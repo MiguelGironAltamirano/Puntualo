@@ -32,6 +32,26 @@ class User(Base):
         nullable=False
     )
 
+    username: Mapped[str] = mapped_column(
+        String,
+        unique=True,
+        index=True,
+        nullable=False
+    )
+
+    dni: Mapped[str | None] = mapped_column(
+        String,
+        unique=True,
+        nullable=True,
+        default=None
+    )
+
+    career: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        default=None
+    )
+
     hashed_password: Mapped[str] = mapped_column(
         String,
         nullable=False

@@ -63,12 +63,37 @@ def register_user(
 
         raise HTTPException(
             status_code=400,
-            detail="El usuario ya existe"
+            detail="El correo ya está registrado"
         )
+
+    existing_username = db.execute(
+        select(User).where(User.username == payload.username)
+    ).scalar_one_or_none()
+
+    if existing_username:
+
+        raise HTTPException(
+            status_code=400,
+            detail="El nombre de usuario ya está en uso"
+        )
+
+    if payload.dni:
+        existing_dni = db.execute(
+            select(User).where(User.dni == payload.dni)
+        ).scalar_one_or_none()
+        
+        if existing_dni:
+            raise HTTPException(
+                status_code=400,
+                detail="El DNI ya está registrado"
+            )
 
     user = User(
         email=payload.email,
         full_name=payload.full_name,
+        username=payload.username,
+        dni=payload.dni,
+        career=payload.career,
         hashed_password=hash_password(
             payload.password
         )

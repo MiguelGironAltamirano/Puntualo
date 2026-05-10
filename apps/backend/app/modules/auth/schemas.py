@@ -11,6 +11,12 @@ class RegisterRequest(BaseModel):
 
     password: str
 
+    username: str
+
+    dni: str | None = None
+
+    career: str | None = None
+
     @field_validator("email")
     @classmethod
     def validate_unmsm_email(
@@ -59,6 +65,12 @@ class UserResponse(BaseModel):
     email: EmailStr
 
     full_name: str
+
+    username: str
+
+    dni: str | None = None
+
+    career: str | None = None
 
     role: str
 
