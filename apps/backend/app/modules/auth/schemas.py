@@ -71,3 +71,6 @@ class UserResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+    
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
