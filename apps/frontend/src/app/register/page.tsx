@@ -8,19 +8,51 @@ export default function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
+    const [fullName, setFullName] = useState('');
+    const [dni, setDni] = useState('');
     const [career, setCareer] = useState('');
-    const [file, setFile] = useState<File | null>(null);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     // --- MANEJO DE ENVÍO (Submit) ---
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Validación obligatoria de archivo para nuevos registros (RF-02)
-        if (!file) {
-            alert("Por favor, sube tu carnet o matrícula para validar tu cuenta.");
-            return;
+        setError('');
+        
+        // Nota: la verificación de documento se maneja en un flujo separado.
+        
+        setLoading(true);
+        
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const res = await fetch(`${apiUrl}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    username,
+                    full_name: fullName,
+                    dni: dni || null,
+                    career: career || null
+                })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                setError(data.detail || 'Ocurrió un error en el registro');
+                setLoading(false);
+                return;
+            }
+
+            alert('Registro exitoso. Serás redirigido al inicio de sesión.');
+            window.location.href = '/login';
+        } catch (err) {
+            setError('Error de conexión con el servidor');
+            setLoading(false);
         }
-        console.log("Datos de registro listos para Backend:", { username, email, career, file });
-        alert('Registro enviado para validación institucional.');
     };
 
     return (
@@ -33,7 +65,28 @@ export default function RegisterPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {error && (
+                        <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm mb-4">
+                            {error}
+                        </div>
+                    )}
+
                     {/* BLOQUE: Datos de Identidad */}
+                    <div>
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Nombre Completo</label>
+                        <div className="relative mt-1">
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600 text-base">👤</span>
+                            <input
+                                type="text"
+                                required
+                                placeholder="Juan Pérez"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Nombre de Usuario</label>
                         <div className="relative mt-1">
@@ -45,6 +98,20 @@ export default function RegisterPage() {
                                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">DNI (Opcional)</label>
+                        <div className="relative mt-1">
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600 text-base">🪪</span>
+                            <input
+                                type="text"
+                                placeholder="12345678"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                value={dni}
+                                onChange={(e) => setDni(e.target.value)}
                             />
                         </div>
                     </div>
@@ -96,27 +163,18 @@ export default function RegisterPage() {
                         </div>
                     </div>
 
-                    {/* Botón personalizado para carga de archivos (RF-02) */}
-                    <div className="pt-2">
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1 mb-2">Foto del Carnet / Matrícula (JPG/PDF)</label>
-                        <label className="inline-block px-4 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg cursor-pointer hover:bg-blue-100 border border-blue-100 shadow-sm transition-transform active:scale-95">
-                            Elegir archivo
-                            <input
-                                type="file"
-                                required
-                                accept=".jpg,.jpeg,.pdf"
-                                className="hidden"
-                                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                            />
-                        </label>
-                        {file && <span className="ml-3 text-[10px] text-green-600 font-semibold italic">{file.name}</span>}
-                    </div>
+                    {/* La carga de documento se gestiona en un flujo de verificación separado */}
 
                     <button
                         type="submit"
-                        className="w-full py-3 bg-[#ff8a00] hover:bg-[#e67e00] text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98]"
+                        disabled={loading}
+                        className={`w-full py-3 text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98] ${
+                            loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#ff8a00] hover:bg-[#e67e00]'
+                        }`}
                     >
-                        Crear cuenta <span>→</span>
+                        {loading ? 'Procesando...' : (
+                            <>Crear cuenta <span>→</span></>
+                        )}
                     </button>
                 </form>
 

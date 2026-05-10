@@ -7,12 +7,43 @@ export default function AuthPage() {
     // --- ESTADOS DEL FORMULARIO ---
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     // --- MANEJO DE ENVÍO (Submit) ---
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Datos listos para Backend login:", { email });
-        alert('Iniciando sesión...');
+        setError('');
+        setLoading(true);
+        
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const res = await fetch(`${apiUrl}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                setError(data.detail || 'Credenciales inválidas');
+                setLoading(false);
+                return;
+            }
+
+            const data = await res.json();
+            localStorage.setItem('access_token', data.access_token);
+            if (data.refresh_token) {
+                localStorage.setItem('refresh_token', data.refresh_token);
+            }
+
+            window.location.href = '/profesores';
+        } catch (err) {
+            setError('Error de conexión con el servidor');
+            setLoading(false);
+        }
     };
 
     return (
@@ -27,6 +58,11 @@ export default function AuthPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {error && (
+                        <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm mb-4">
+                            {error}
+                        </div>
+                    )}
 
                     {/* BLOQUE: Credenciales Universitarias (Login) */}
                     <div>
@@ -67,9 +103,14 @@ export default function AuthPage() {
 
                     <button
                         type="submit"
-                        className="w-full py-3 bg-[#ff8a00] hover:bg-[#e67e00] text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98]"
+                        disabled={loading}
+                        className={`w-full py-3 text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98] ${
+                            loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#ff8a00] hover:bg-[#e67e00]'
+                        }`}
                     >
-                        Acceder <span>→</span>
+                        {loading ? 'Accediendo...' : (
+                            <>Acceder <span>→</span></>
+                        )}
                     </button>
                 </form>
 
