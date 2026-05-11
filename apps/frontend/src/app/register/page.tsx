@@ -18,11 +18,11 @@ export default function RegisterPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        
+
         // Nota: la verificación de documento se maneja en un flujo separado.
-        
+
         setLoading(true);
-        
+
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
             const res = await fetch(`${apiUrl}/auth/register`, {
@@ -47,8 +47,8 @@ export default function RegisterPage() {
                 return;
             }
 
-            alert('Registro exitoso. Serás redirigido al inicio de sesión.');
-            window.location.href = '/login';
+            alert('Registro exitoso. Ahora, por favor verifica tu identidad como alumno de la UNMSM.');
+            window.location.href = '/verify';
         } catch (err) {
             setError('Error de conexión con el servidor');
             setLoading(false);
@@ -168,9 +168,8 @@ export default function RegisterPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-3 text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98] ${
-                            loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#ff8a00] hover:bg-[#e67e00]'
-                        }`}
+                        className={`w-full py-3 text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98] ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#ff8a00] hover:bg-[#e67e00]'
+                            }`}
                     >
                         {loading ? 'Procesando...' : (
                             <>Crear cuenta <span>→</span></>
