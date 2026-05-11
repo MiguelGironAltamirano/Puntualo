@@ -3,6 +3,7 @@ from sqlalchemy import text
 
 from app.db.session import engine
 from app.modules.auth.router import router as auth_router
+from app.modules.professors.router import router as professors_router
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
@@ -36,4 +37,10 @@ app.include_router(
     auth_router,
     prefix="/auth",
     tags=["auth"],
+)
+
+app.include_router(
+    professors_router,
+    prefix="/professors",
+    tags=["professors"],
 )
