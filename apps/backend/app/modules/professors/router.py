@@ -5,7 +5,6 @@ from app.db.async_session import get_async_db
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_user
 from app.modules.professors.schemas import (
-    PaginatedProfessors,
     ProfessorCreate,
     ProfessorOut,
     ProfessorUpdate,
@@ -15,6 +14,9 @@ from app.modules.professors.service import (
     ProfessorAlreadyExistsError,
     ProfessorService,
 )
+from app.schemas.error import ErrorResponse
+from app.schemas.pagination import PaginatedResponse
+from app.utils.pagination import PaginationParams, paginate
 
 router = APIRouter()
 
@@ -24,6 +26,9 @@ router = APIRouter()
     response_model=ProfessorOut,
     status_code=status.HTTP_201_CREATED,
     summary="Registrar nuevo profesor",
+    responses={
+        409: {"model": ErrorResponse, "description": "Profesor duplicado"},
+    },
 )
 async def create_professor(
     payload: ProfessorCreate,
@@ -42,23 +47,26 @@ async def create_professor(
 
 @router.get(
     "/",
-    response_model=PaginatedProfessors,
+    response_model=PaginatedResponse[ProfessorOut],
     summary="Listar profesores (paginado)",
 )
 async def list_professors(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    pagination: PaginationParams = Depends(),
     search: str | None = Query(None, max_length=200),
     db: AsyncSession = Depends(get_async_db),
 ):
     service = ProfessorService(db)
-    return await service.list_paginated(page=page, page_size=page_size, search=search)
+    query = service.list_query(search=search)
+    return await paginate(db, query, pagination, ProfessorOut)
 
 
 @router.get(
     "/{professor_id}",
     response_model=ProfessorOut,
     summary="Obtener profesor por id",
+    responses={
+        404: {"model": ErrorResponse, "description": "Profesor no encontrado"},
+    },
 )
 async def get_professor(
     professor_id: str,
@@ -78,6 +86,10 @@ async def get_professor(
     "/{professor_id}",
     response_model=ProfessorOut,
     summary="Actualizar profesor",
+    responses={
+        404: {"model": ErrorResponse, "description": "Profesor no encontrado"},
+        409: {"model": ErrorResponse, "description": "Profesor duplicado"},
+    },
 )
 async def update_professor(
     professor_id: str,
@@ -111,6 +123,9 @@ async def update_professor(
     "/{professor_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Eliminar profesor (soft delete)",
+    responses={
+        404: {"model": ErrorResponse, "description": "Profesor no encontrado"},
+    },
 )
 async def delete_professor(
     professor_id: str,

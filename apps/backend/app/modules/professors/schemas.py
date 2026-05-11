@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel
-from pydantic import EmailStr
-from pydantic import Field
+from pydantic import BaseModel, Field
+
+from app.schemas.pagination import PaginatedResponse
 
 
 VALIDATION_STATUSES = {"pending_validation", "validated", "rejected"}
@@ -25,6 +25,7 @@ class ProfessorUpdate(BaseModel):
 
     faculty: str | None = Field(default=None, min_length=2, max_length=150)
 
+    # TODO(2.4): restringir a rol admin cuando se implemente RBAC + integración SUNEDU.
     validation_status: str | None = None
 
 
@@ -48,23 +49,7 @@ class ProfessorOut(BaseModel):
 
     updated_at: datetime
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
 
-class PaginatedProfessors(BaseModel):
-
-    items: list[ProfessorOut]
-
-    total: int
-
-    page: int
-
-    page_size: int
-
-    total_pages: int
-
-    has_next: bool
-
-    has_prev: bool
+PaginatedProfessors = PaginatedResponse[ProfessorOut]

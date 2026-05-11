@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from math import ceil
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -55,12 +54,8 @@ class ProfessorService:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_paginated(
-        self,
-        page: int,
-        page_size: int,
-        search: str | None = None,
-    ) -> dict:
+    def list_query(self, search: str | None = None):
+        """Construye la query base para listar profesores activos con filtro opcional."""
         base = select(Professor).where(Professor.is_active.is_(True))
 
         if search:
@@ -73,28 +68,7 @@ class ProfessorService:
                 )
             )
 
-        count_stmt = select(func.count()).select_from(base.subquery())
-        total = (await self.db.execute(count_stmt)).scalar_one()
-
-        offset = (page - 1) * page_size
-        items_stmt = (
-            base.order_by(Professor.created_at.desc())
-            .offset(offset)
-            .limit(page_size)
-        )
-        items = (await self.db.execute(items_stmt)).scalars().all()
-
-        total_pages = ceil(total / page_size) if total > 0 else 0
-
-        return {
-            "items": list(items),
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": total_pages,
-            "has_next": page < total_pages,
-            "has_prev": page > 1,
-        }
+        return base.order_by(Professor.created_at.desc())
 
     async def update(
         self,
