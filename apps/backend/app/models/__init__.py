@@ -6,16 +6,18 @@ from app.models.rating_category import RatingCategory
 from app.models.rating_detail import RatingDetail
 from app.models.review import Review, ReviewStatus
 from app.models.subject import Subject
+from app.models.teacher import Teacher
 from app.models.university import University
 from app.models.user import User
 
 __all__ = [
     "User",
+    "Professor",
     "AcademicDegree",
     "University",
     "Subject",
     "RatingCategory",
-    "Professor",
+    "Teacher",
     "Class",
     "Review",
     "ReviewStatus",

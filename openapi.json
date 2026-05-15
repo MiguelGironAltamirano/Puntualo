@@ -1,0 +1,2861 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Puntualo API",
+    "version": "1.0.0",
+    "description": "## API de evaluación docente universitaria — UNMSM\n\nPuntualo permite a los estudiantes calificar, comentar y comparar a sus\nprofesores, con síntesis de opiniones mediante IA.\n\n### Autenticación\nLa mayoría de endpoints requieren un token JWT.\nObtén uno en `POST /auth/login`.\n\n### Flujo típico\n1. Registrarse → `POST /auth/register`\n2. Login → `POST /auth/login` (obtener token)\n3. Buscar profesores → `GET /profesores?q=nombre`\n4. Ver perfil → `GET /profesores/{id}`\n5. Evaluar → `POST /evaluaciones`\n\n### Niveles de acceso\n| Nivel | Permisos |\n|-------|----------|\n| Anónimo | Búsqueda, ver perfiles, leer comentarios |\n| Registrado | Todo lo anterior + evaluar, comentar, reaccionar |\n| Verificado | Todo lo anterior + insignia ✓, prioridad en feed |\n| Admin | Todo lo anterior + moderación, validación |\n\n### Límites de Rate\n- Endpoints públicos: 100 req/min por IP\n- Endpoints de escritura: 30 req/min por IP\n- Chatbot: 20 mensajes/sesión, 5 sesiones/día\n",
+    "contact": {
+      "name": "Equipo Puntualo",
+      "email": "equipo@puntualo.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/api/v1",
+      "description": "Desarrollo local"
+    },
+    {
+      "url": "https://api.puntualo.com/v1",
+      "description": "Producción"
+    }
+  ],
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Registro, login, verificación de identidad y gestión de sesión"
+    },
+    {
+      "name": "profesores",
+      "description": "Catálogo de profesores — CRUD, búsqueda, autocompletado"
+    },
+    {
+      "name": "evaluaciones",
+      "description": "Sistema de puntuación y evaluación docente"
+    },
+    {
+      "name": "comentarios",
+      "description": "Comentarios, reacciones y denuncias"
+    },
+    {
+      "name": "comparar",
+      "description": "Módulo comparativo de hasta 3 profesores"
+    },
+    {
+      "name": "chatbot",
+      "description": "Chatbot de recomendación con IA"
+    },
+    {
+      "name": "admin",
+      "description": "Panel de administración y moderación"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Registrar nuevo usuario",
+        "description": "Crea una cuenta con correo y contraseña.\nEl usuario inicia con nivel \"registrado\".\nEnvía email de confirmación para activar la cuenta.\n",
+        "operationId": "registrarUsuario",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroRequest"
+              },
+              "example": {
+                "email": "alumno@gmail.com",
+                "password": "MiPassword123",
+                "password_confirm": "MiPassword123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Las contraseñas no coinciden",
+                  "code": "AUTH_PASSWORD_MISMATCH",
+                  "status_code": 400
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email ya registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Este correo ya está registrado",
+                  "code": "AUTH_EMAIL_EXISTS",
+                  "status_code": 409
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Iniciar sesión",
+        "description": "Retorna JWT access token (15-30 min) y refresh token (7 días).\nEl refresh token se envía como httpOnly cookie.\n",
+        "operationId": "loginUsuario",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "email": "alumno@gmail.com",
+                "password": "MiPassword123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login exitoso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                },
+                "example": {
+                  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  "token_type": "bearer",
+                  "expires_in": 1800,
+                  "usuario": {
+                    "id": 1,
+                    "email": "alumno@gmail.com",
+                    "nivel_verificacion": "registrado"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Credenciales inválidas",
+                  "code": "AUTH_INVALID_CREDENTIALS",
+                  "status_code": 401
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Cerrar sesión",
+        "description": "Invalida el access token actual agregándolo a la blacklist en Redis.",
+        "operationId": "logoutUsuario",
+        "responses": {
+          "200": {
+            "description": "Sesión cerrada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Sesión cerrada exitosamente"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/auth/password-reset": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Solicitar reset de contraseña",
+        "description": "Envía un enlace de recuperación al correo registrado.",
+        "operationId": "solicitarResetPassword",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "alumno@gmail.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email de recuperación enviado (siempre retorna 200\npara no revelar si el email existe).\n",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Si el correo existe, recibirás un enlace de recuperación"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/password-reset/confirm": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Confirmar nuevo password",
+        "description": "Recibe el token de reset y la nueva contraseña.",
+        "operationId": "confirmarResetPassword",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "new_password",
+                  "new_password_confirm"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "Token recibido por email"
+                  },
+                  "new_password": {
+                    "type": "string",
+                    "minLength": 8
+                  },
+                  "new_password_confirm": {
+                    "type": "string",
+                    "minLength": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contraseña actualizada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Contraseña actualizada exitosamente"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Token inválido o expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Subir documento de verificación",
+        "description": "Sube un documento para verificar la identidad del alumno.\nMétodos aceptados:\n- **correo_institucional**: ingresa email @unmsm.edu.pe, se envía enlace de verificación\n- **reporte_matricula**: sube imagen/PDF del reporte\n- **carnet_universitario**: sube foto del carnet\n\nEl documento queda en estado \"pendiente_revision\" hasta que el admin lo apruebe.\n",
+        "operationId": "verificarIdentidad",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Documento recibido, pendiente de revisión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificacionOut"
+                },
+                "example": {
+                  "id": 1,
+                  "metodo": "reporte_matricula",
+                  "estado": "pendiente_revision",
+                  "mensaje": "Tu documento fue recibido. Te notificaremos cuando sea revisado."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Archivo inválido (formato o tamaño)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Formato no soportado. Usa JPG, PNG o PDF (máx 5MB)",
+                  "code": "VERIFICACION_INVALID_FILE",
+                  "status_code": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/auth/verify/email": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Confirmar verificación por correo institucional",
+        "description": "Endpoint al que redirige el enlace enviado al correo @unmsm.edu.pe.",
+        "operationId": "confirmarVerificacionEmail",
+        "security": [],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuenta verificada exitosamente",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Tu cuenta ha sido verificada. Ahora tienes insignia ✓"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Token inválido o expirado"
+          }
+        }
+      }
+    },
+    "/profesores": {
+      "get": {
+        "tags": [
+          "profesores"
+        ],
+        "summary": "Buscar profesores con filtros",
+        "description": "Búsqueda avanzada con filtros combinables.\nSolo retorna profesores con `estado_validacion = \"validado\"`.\nSoporta búsqueda por texto parcial con trigram similarity (pg_trgm).\n",
+        "operationId": "buscarProfesores",
+        "security": [],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Texto de búsqueda por nombre del profesor (coincidencia parcial)",
+            "schema": {
+              "type": "string",
+              "example": "perez"
+            }
+          },
+          {
+            "name": "universidad_id",
+            "in": "query",
+            "description": "Filtrar por universidad (v1.0 solo UNMSM = 1)",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          {
+            "name": "facultad_id",
+            "in": "query",
+            "description": "Filtrar por facultad",
+            "schema": {
+              "type": "integer",
+              "example": 3
+            }
+          },
+          {
+            "name": "dificultad_min",
+            "in": "query",
+            "description": "Nivel mínimo de dificultad promedio (1-5)",
+            "schema": {
+              "type": "number",
+              "format": "float",
+              "minimum": 1,
+              "maximum": 5
+            }
+          },
+          {
+            "name": "dificultad_max",
+            "in": "query",
+            "description": "Nivel máximo de dificultad promedio (1-5)",
+            "schema": {
+              "type": "number",
+              "format": "float",
+              "minimum": 1,
+              "maximum": 5
+            }
+          },
+          {
+            "name": "etiquetas",
+            "in": "query",
+            "description": "Filtrar por etiquetas del docente.\nPasar múltiples valores separados por coma.\n",
+            "schema": {
+              "type": "string",
+              "example": "practico,exigente"
+            }
+          },
+          {
+            "name": "modalidad",
+            "in": "query",
+            "description": "Filtrar por modalidad de clase",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "virtual",
+                "presencial",
+                "ambas"
+              ]
+            }
+          },
+          {
+            "name": "metodo_evaluacion",
+            "in": "query",
+            "description": "Filtrar por método de evaluación predominante",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "examenes",
+                "proyectos",
+                "participacion"
+              ]
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "description": "Criterio de ordenamiento",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "puntaje_desc",
+                "puntaje_asc",
+                "nombre_asc",
+                "relevancia"
+              ],
+              "default": "relevancia"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de profesores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ProfesorOut"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": 1,
+                      "nombre_completo": "Juan Carlos Pérez López",
+                      "foto_url": null,
+                      "universidad": "UNMSM",
+                      "facultad": "Ingeniería de Sistemas",
+                      "puntaje_global": 4.3,
+                      "total_evaluaciones": 47,
+                      "etiquetas": [
+                        {
+                          "id": 1,
+                          "nombre": "Práctico",
+                          "votos": 12
+                        },
+                        {
+                          "id": 3,
+                          "nombre": "Exigente",
+                          "votos": 8
+                        }
+                      ],
+                      "sunedu_validado": true,
+                      "estado_validacion": "validado",
+                      "created_at": "2026-05-01T10:00:00Z",
+                      "updated_at": "2026-05-08T15:30:00Z"
+                    }
+                  ],
+                  "total": 145,
+                  "page": 1,
+                  "page_size": 20,
+                  "total_pages": 8,
+                  "has_next": true,
+                  "has_prev": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "profesores"
+        ],
+        "summary": "Registrar nuevo profesor",
+        "description": "Cualquier usuario registrado puede registrar un profesor.\nEl perfil se crea con estado `pendiente_validacion` y NO es visible\nen búsquedas públicas hasta ser validado.\n\nAl crearse, se dispara una tarea asíncrona (Celery) que:\n1. Busca match en el seed del directorio UNMSM → si match, auto-valida\n2. Si no hay match, consulta el Registro de Grados y Títulos de SUNEDU\n3. Si SUNEDU confirma → `validado`\n4. Si no se encuentra → `no_encontrado`, queda en cola de revisión admin\n",
+        "operationId": "registrarProfesor",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfesorCreate"
+              },
+              "example": {
+                "nombre_completo": "María Elena García Ríos",
+                "universidad_id": 1,
+                "facultad_id": 3,
+                "cursos_ids": [
+                  12,
+                  15
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Profesor registrado, validación en progreso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfesorOut"
+                },
+                "example": {
+                  "id": 25,
+                  "nombre_completo": "María Elena García Ríos",
+                  "foto_url": null,
+                  "universidad": "UNMSM",
+                  "facultad": "Ingeniería de Sistemas",
+                  "puntaje_global": null,
+                  "total_evaluaciones": 0,
+                  "etiquetas": [],
+                  "sunedu_validado": false,
+                  "estado_validacion": "pendiente_validacion",
+                  "created_at": "2026-05-10T14:00:00Z",
+                  "updated_at": "2026-05-10T14:00:00Z"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "description": "Profesor ya registrado en esa universidad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Este profesor ya está registrado en UNMSM",
+                  "code": "PROFESOR_DUPLICATE",
+                  "status_code": 409
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profesores/autocomplete": {
+      "get": {
+        "tags": [
+          "profesores"
+        ],
+        "summary": "Autocompletado de profesores",
+        "description": "Retorna top 10 sugerencias para el buscador con autocompletado.\nUsa índice GIN con pg_trgm para matches parciales.\nSolo retorna profesores validados.\nObjetivo de rendimiento: < 200ms.\n",
+        "operationId": "autocompletarProfesores",
+        "security": [],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "description": "Texto de búsqueda (mínimo 2 caracteres)",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "example": "gar"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de sugerencias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutocompleteItem"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 5,
+                    "nombre_completo": "María Elena García Ríos",
+                    "universidad": "UNMSM",
+                    "facultad": "Ingeniería de Sistemas",
+                    "puntaje_global": 4.1
+                  },
+                  {
+                    "id": 12,
+                    "nombre_completo": "Carlos García Mendoza",
+                    "universidad": "UNMSM",
+                    "facultad": "Medicina",
+                    "puntaje_global": 3.8
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profesores/{profesor_id}": {
+      "get": {
+        "tags": [
+          "profesores"
+        ],
+        "summary": "Detalle completo de un profesor",
+        "description": "Retorna el perfil completo incluyendo:\n- Datos del profesor y universidad\n- Métricas agregadas (claridad, facilidad, ayuda)\n- Resumen IA (si existe)\n- Lista de cursos por semestre\n- Conteo de evaluaciones\nSolo accesible si el profesor tiene estado \"validado\".\n",
+        "operationId": "obtenerProfesor",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProfesorId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil completo del profesor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfesorDetalle"
+                },
+                "example": {
+                  "id": 1,
+                  "nombre_completo": "Juan Carlos Pérez López",
+                  "foto_url": null,
+                  "universidad": "UNMSM",
+                  "facultad": "Ingeniería de Sistemas",
+                  "puntaje_global": 4.3,
+                  "total_evaluaciones": 47,
+                  "etiquetas": [
+                    {
+                      "id": 1,
+                      "nombre": "Práctico",
+                      "votos": 12
+                    }
+                  ],
+                  "sunedu_validado": true,
+                  "estado_validacion": "validado",
+                  "created_at": "2026-05-01T10:00:00Z",
+                  "updated_at": "2026-05-08T15:30:00Z",
+                  "metricas": {
+                    "claridad": 4.5,
+                    "facilidad": 3.8,
+                    "ayuda": 4.6,
+                    "dificultad_promedio": 3.2
+                  },
+                  "cursos": [
+                    {
+                      "id": 12,
+                      "nombre": "Algoritmos y Estructuras de Datos",
+                      "codigo": "AED-301",
+                      "semestre": "2026-I",
+                      "modalidad": "presencial"
+                    },
+                    {
+                      "id": 15,
+                      "nombre": "Base de Datos I",
+                      "codigo": "BD-401",
+                      "semestre": "2025-II",
+                      "modalidad": "virtual"
+                    }
+                  ],
+                  "resumen_ia": {
+                    "resumen_texto": "Los estudiantes valoran altamente su capacidad para explicar temas complejos con ejemplos prácticos. Algunos señalan que sus exámenes son exigentes pero justos.",
+                    "puntos_fuertes": [
+                      "Explica con ejemplos reales y código",
+                      "Siempre resuelve dudas con paciencia",
+                      "Material de clase actualizado"
+                    ],
+                    "puntos_debiles": [
+                      "Exámenes con poco tiempo",
+                      "A veces avanza muy rápido"
+                    ],
+                    "frase_sintesis": "Exigente pero te prepara bien",
+                    "sentimiento_global": 0.72,
+                    "fecha_generacion": "2026-05-07T08:00:00Z",
+                    "comentarios_analizados": 42
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profesor no encontrado o no validado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Profesor no encontrado",
+                  "code": "PROFESOR_NOT_FOUND",
+                  "status_code": 404
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "profesores"
+        ],
+        "summary": "Actualizar datos del profesor",
+        "description": "Solo el admin o el usuario que registró al profesor puede actualizarlo.",
+        "operationId": "actualizarProfesor",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProfesorId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfesorUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profesor actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfesorOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Profesor no encontrado"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "profesores"
+        ],
+        "summary": "Eliminar profesor (soft delete)",
+        "description": "Solo admin. Marca el profesor como inactivo sin borrar datos.",
+        "operationId": "eliminarProfesor",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProfesorId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profesor desactivado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Profesor desactivado exitosamente"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/profesores/{profesor_id}/comentarios": {
+      "get": {
+        "tags": [
+          "profesores"
+        ],
+        "summary": "Feed de comentarios de un profesor",
+        "description": "Retorna comentarios paginados con filtros.\nOrden por defecto: verificados primero, luego por votos, luego por fecha.\n",
+        "operationId": "listarComentariosProfesor",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProfesorId"
+          },
+          {
+            "name": "modalidad",
+            "in": "query",
+            "description": "Filtrar por modalidad de la clase evaluada",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "virtual",
+                "presencial"
+              ]
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "description": "Criterio de orden",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recientes",
+                "mas_votados",
+                "verificados_primero"
+              ],
+              "default": "verificados_primero"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feed de comentarios paginado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ComentarioOut"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profesor no encontrado"
+          }
+        }
+      }
+    },
+    "/profesores/{profesor_id}/silabos": {
+      "get": {
+        "tags": [
+          "profesores"
+        ],
+        "summary": "Listar sílabos del profesor",
+        "description": "Retorna los sílabos aprobados, organizados por curso y semestre.",
+        "operationId": "listarSilabosProfesor",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProfesorId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de sílabos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SilaboOut"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "profesores"
+        ],
+        "summary": "Subir sílabo",
+        "description": "Cualquier usuario registrado puede subir un sílabo.\nEl archivo queda en estado \"pendiente\" hasta que el admin lo apruebe.\nFormatos aceptados: PDF. Tamaño máximo: 10MB.\n",
+        "operationId": "subirSilabo",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProfesorId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "archivo",
+                  "curso_id",
+                  "semestre"
+                ],
+                "properties": {
+                  "archivo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Archivo PDF del sílabo"
+                  },
+                  "curso_id": {
+                    "type": "integer"
+                  },
+                  "semestre": {
+                    "type": "string",
+                    "example": "2026-I"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sílabo subido, pendiente de aprobación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SilaboOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/profesores/{profesor_id}/resumen-ia": {
+      "get": {
+        "tags": [
+          "profesores"
+        ],
+        "summary": "Obtener resumen IA del profesor",
+        "description": "Retorna el resumen más reciente generado por el pipeline NLP.\nSi no hay suficientes comentarios (mínimo 5), retorna 404.\n",
+        "operationId": "obtenerResumenIA",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProfesorId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumen IA disponible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenIAOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No hay resumen disponible para este profesor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Aún no hay suficientes evaluaciones para generar un resumen",
+                  "code": "RESUMEN_NOT_AVAILABLE",
+                  "status_code": 404
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/evaluaciones": {
+      "post": {
+        "tags": [
+          "evaluaciones"
+        ],
+        "summary": "Crear evaluación y comentario",
+        "description": "Registra la puntuación de un alumno hacia un profesor en un curso.\nOpcionalmente incluye un comentario textual (mínimo 20 caracteres).\n\n**Restricciones:**\n- Requiere login (nivel registrado o verificado)\n- Un usuario solo puede evaluar una vez por profesor/curso/semestre\n- El profesor debe estar validado\n\n**Efectos secundarios:**\n- Recalcula el puntaje global del profesor\n- Si se acumulan 10+ comentarios nuevos, dispara generación de resumen IA\n",
+        "operationId": "crearEvaluacion",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluacionCreate"
+              },
+              "example": {
+                "profesor_id": 1,
+                "curso_id": 12,
+                "claridad": 4,
+                "facilidad": 3,
+                "ayuda": 5,
+                "dificultad_curso": 3,
+                "modalidad": "presencial",
+                "comentario_texto": "Explica muy bien los conceptos y siempre resuelve las dudas con paciencia. Los exámenes son exigentes pero justos."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evaluación creada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluacionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "description": "Ya evaluaste a este profesor en este curso/semestre",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Ya evaluaste a este profesor en este curso/semestre",
+                  "code": "EVALUACION_DUPLICATE",
+                  "status_code": 409
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Comentario demasiado corto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "El comentario debe tener al menos 20 caracteres",
+                  "code": "COMENTARIO_TOO_SHORT",
+                  "status_code": 422
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/evaluaciones/profesor/{profesor_id}/metricas": {
+      "get": {
+        "tags": [
+          "evaluaciones"
+        ],
+        "summary": "Métricas agregadas del profesor",
+        "description": "Retorna los promedios de claridad, facilidad, ayuda y dificultad\ncalculados a partir de todas las evaluaciones del profesor.\n",
+        "operationId": "obtenerMetricasProfesor",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProfesorId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métricas del profesor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricasOut"
+                },
+                "example": {
+                  "claridad": 4.5,
+                  "facilidad": 3.8,
+                  "ayuda": 4.6,
+                  "dificultad_promedio": 3.2,
+                  "puntaje_global": 4.3,
+                  "total_evaluaciones": 47
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comentarios/{comentario_id}/reaccion": {
+      "post": {
+        "tags": [
+          "comentarios"
+        ],
+        "summary": "Reaccionar a un comentario",
+        "description": "Toggle de reacción: si ya reaccionaste con el mismo tipo, se elimina.\nSi reaccionaste con tipo diferente, se cambia.\nTipos: \"util\" (👍), \"no_util\" (👎).\n",
+        "operationId": "reaccionarComentario",
+        "parameters": [
+          {
+            "name": "comentario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "tipo"
+                ],
+                "properties": {
+                  "tipo": {
+                    "type": "string",
+                    "enum": [
+                      "util",
+                      "no_util"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "tipo": "util"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reacción registrada/actualizada/eliminada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accion": {
+                      "type": "string",
+                      "enum": [
+                        "creada",
+                        "actualizada",
+                        "eliminada"
+                      ]
+                    },
+                    "conteo_util": {
+                      "type": "integer"
+                    },
+                    "conteo_no_util": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "accion": "creada",
+                  "conteo_util": 15,
+                  "conteo_no_util": 2
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/comentarios/{comentario_id}/denuncia": {
+      "post": {
+        "tags": [
+          "comentarios"
+        ],
+        "summary": "Denunciar un comentario",
+        "description": "Reporta un comentario para revisión del admin.\nUn usuario no puede denunciar el mismo comentario dos veces.\nSi un comentario acumula 5+ denuncias, se oculta automáticamente.\n",
+        "operationId": "denunciarComentario",
+        "parameters": [
+          {
+            "name": "comentario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DenunciaCreate"
+              },
+              "example": {
+                "motivo": "ofensivo",
+                "descripcion": "Contiene insultos hacia el profesor"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Denuncia registrada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Denuncia registrada. Será revisada por el equipo de moderación.",
+                  "denuncia_id": 42
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "description": "Ya denunciaste este comentario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Ya denunciaste este comentario",
+                  "code": "DENUNCIA_DUPLICATE",
+                  "status_code": 409
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comparar": {
+      "get": {
+        "tags": [
+          "comparar"
+        ],
+        "summary": "Comparar hasta 3 profesores",
+        "description": "Retorna los datos comparativos de 2-3 profesores en paralelo,\nincluyendo métricas, etiquetas, resumen IA y frase de opinión popular.\n",
+        "operationId": "compararProfesores",
+        "security": [],
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "description": "IDs de profesores separados por coma (mínimo 2, máximo 3)",
+            "schema": {
+              "type": "string",
+              "example": "1,5,12"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datos comparativos de los profesores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "profesores": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProfesorComparativa"
+                      },
+                      "minItems": 2,
+                      "maxItems": 3
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Debe comparar entre 2 y 3 profesores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Debe comparar entre 2 y 3 profesores",
+                  "code": "COMPARAR_INVALID_COUNT",
+                  "status_code": 400
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chatbot/nueva-sesion": {
+      "post": {
+        "tags": [
+          "chatbot"
+        ],
+        "summary": "Crear nueva sesión de chatbot",
+        "description": "Genera un session_id único para iniciar una conversación.",
+        "operationId": "crearSesionChatbot",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Sesión creada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "session_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chatbot/mensaje": {
+      "post": {
+        "tags": [
+          "chatbot"
+        ],
+        "summary": "Enviar mensaje al chatbot",
+        "description": "Envía un mensaje en lenguaje natural y recibe recomendación de profesores.\n\nEl chatbot usa un LLM con function calling para:\n1. Interpretar las preferencias del alumno\n2. Traducirlas a filtros de búsqueda en la BD\n3. Generar una respuesta conversacional con los resultados\n\n**Límites:**\n- 20 mensajes por sesión\n- Sesión expira tras 1 hora de inactividad\n- 5 sesiones por día para usuarios no premium\n",
+        "operationId": "enviarMensajeChatbot",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatbotMensajeIn"
+              },
+              "example": {
+                "mensaje": "Busco un profesor de Algoritmos que explique bien y no sea tan difícil",
+                "session_id": "550e8400-e29b-41d4-a716-446655440000"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta del chatbot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatbotMensajeOut"
+                },
+                "example": {
+                  "respuesta": "¡Buena! Para Algoritmos te recomiendo a estos profes que explican bien y tienen dificultad moderada:",
+                  "profesores_recomendados": [
+                    {
+                      "id": 1,
+                      "nombre_completo": "Juan Carlos Pérez López",
+                      "foto_url": null,
+                      "puntaje_global": 4.3,
+                      "justificacion": "Alta claridad (4.5) y dificultad moderada (3.2)"
+                    },
+                    {
+                      "id": 8,
+                      "nombre_completo": "Ana María Torres Vega",
+                      "foto_url": null,
+                      "puntaje_global": 4.1,
+                      "justificacion": "Muy buena disposición (4.7) y ejemplos prácticos"
+                    }
+                  ],
+                  "sugerencias_rapidas": [
+                    "Más fácil",
+                    "Más difícil",
+                    "Solo presencial",
+                    "Solo virtual",
+                    "Otra materia"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de mensajes alcanzado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "detail": "Has alcanzado el límite de mensajes por sesión",
+                  "code": "CHATBOT_SESSION_LIMIT",
+                  "status_code": 429
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/denuncias": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Cola de denuncias pendientes",
+        "description": "Lista los comentarios denunciados ordenados por prioridad\n(más denuncias = más urgente).\nRequiere rol admin.\n",
+        "operationId": "listarDenuncias",
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pendiente",
+                "revision_urgente",
+                "resuelta"
+              ],
+              "default": "pendiente"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de denuncias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/DenunciaAdminOut"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/admin/comentarios/{comentario_id}/moderar": {
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Moderar un comentario",
+        "description": "Ejecuta una acción de moderación sobre un comentario.\nAcciones disponibles: aprobar, editar, eliminar, banear_usuario.\nRequiere rol admin.\n",
+        "operationId": "moderarComentario",
+        "parameters": [
+          {
+            "name": "comentario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModeracionRequest"
+              },
+              "example": {
+                "accion": "eliminar",
+                "motivo": "Contiene insultos personales hacia el docente"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Acción de moderación ejecutada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Comentario eliminado exitosamente",
+                  "accion": "eliminar",
+                  "comentario_id": 55
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/admin/profesores/pendientes": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Profesores pendientes de validación",
+        "description": "Lista los profesores registrados por alumnos que aún no han sido validados.\nIncluye los que SUNEDU marcó como \"no_encontrado\".\nRequiere rol admin.\n",
+        "operationId": "listarProfesoresPendientes",
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pendiente_validacion",
+                "no_encontrado"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de profesores pendientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ProfesorOut"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/admin/profesores/{profesor_id}/validar": {
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Aprobar o rechazar profesor",
+        "description": "El admin valida manualmente a un profesor.\nAl aprobar, el perfil se hace visible en búsquedas públicas.\nRequiere rol admin.\n",
+        "operationId": "validarProfesor",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProfesorId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "accion"
+                ],
+                "properties": {
+                  "accion": {
+                    "type": "string",
+                    "enum": [
+                      "aprobar",
+                      "rechazar"
+                    ]
+                  },
+                  "motivo_rechazo": {
+                    "type": "string",
+                    "description": "Obligatorio si accion = rechazar"
+                  }
+                }
+              },
+              "example": {
+                "accion": "aprobar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profesor validado/rechazado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Profesor aprobado y visible en búsquedas",
+                  "estado_validacion": "validado"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/admin/verificaciones/pendientes": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Verificaciones de identidad pendientes",
+        "description": "Lista los documentos de verificación (matrícula/carnet) subidos\npor alumnos que están pendientes de revisión.\nRequiere rol admin.\n",
+        "operationId": "listarVerificacionesPendientes",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de verificaciones pendientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/VerificacionAdminOut"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/admin/verificaciones/{verificacion_id}/resolver": {
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Aprobar o rechazar verificación de identidad",
+        "description": "Al aprobar, el usuario sube a nivel \"verificado\" y todos sus\ncomentarios existentes reciben la insignia ✓.\nRequiere rol admin.\n",
+        "operationId": "resolverVerificacion",
+        "parameters": [
+          {
+            "name": "verificacion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "accion"
+                ],
+                "properties": {
+                  "accion": {
+                    "type": "string",
+                    "enum": [
+                      "aprobar",
+                      "rechazar"
+                    ]
+                  },
+                  "motivo_rechazo": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verificación resuelta",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Verificación aprobada. El usuario ahora tiene insignia ✓"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/admin/estadisticas/moderacion": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Estadísticas de moderación",
+        "description": "Métricas del panel admin: denuncias por día, tiempo promedio\nde resolución, nuevos registros, comentarios por día.\n",
+        "operationId": "obtenerEstadisticasModeracion",
+        "responses": {
+          "200": {
+            "description": "Métricas de moderación",
+            "content": {
+              "application/json": {
+                "example": {
+                  "denuncias_pendientes": 12,
+                  "denuncias_hoy": 3,
+                  "tiempo_promedio_resolucion_horas": 4.5,
+                  "comentarios_hoy": 28,
+                  "nuevos_usuarios_hoy": 15,
+                  "profesores_pendientes_validacion": 5
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Access token JWT obtenido en POST /auth/login.\nExpiración: 15-30 minutos.\nHeader: `Authorization: Bearer <token>`\n"
+      }
+    },
+    "parameters": {
+      "ProfesorId": {
+        "name": "profesor_id",
+        "in": "path",
+        "required": true,
+        "description": "ID único del profesor",
+        "schema": {
+          "type": "integer",
+          "example": 1
+        }
+      },
+      "Page": {
+        "name": "page",
+        "in": "query",
+        "description": "Número de página (empieza en 1)",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "PageSize": {
+        "name": "page_size",
+        "in": "query",
+        "description": "Resultados por página (máximo 100)",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Token no proporcionado o inválido",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": "Token no proporcionado o inválido",
+              "code": "AUTH_INVALID_TOKEN",
+              "status_code": 401
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Permisos insuficientes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": "No tienes permisos para realizar esta acción",
+              "code": "AUTH_INSUFFICIENT_PERMISSIONS",
+              "status_code": 403
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "detail",
+          "code",
+          "status_code"
+        ],
+        "properties": {
+          "detail": {
+            "type": "string",
+            "description": "Mensaje legible del error"
+          },
+          "code": {
+            "type": "string",
+            "description": "Código de error del dominio"
+          },
+          "status_code": {
+            "type": "integer"
+          }
+        }
+      },
+      "PaginatedResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {}
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total de resultados sin paginar"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total_pages": {
+            "type": "integer"
+          },
+          "has_next": {
+            "type": "boolean"
+          },
+          "has_prev": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RegistroRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "password_confirm"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Mínimo 8 caracteres, al menos una mayúscula y un número"
+          },
+          "password_confirm": {
+            "type": "string",
+            "minLength": 8
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string",
+            "example": "bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "description": "Segundos hasta expiración del access token"
+          },
+          "usuario": {
+            "$ref": "#/components/schemas/UsuarioOut"
+          }
+        }
+      },
+      "UsuarioOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "nivel_verificacion": {
+            "type": "string",
+            "enum": [
+              "anonimo",
+              "registrado",
+              "verificado"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "VerificacionRequest": {
+        "type": "object",
+        "required": [
+          "metodo"
+        ],
+        "properties": {
+          "metodo": {
+            "type": "string",
+            "enum": [
+              "correo_institucional",
+              "reporte_matricula",
+              "carnet_universitario"
+            ]
+          },
+          "correo_institucional": {
+            "type": "string",
+            "format": "email",
+            "description": "Email @unmsm.edu.pe (solo si metodo = correo_institucional)"
+          },
+          "archivo": {
+            "type": "string",
+            "format": "binary",
+            "description": "Imagen o PDF (solo si metodo = reporte_matricula o carnet_universitario)"
+          }
+        }
+      },
+      "VerificacionOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "metodo": {
+            "type": "string",
+            "enum": [
+              "correo_institucional",
+              "reporte_matricula",
+              "carnet_universitario"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "pendiente_revision",
+              "aprobado",
+              "rechazado"
+            ]
+          },
+          "mensaje": {
+            "type": "string"
+          }
+        }
+      },
+      "VerificacionAdminOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "usuario_id": {
+            "type": "integer"
+          },
+          "usuario_email": {
+            "type": "string"
+          },
+          "metodo": {
+            "type": "string"
+          },
+          "archivo_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string"
+          },
+          "fecha_subida": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProfesorCreate": {
+        "type": "object",
+        "required": [
+          "nombre_completo",
+          "universidad_id",
+          "facultad_id"
+        ],
+        "properties": {
+          "nombre_completo": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200,
+            "description": "Nombre completo del docente tal como aparece en SUNEDU"
+          },
+          "universidad_id": {
+            "type": "integer"
+          },
+          "facultad_id": {
+            "type": "integer"
+          },
+          "cursos_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "default": [],
+            "description": "IDs de los cursos que dicta actualmente"
+          }
+        }
+      },
+      "ProfesorUpdate": {
+        "type": "object",
+        "properties": {
+          "nombre_completo": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200
+          },
+          "facultad_id": {
+            "type": "integer"
+          },
+          "foto_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          }
+        }
+      },
+      "ProfesorOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre_completo": {
+            "type": "string"
+          },
+          "foto_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "universidad": {
+            "type": "string"
+          },
+          "facultad": {
+            "type": "string"
+          },
+          "puntaje_global": {
+            "type": "number",
+            "format": "float",
+            "nullable": true,
+            "minimum": 1.0,
+            "maximum": 5.0,
+            "description": "Promedio ponderado: claridad×0.4 + facilidad×0.3 + ayuda×0.3"
+          },
+          "total_evaluaciones": {
+            "type": "integer"
+          },
+          "etiquetas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EtiquetaOut"
+            }
+          },
+          "sunedu_validado": {
+            "type": "boolean"
+          },
+          "estado_validacion": {
+            "type": "string",
+            "enum": [
+              "pendiente_validacion",
+              "validado",
+              "rechazado",
+              "no_encontrado"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProfesorDetalle": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProfesorOut"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "metricas": {
+                "$ref": "#/components/schemas/MetricasOut"
+              },
+              "cursos": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CursoSemestreOut"
+                }
+              },
+              "resumen_ia": {
+                "nullable": true,
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ResumenIAOut"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "AutocompleteItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre_completo": {
+            "type": "string"
+          },
+          "universidad": {
+            "type": "string"
+          },
+          "facultad": {
+            "type": "string"
+          },
+          "puntaje_global": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          }
+        }
+      },
+      "EtiquetaOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "votos": {
+            "type": "integer"
+          }
+        }
+      },
+      "CursoSemestreOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "semestre": {
+            "type": "string",
+            "example": "2026-I"
+          },
+          "modalidad": {
+            "type": "string",
+            "enum": [
+              "virtual",
+              "presencial"
+            ]
+          }
+        }
+      },
+      "MetricasOut": {
+        "type": "object",
+        "properties": {
+          "claridad": {
+            "type": "number",
+            "format": "float",
+            "minimum": 1.0,
+            "maximum": 5.0
+          },
+          "facilidad": {
+            "type": "number",
+            "format": "float",
+            "minimum": 1.0,
+            "maximum": 5.0
+          },
+          "ayuda": {
+            "type": "number",
+            "format": "float",
+            "minimum": 1.0,
+            "maximum": 5.0
+          },
+          "dificultad_promedio": {
+            "type": "number",
+            "format": "float",
+            "minimum": 1.0,
+            "maximum": 5.0
+          },
+          "puntaje_global": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "total_evaluaciones": {
+            "type": "integer"
+          }
+        }
+      },
+      "EvaluacionCreate": {
+        "type": "object",
+        "required": [
+          "profesor_id",
+          "curso_id",
+          "claridad",
+          "facilidad",
+          "ayuda",
+          "dificultad_curso",
+          "modalidad"
+        ],
+        "properties": {
+          "profesor_id": {
+            "type": "integer"
+          },
+          "curso_id": {
+            "type": "integer"
+          },
+          "claridad": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "facilidad": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "ayuda": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "dificultad_curso": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "modalidad": {
+            "type": "string",
+            "enum": [
+              "virtual",
+              "presencial"
+            ]
+          },
+          "comentario_texto": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 2000,
+            "nullable": true,
+            "description": "Opcional. Si se incluye, debe tener mínimo 20 caracteres."
+          }
+        }
+      },
+      "EvaluacionOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "profesor_id": {
+            "type": "integer"
+          },
+          "curso_id": {
+            "type": "integer"
+          },
+          "claridad": {
+            "type": "integer"
+          },
+          "facilidad": {
+            "type": "integer"
+          },
+          "ayuda": {
+            "type": "integer"
+          },
+          "dificultad_curso": {
+            "type": "integer"
+          },
+          "modalidad": {
+            "type": "string"
+          },
+          "semestre": {
+            "type": "string"
+          },
+          "comentario_id": {
+            "type": "integer",
+            "nullable": true,
+            "description": "ID del comentario creado (si se incluyó texto)"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ComentarioOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "autor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nombre o alias del autor (null si anónimo)"
+          },
+          "es_verificado": {
+            "type": "boolean",
+            "description": "El autor tiene insignia de verificación ✓"
+          },
+          "curso": {
+            "type": "string",
+            "description": "Nombre del curso evaluado"
+          },
+          "modalidad": {
+            "type": "string",
+            "enum": [
+              "virtual",
+              "presencial"
+            ]
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "conteo_util": {
+            "type": "integer",
+            "description": "Cantidad de reacciones \"útil\""
+          },
+          "conteo_no_util": {
+            "type": "integer",
+            "description": "Cantidad de reacciones \"no útil\""
+          },
+          "mi_reaccion": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "util",
+              "no_util"
+            ],
+            "description": "Reacción del usuario actual (null si no ha reaccionado o no está logueado)"
+          }
+        }
+      },
+      "DenunciaCreate": {
+        "type": "object",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "enum": [
+              "ofensivo",
+              "spam",
+              "informacion_falsa",
+              "acoso",
+              "otro"
+            ]
+          },
+          "descripcion": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true
+          }
+        }
+      },
+      "DenunciaAdminOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "comentario_id": {
+            "type": "integer"
+          },
+          "comentario_texto": {
+            "type": "string"
+          },
+          "comentario_autor": {
+            "type": "string",
+            "nullable": true
+          },
+          "profesor_nombre": {
+            "type": "string"
+          },
+          "total_denuncias": {
+            "type": "integer"
+          },
+          "motivos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "revision_urgente",
+              "resuelta"
+            ]
+          },
+          "fecha_primera_denuncia": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ModeracionRequest": {
+        "type": "object",
+        "required": [
+          "accion"
+        ],
+        "properties": {
+          "accion": {
+            "type": "string",
+            "enum": [
+              "aprobar",
+              "editar",
+              "eliminar",
+              "banear_usuario"
+            ]
+          },
+          "motivo": {
+            "type": "string",
+            "description": "Justificación de la acción (obligatorio para eliminar y banear)"
+          },
+          "texto_editado": {
+            "type": "string",
+            "description": "Nuevo texto (solo si accion = editar)"
+          }
+        }
+      },
+      "ProfesorComparativa": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre_completo": {
+            "type": "string"
+          },
+          "foto_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "universidad": {
+            "type": "string"
+          },
+          "facultad": {
+            "type": "string"
+          },
+          "puntaje_global": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "metricas": {
+            "$ref": "#/components/schemas/MetricasOut"
+          },
+          "etiquetas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EtiquetaOut"
+            }
+          },
+          "modalidad_predominante": {
+            "type": "string",
+            "enum": [
+              "virtual",
+              "presencial",
+              "ambas"
+            ]
+          },
+          "metodo_evaluacion_predominante": {
+            "type": "string",
+            "nullable": true
+          },
+          "resumen_ia": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResumenIAOut"
+              }
+            ]
+          }
+        }
+      },
+      "ResumenIAOut": {
+        "type": "object",
+        "properties": {
+          "resumen_texto": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "puntos_fuertes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5
+          },
+          "puntos_debiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5
+          },
+          "frase_sintesis": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "Ej: 'Exigente pero te prepara bien'"
+          },
+          "sentimiento_global": {
+            "type": "number",
+            "format": "float",
+            "minimum": -1.0,
+            "maximum": 1.0
+          },
+          "fecha_generacion": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "comentarios_analizados": {
+            "type": "integer"
+          }
+        }
+      },
+      "ChatbotMensajeIn": {
+        "type": "object",
+        "required": [
+          "mensaje",
+          "session_id"
+        ],
+        "properties": {
+          "mensaje": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ChatbotMensajeOut": {
+        "type": "object",
+        "properties": {
+          "respuesta": {
+            "type": "string",
+            "description": "Texto conversacional del chatbot"
+          },
+          "profesores_recomendados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatbotRecomendacion"
+            },
+            "maxItems": 5
+          },
+          "sugerencias_rapidas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 6,
+            "description": "Chips de respuesta rápida"
+          }
+        }
+      },
+      "ChatbotRecomendacion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre_completo": {
+            "type": "string"
+          },
+          "foto_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "puntaje_global": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "justificacion": {
+            "type": "string",
+            "description": "Por qué se recomienda este profesor"
+          }
+        }
+      },
+      "SilaboOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "curso": {
+            "type": "string"
+          },
+          "semestre": {
+            "type": "string"
+          },
+          "archivo_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "aprobado",
+              "rechazado"
+            ]
+          },
+          "fecha_subida": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}
