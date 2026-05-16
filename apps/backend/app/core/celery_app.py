@@ -7,7 +7,7 @@ celery_app = Celery(
     backend=settings.CELERY_RESULT_BACKEND,
 )
 
-celery_app.autodiscover_tasks(["app.tasks"])
+celery_app.conf.include = ["app.tasks.professor_validation_tasks"]
 
 celery_app.conf.update(
     task_acks_late=True,

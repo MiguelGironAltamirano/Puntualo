@@ -7,7 +7,7 @@ from typing import Any, Literal, Protocol
 from pydantic import BaseModel, Field
 
 from app.core.config import settings
-from app.utils.cache import redis_client
+import app.utils.cache as _cache_mod
 
 logger = logging.getLogger(__name__)
 
@@ -101,16 +101,16 @@ class ProfessorValidationPipeline:
 
     async def _is_circuit_open(self, source_name: str) -> bool:
         key = f"circuit:{source_name}:failures"
-        value = await redis_client.get(key)
+        value = await _cache_mod.redis_client.get(key)
         if value is None:
             return False
         return int(value) >= settings.CIRCUIT_THRESHOLD
 
     async def _register_failure(self, source_name: str) -> None:
         key = f"circuit:{source_name}:failures"
-        new_value = await redis_client.incr(key)
+        new_value = await _cache_mod.redis_client.incr(key)
         if new_value == 1:
-            await redis_client.expire(key, settings.CIRCUIT_RESET_SECONDS)
+            await _cache_mod.redis_client.expire(key, settings.CIRCUIT_RESET_SECONDS)
 
     def _merge_with_provenance(
         self,

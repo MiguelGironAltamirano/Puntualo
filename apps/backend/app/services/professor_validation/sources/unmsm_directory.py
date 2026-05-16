@@ -16,7 +16,7 @@ from app.services.professor_validation.pipeline import (
     FieldWithProvenance,
     ValidationResult,
 )
-from app.utils.cache import redis_client
+import app.utils.cache as _cache_mod
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ class UnmsmDirectorySource:
 
     async def _fetch_url(self, client: httpx.AsyncClient, url: str) -> list[dict]:
         cache_key = f"unmsm_directory:parsed:{url}"
-        cached = await redis_client.get(cache_key)
+        cached = await _cache_mod.redis_client.get(cache_key)
         if cached:
             return json.loads(cached)
 
@@ -101,7 +101,7 @@ class UnmsmDirectorySource:
         response.raise_for_status()
 
         professors = _parse_last_semester_table(response.text, url)
-        await redis_client.set(
+        await _cache_mod.redis_client.set(
             cache_key,
             json.dumps(professors, ensure_ascii=False),
             ex=settings.CACHE_TTL_VALIDATION_SECONDS,

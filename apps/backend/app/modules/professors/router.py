@@ -8,6 +8,7 @@ from app.modules.professors.schemas import (
     ProfessorCreate,
     ProfessorOut,
     ProfessorUpdate,
+    RevalidateResponse,
 )
 from app.modules.professors.service import (
     InvalidValidationStatusError,
@@ -117,6 +118,30 @@ async def update_professor(
             detail={"code": "PROFESSOR_NOT_FOUND", "message": "Profesor no encontrado"},
         )
     return professor
+
+
+@router.post(
+    "/{professor_id}/revalidate",
+    response_model=RevalidateResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Forzar revalidación del profesor",
+    responses={
+        404: {"model": ErrorResponse, "description": "Profesor no encontrado"},
+    },
+)
+async def revalidate_professor(
+    professor_id: str,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = ProfessorService(db)
+    queued = await service.revalidate(professor_id)
+    if not queued:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "PROFESSOR_NOT_FOUND", "message": "Profesor no encontrado"},
+        )
+    return RevalidateResponse(queued=True, professor_id=professor_id)
 
 
 @router.delete(
