@@ -27,6 +27,7 @@ ehthumbs.db
 
 *.swp
 *.swo
+*.md
 
 # =========================================================
 # Node.js / Package Managers
