@@ -1,5 +1,6 @@
 'use client'
 
+import Link from "next/link"; // <-- 1. Importamos el Link de Next.js
 import { Plus } from "lucide-react";
 
 const PROFESORES_MOCK = [
@@ -38,7 +39,6 @@ const PROFESORES_MOCK = [
 export default function CatalogoProfesores() {
     return (
         <div className="flex-1 p-8 bg-[#f8fafc]/40 text-left overflow-y-auto h-[calc(100vh-69px)]">
-            {/* Contenedor limitador para centrar y estructurar como el Figma */}
             <div className="max-w-[1300px] mx-auto">
 
                 {/* Banner de Análisis de Resultados IA */}
@@ -70,11 +70,15 @@ export default function CatalogoProfesores() {
                     </div>
                 </div>
 
-                {/* Cuadrícula de Tarjetas con gap perfecto */}
+                {/* Cuadrícula de Tarjetas */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {PROFESORES_MOCK.map((prof) => (
-                        <div key={prof.id} className="border border-slate-100 bg-white rounded-2xl p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_30px_rgba(0,0,0,0.05)] transition-all flex flex-col justify-between relative min-h-[220px]">
-
+                        /* 2. Envolvemos la tarjeta completa con el Link usando backticks `` para inyectar el ID dinámico */
+                        <Link
+                            key={prof.id}
+                            href={`/profesores/${prof.id}`}
+                            className="border border-slate-100 bg-white rounded-2xl p-6 shadow-[0_4px_25px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_30px_rgba(0,0,0,0.05)] transition-all flex flex-col justify-between relative min-h-[220px] no-underline group cursor-pointer"
+                        >
                             {/* Fila Superior: Foto Real e Info */}
                             <div className="flex items-start justify-between gap-3 mb-5">
                                 <div className="flex items-center gap-3.5">
@@ -82,7 +86,7 @@ export default function CatalogoProfesores() {
                                         <img src={prof.avatar} alt={prof.name} className="w-full h-full object-cover object-top" />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-black text-slate-900 tracking-tight leading-snug">{prof.name}</h3>
+                                        <h3 className="text-sm font-black text-slate-900 tracking-tight leading-snug group-hover:text-[#0284c7] transition-colors">{prof.name}</h3>
                                         <p className="text-[11px] font-semibold text-slate-400 mt-0.5">{prof.course}</p>
                                     </div>
                                 </div>
@@ -91,7 +95,7 @@ export default function CatalogoProfesores() {
                                 </div>
                             </div>
 
-                            {/* Barras de Métricas idénticas al Figma */}
+                            {/* Barras de Métricas */}
                             <div className="space-y-3 mb-6">
                                 <div>
                                     <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
@@ -111,7 +115,7 @@ export default function CatalogoProfesores() {
                                 </div>
                             </div>
 
-                            {/* Fila Inferior: Etiquetas Planas y Botón Más */}
+                            {/* Fila Inferior */}
                             <div className="flex items-center justify-between gap-2 pt-4 border-t border-slate-50 mt-auto">
                                 <div className="flex flex-wrap gap-1.5">
                                     {prof.tags.map(t => (
@@ -120,12 +124,11 @@ export default function CatalogoProfesores() {
                                         </span>
                                     ))}
                                 </div>
-                                <button type="button" className="w-7 h-7 border border-slate-200 hover:border-sky-400 hover:bg-sky-50 rounded-full flex items-center justify-center text-slate-400 hover:text-[#0284c7] transition-all text-sm font-bold shadow-none">
+                                <div className="w-7 h-7 border border-slate-200 group-hover:border-sky-400 group-hover:bg-sky-50 rounded-full flex items-center justify-center text-slate-400 group-hover:text-[#0284c7] transition-all text-sm font-bold shadow-none">
                                     +
-                                </button>
+                                </div>
                             </div>
-
-                        </div>
+                        </Link>
                     ))}
                 </div>
 
