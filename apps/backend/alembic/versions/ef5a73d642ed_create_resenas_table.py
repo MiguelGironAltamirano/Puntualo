@@ -20,16 +20,22 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Create ENUM type for estado
-    estado_enum = sa.Enum('pendiente', 'publicada', 'rechazada', name='resena_estado')
-    estado_enum.create(op.get_bind())
-    
+    # Drop preventivo del tipo por si quedó huérfano de un upgrade previo fallido.
+    # SQLAlchemy auto-crea el ENUM cuando `op.create_table` ve la columna `estado`,
+    # así que NO debe llamarse `.create()` explícito antes (causa DuplicateObject).
+    op.execute("DROP TYPE IF EXISTS resena_estado")
+
     op.create_table('resenas',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('usuario_id', sa.String(), nullable=False),
     sa.Column('clase_id', sa.Integer(), nullable=False),
     sa.Column('comentario', sa.Text(), nullable=True),
-    sa.Column('estado', estado_enum, nullable=False, server_default='pendiente'),
+    sa.Column(
+        'estado',
+        sa.Enum('pendiente', 'publicada', 'rechazada', name='resena_estado'),
+        nullable=False,
+        server_default='pendiente',
+    ),
     sa.Column('es_anonima', sa.Boolean(), nullable=False, server_default='false'),
     sa.Column('fecha', sa.DateTime(), nullable=False, server_default=sa.func.now()),
     sa.ForeignKeyConstraint(['clase_id'], ['clases.id'], ),

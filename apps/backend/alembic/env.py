@@ -20,18 +20,17 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 from app.db.base import Base
 from app.models import (  # noqa: F401
-    User,
-    Professor,
-    ProfessorEvidence
     AcademicDegree,
+    Comment,
+    Course,
+    Evaluation,
+    Faculty,
+    Professor,
+    ProfessorEvidence,
+    Reaction,
+    Report,
     University,
-    Subject,
-    RatingCategory,
-    Teacher,
-    Class,
-    Review,
-    RatingDetail,
-    Like,
+    User,
 )
 
 target_metadata = Base.metadata

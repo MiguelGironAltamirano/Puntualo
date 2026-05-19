@@ -1,28 +1,29 @@
 from app.models.academic_degree import AcademicDegree
-from app.models.class_ import Class
-from app.models.like import Like
+from app.models.comment import Comment, CommentStatus
+from app.models.course import Course
+from app.models.evaluation import Evaluation
+from app.models.faculty import Faculty
 from app.models.professor import Professor
 from app.models.professor_evidence import ProfessorEvidence
-from app.models.rating_category import RatingCategory
-from app.models.rating_detail import RatingDetail
-from app.models.review import Review, ReviewStatus
-from app.models.subject import Subject
-from app.models.teacher import Teacher
+from app.models.reaction import Reaction, ReactionType
+from app.models.report import Report, ReportReason, ReportStatus
 from app.models.university import University
 from app.models.user import User
 
 __all__ = [
-    "User",
+    "AcademicDegree",
+    "Comment",
+    "CommentStatus",
+    "Course",
+    "Evaluation",
+    "Faculty",
     "Professor",
     "ProfessorEvidence",
-    "AcademicDegree",
+    "Reaction",
+    "ReactionType",
+    "Report",
+    "ReportReason",
+    "ReportStatus",
     "University",
-    "Subject",
-    "RatingCategory",
-    "Teacher",
-    "Class",
-    "Review",
-    "ReviewStatus",
-    "RatingDetail",
-    "Like",
+    "User",
 ]

@@ -12,18 +12,18 @@ class ProfessorCreate(BaseModel):
 
     full_name: str = Field(min_length=3, max_length=200)
 
-    university: str = Field(min_length=2, max_length=150)
+    university_id: int = Field(gt=0)
 
-    faculty: str = Field(min_length=2, max_length=150)
+    faculty_id: int = Field(gt=0)
 
 
 class ProfessorUpdate(BaseModel):
 
     full_name: str | None = Field(default=None, min_length=3, max_length=200)
 
-    university: str | None = Field(default=None, min_length=2, max_length=150)
+    university_id: int | None = Field(default=None, gt=0)
 
-    faculty: str | None = Field(default=None, min_length=2, max_length=150)
+    faculty_id: int | None = Field(default=None, gt=0)
 
     # TODO(2.4): restringir a rol admin cuando se implemente RBAC + integración SUNEDU.
     validation_status: str | None = None
@@ -35,9 +35,9 @@ class ProfessorOut(BaseModel):
 
     full_name: str
 
-    university: str
+    university_id: int
 
-    faculty: str
+    faculty_id: int
 
     validation_status: str
 

@@ -5,8 +5,10 @@ from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.models.faculty import Faculty
 from app.models.professor import Professor
 from app.models.professor_evidence import ProfessorEvidence
+from app.models.university import University
 from app.modules.professors.schemas import (
     VALIDATION_STATUSES,
     ProfessorCreate,
@@ -24,6 +26,14 @@ class InvalidValidationStatusError(Exception):
     pass
 
 
+class UniversityNotFoundError(Exception):
+    pass
+
+
+class FacultyNotFoundError(Exception):
+    pass
+
+
 class ProfessorService:
 
     def __init__(self, db: AsyncSession):
@@ -34,15 +44,20 @@ class ProfessorService:
         data: ProfessorCreate,
         registered_by_id: str | None = None,
     ) -> Professor:
-        if await self._find_duplicate(data.full_name, data.university):
+        await self._validate_university_and_faculty(
+            data.university_id, data.faculty_id
+        )
+
+        if await self._find_duplicate(data.full_name, data.university_id):
             raise ProfessorAlreadyExistsError(
-                f"Ya existe un profesor activo llamado '{data.full_name}' en {data.university}"
+                f"Ya existe un profesor activo llamado '{data.full_name}' "
+                f"en la universidad id={data.university_id}"
             )
 
         professor = Professor(
             full_name=data.full_name.strip(),
-            university=data.university.strip(),
-            faculty=data.faculty.strip(),
+            university_id=data.university_id,
+            faculty_id=data.faculty_id,
             registered_by_id=registered_by_id,
         )
 
@@ -71,15 +86,20 @@ class ProfessorService:
 
     def list_query(self, search: str | None = None):
         """Construye la query base para listar profesores activos con filtro opcional."""
-        base = select(Professor).where(Professor.is_active.is_(True))
+        base = (
+            select(Professor)
+            .join(University, Professor.university_id == University.id)
+            .join(Faculty, Professor.faculty_id == Faculty.id)
+            .where(Professor.is_active.is_(True))
+        )
 
         if search:
             term = f"%{search.strip().lower()}%"
             base = base.where(
                 or_(
                     func.lower(Professor.full_name).like(term),
-                    func.lower(Professor.university).like(term),
-                    func.lower(Professor.faculty).like(term),
+                    func.lower(University.name).like(term),
+                    func.lower(Faculty.name).like(term),
                 )
             )
 
@@ -102,17 +122,31 @@ class ProfessorService:
                     f"validation_status debe ser uno de {sorted(VALIDATION_STATUSES)}"
                 )
 
+        new_university_id = payload.get("university_id", professor.university_id)
+        new_faculty_id = payload.get("faculty_id", professor.faculty_id)
+
+        if (
+            new_university_id != professor.university_id
+            or new_faculty_id != professor.faculty_id
+        ):
+            await self._validate_university_and_faculty(
+                new_university_id, new_faculty_id
+            )
+
         new_name = payload.get("full_name", professor.full_name)
-        new_university = payload.get("university", professor.university)
-        if (new_name, new_university) != (professor.full_name, professor.university):
+        if (new_name, new_university_id) != (
+            professor.full_name,
+            professor.university_id,
+        ):
             duplicate = await self._find_duplicate(
                 new_name,
-                new_university,
+                new_university_id,
                 exclude_id=professor.id,
             )
             if duplicate:
                 raise ProfessorAlreadyExistsError(
-                    f"Ya existe un profesor activo llamado '{new_name}' en {new_university}"
+                    f"Ya existe un profesor activo llamado '{new_name}' "
+                    f"en la universidad id={new_university_id}"
                 )
 
         for field, value in payload.items():
@@ -168,15 +202,33 @@ class ProfessorService:
     async def _find_duplicate(
         self,
         full_name: str,
-        university: str,
+        university_id: int,
         exclude_id: str | None = None,
     ) -> Professor | None:
         stmt = select(Professor).where(
             func.lower(Professor.full_name) == full_name.strip().lower(),
-            func.lower(Professor.university) == university.strip().lower(),
+            Professor.university_id == university_id,
             Professor.is_active.is_(True),
         )
         if exclude_id:
             stmt = stmt.where(Professor.id != exclude_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def _validate_university_and_faculty(
+        self,
+        university_id: int,
+        faculty_id: int,
+    ) -> None:
+        """Valida que university_id exista y que faculty_id pertenezca a esa university."""
+        university = await self.db.get(University, university_id)
+        if university is None:
+            raise UniversityNotFoundError(
+                f"No existe universidad con id={university_id}"
+            )
+
+        faculty = await self.db.get(Faculty, faculty_id)
+        if faculty is None or faculty.university_id != university_id:
+            raise FacultyNotFoundError(
+                f"No existe facultad con id={faculty_id} en la universidad id={university_id}"
+            )

@@ -1,7 +1,10 @@
 import uuid
 
+from sqlalchemy import CheckConstraint
+from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import Index
+from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import func
 from sqlalchemy import text
@@ -29,14 +32,18 @@ class Professor(Base, TimestampMixin, SoftDeleteMixin):
         index=True,
     )
 
-    university: Mapped[str] = mapped_column(
-        String(150),
+    university_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("universities.id", ondelete="RESTRICT"),
         nullable=False,
+        index=True,
     )
 
-    faculty: Mapped[str] = mapped_column(
-        String(150),
+    faculty_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("faculties.id", ondelete="RESTRICT"),
         nullable=False,
+        index=True,
     )
 
     validation_status: Mapped[str] = mapped_column(
@@ -52,12 +59,28 @@ class Professor(Base, TimestampMixin, SoftDeleteMixin):
         default=None,
     )
 
+    global_score: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        default=None,
+    )
+
+    total_evaluations: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0"),
+    )
+
     __table_args__ = (
         Index(
             "uq_professors_name_university_active",
             func.lower(text("full_name")),
-            text("university"),
+            text("university_id"),
             unique=True,
             postgresql_where=text("is_active = true"),
+        ),
+        CheckConstraint(
+            "global_score IS NULL OR global_score BETWEEN 1.0 AND 5.0",
+            name="ck_professors_global_score_range",
         ),
     )

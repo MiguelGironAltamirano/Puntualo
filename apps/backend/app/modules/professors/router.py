@@ -11,9 +11,11 @@ from app.modules.professors.schemas import (
     RevalidateResponse,
 )
 from app.modules.professors.service import (
+    FacultyNotFoundError,
     InvalidValidationStatusError,
     ProfessorAlreadyExistsError,
     ProfessorService,
+    UniversityNotFoundError,
 )
 from app.schemas.error import ErrorResponse
 from app.schemas.pagination import PaginatedResponse
@@ -28,6 +30,7 @@ router = APIRouter()
     status_code=status.HTTP_201_CREATED,
     summary="Registrar nuevo profesor",
     responses={
+        404: {"model": ErrorResponse, "description": "Universidad o facultad no encontrada"},
         409: {"model": ErrorResponse, "description": "Profesor duplicado"},
     },
 )
@@ -43,6 +46,16 @@ async def create_professor(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={"code": "PROFESSOR_DUPLICATE", "message": str(exc)},
+        )
+    except UniversityNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "UNIVERSITY_NOT_FOUND", "message": str(exc)},
+        )
+    except FacultyNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "FACULTY_NOT_FOUND", "message": str(exc)},
         )
 
 
@@ -110,6 +123,16 @@ async def update_professor(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"code": "INVALID_VALIDATION_STATUS", "message": str(exc)},
+        )
+    except UniversityNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "UNIVERSITY_NOT_FOUND", "message": str(exc)},
+        )
+    except FacultyNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "FACULTY_NOT_FOUND", "message": str(exc)},
         )
 
     if not professor:
