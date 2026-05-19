@@ -1,12 +1,36 @@
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 import app.core.celery_app  # noqa: F401 — ensures shared_task binds to Redis broker
 from app.db.session import engine
 from app.modules.auth.router import router as auth_router
+from app.modules.evaluations.errors import DomainError
+from app.modules.evaluations.router import router as evaluations_router
 from app.modules.professors.router import router as professors_router
 from fastapi.middleware.cors import CORSMiddleware
+
+logger = logging.getLogger(__name__)
+
 app = FastAPI()
+
+
+@app.exception_handler(DomainError)
+async def domain_error_handler(request: Request, exc: DomainError) -> JSONResponse:
+    """Traduce DomainError -> ErrorResponse { detail: { code, message } }."""
+    logger.warning(
+        "domain_error | code=%s | status=%s | path=%s | message=%s",
+        exc.code,
+        exc.status_code,
+        request.url.path,
+        exc.message,
+    )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": {"code": exc.code, "message": exc.message}},
+    )
 
 origins = [
     "http://localhost:3000",
@@ -44,4 +68,9 @@ app.include_router(
     professors_router,
     prefix="/professors",
     tags=["professors"],
+)
+
+app.include_router(
+    evaluations_router,
+    tags=["evaluations"],
 )

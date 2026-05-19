@@ -129,7 +129,7 @@ alembic/__pycache__/
 .env.development.local
 .env.test.local
 .env.production.local
-
+!apps/backend/.env.example
 
 # =========================================================
 # Logs / Debug

@@ -135,5 +135,64 @@ class Settings:
         "redis://localhost:6379/2"
     )
 
+    # --- Tarea 2.6: pesos del score global (hardcoded, no env)
+    # Las 4 metricas que entran al score (clarity, easiness, helpfulness, punctuality)
+    # pesan 0.25 cada una y suman 1.0. course_difficulty no entra al score.
+    SCORE_WEIGHT_CLARITY: float = 0.25
+    SCORE_WEIGHT_EASINESS: float = 0.25
+    SCORE_WEIGHT_HELPFULNESS: float = 0.25
+    SCORE_WEIGHT_PUNCTUALITY: float = 0.25
+
+    # --- Tarea 2.6: validacion de comentarios
+    COMMENT_MIN_LENGTH: int = int(os.getenv("COMMENT_MIN_LENGTH", "20"))
+    COMMENT_MAX_LENGTH: int = int(os.getenv("COMMENT_MAX_LENGTH", "2000"))
+    COMMENT_PROFANITY_BLOCKLIST_FILE: str = os.getenv(
+        "COMMENT_PROFANITY_BLOCKLIST_FILE",
+        "app/modules/evaluations/data/profanity_es.txt",
+    )
+    COMMENT_REPORT_REASON_MAX_LENGTH: int = int(
+        os.getenv("COMMENT_REPORT_REASON_MAX_LENGTH", "500")
+    )
+
+    # --- Tarea 2.6: moderacion
+    MODERATION_HIDE_THRESHOLD: int = int(os.getenv("MODERATION_HIDE_THRESHOLD", "5"))
+    LLM_MODERATION_ENABLED: bool = os.getenv("LLM_MODERATION_ENABLED", "false").lower() == "true"
+    MODERATION_VERIFIED_EMAIL_DOMAIN: str = os.getenv(
+        "MODERATION_VERIFIED_EMAIL_DOMAIN", "unmsm.edu.pe"
+    )
+
+    # --- Tarea 2.6: hook resumen IA (Tarea 4.4)
+    IA_SUMMARY_HOOK_ENABLED: bool = os.getenv("IA_SUMMARY_HOOK_ENABLED", "false").lower() == "true"
+    IA_SUMMARY_THRESHOLD: int = int(os.getenv("IA_SUMMARY_THRESHOLD", "10"))
+
+    # --- Tarea 2.6: cache TTLs
+    CACHE_TTL_PROFESSOR_DETAIL_SECONDS: int = int(
+        os.getenv("CACHE_TTL_PROFESSOR_DETAIL_SECONDS", "300")
+    )
+    CACHE_TTL_PROFESSOR_COMMENTS_SECONDS: int = int(
+        os.getenv("CACHE_TTL_PROFESSOR_COMMENTS_SECONDS", "120")
+    )
+    CACHE_TTL_COURSES_SEARCH_SECONDS: int = int(
+        os.getenv("CACHE_TTL_COURSES_SEARCH_SECONDS", "60")
+    )
+
+    # --- Tarea 2.6: override de semestre (solo tests)
+    SEMESTER_OVERRIDE: str | None = os.getenv("SEMESTER_OVERRIDE") or None
+
 
 settings = Settings()
+
+
+# Sanity check: aunque los pesos son hardcoded, validamos al import para
+# detectar typos si alguien cambia los literales. Suma debe ser 1.0 +- 1e-3.
+_weights_sum = (
+    settings.SCORE_WEIGHT_CLARITY
+    + settings.SCORE_WEIGHT_EASINESS
+    + settings.SCORE_WEIGHT_HELPFULNESS
+    + settings.SCORE_WEIGHT_PUNCTUALITY
+)
+if abs(_weights_sum - 1.0) > 1e-3:
+    raise ValueError(
+        f"Los pesos del puntaje deben sumar 1.0; suman {_weights_sum}. "
+        "Revisa SCORE_WEIGHT_* en app/core/config.py."
+    )
