@@ -1,0 +1,16 @@
+# Blocklist de comentarios ofensivos para Puntualo (es-PE).
+# Una palabra por linea. Lineas vacias y lineas que empiezan con # se ignoran.
+# El matcher normaliza el input con NFKD + strip de diacriticos + lowercase,
+# asi que listar variantes con tildes (huevón vs huevon) es redundante.
+# Set inicial chico (~10) — se ampliara segun feedback de moderacion.
+
+mierda
+cabron
+huevon
+pendejo
+cojudo
+imbecil
+estupido
+puta
+mongol
+idiota
