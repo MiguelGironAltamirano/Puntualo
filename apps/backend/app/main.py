@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 
+import app.core.celery_app  # noqa: F401 — ensures shared_task binds to Redis broker
 from app.db.session import engine
 from app.modules.auth.router import router as auth_router
 from app.modules.professors.router import router as professors_router

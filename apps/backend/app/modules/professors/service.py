@@ -1,14 +1,19 @@
+import logging
 from datetime import datetime, timezone
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.models.professor import Professor
+from app.models.professor_evidence import ProfessorEvidence
 from app.modules.professors.schemas import (
     VALIDATION_STATUSES,
     ProfessorCreate,
     ProfessorUpdate,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ProfessorAlreadyExistsError(Exception):
@@ -44,6 +49,16 @@ class ProfessorService:
         self.db.add(professor)
         await self.db.commit()
         await self.db.refresh(professor)
+
+        # Disparar validación asíncrona — si el broker está caído, el POST no falla
+        try:
+            from app.tasks.professor_validation_tasks import run_professor_validation
+            run_professor_validation.delay(professor.id, professor.full_name)
+        except Exception as exc:
+            logger.warning(
+                f"could not enqueue validation | professor_id={professor.id} | error={exc}"
+            )
+
         return professor
 
     async def get_by_id(self, professor_id: str) -> Professor | None:
@@ -106,6 +121,39 @@ class ProfessorService:
         await self.db.commit()
         await self.db.refresh(professor)
         return professor
+
+    async def revalidate(self, professor_id: str) -> bool:
+        professor = await self.get_by_id(professor_id)
+        if not professor:
+            return False
+
+        from app.utils.cache import redis_client
+
+        cache_keys = [
+            f"openalex:validate:{professor.full_name}",
+            f"openalex:author:name:{professor.full_name}",
+            f"orcid:validate:{professor.full_name}",
+            *(f"unmsm_directory:parsed:{url}" for url in settings.UNMSM_DIRECTORY_URLS),
+        ]
+        for key in cache_keys:
+            await redis_client.delete(key)
+
+        await self.db.execute(
+            delete(ProfessorEvidence).where(ProfessorEvidence.professor_id == professor_id)
+        )
+
+        professor.validation_status = "pending_validation"
+        await self.db.commit()
+
+        try:
+            from app.tasks.professor_validation_tasks import run_professor_validation
+            run_professor_validation.delay(professor.id, professor.full_name)
+        except Exception as exc:
+            logger.warning(
+                f"could not enqueue revalidation | professor_id={professor_id} | error={exc}"
+            )
+
+        return True
 
     async def soft_delete(self, professor_id: str) -> bool:
         professor = await self.get_by_id(professor_id)
