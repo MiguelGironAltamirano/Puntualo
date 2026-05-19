@@ -22,6 +22,7 @@ from app.db.base import Base
 from app.models import (  # noqa: F401
     User,
     Professor,
+    ProfessorEvidence
     AcademicDegree,
     University,
     Subject,
@@ -32,6 +33,7 @@ from app.models import (  # noqa: F401
     RatingDetail,
     Like,
 )
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

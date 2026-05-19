@@ -1,53 +1,99 @@
-import Link from "next/link";
-import { Bell, CircleHelp, User } from "lucide-react";
+'use client'
 
-export function Navbar() {
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Bell, CircleHelp, Search } from "lucide-react";
+
+interface NavbarProps {
+  showSearch?: boolean;
+  searchQuery?: string;
+  setSearchQuery?: (value: string) => void;
+}
+
+export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: NavbarProps) {
+  const pathname = usePathname();
+
+  // Detectamos dinámicamente qué pestaña debe estar activa según la URL
+  const isHomeActive = pathname === "/";
+  const isBuscadorActive = pathname.startsWith("/profesores");
+  const isCompararActive = pathname.startsWith("/comparar");
+
   return (
-    <nav className="w-full flex items-center justify-between px-6 py-4 bg-white z-50">
-      {/* Left: Logo */}
-      <div className="flex items-center">
-        <Link href="/" className="text-xl font-extrabold text-[#0369a1] tracking-tight">
+    <nav className="w-full flex items-center justify-between px-8 py-4 bg-white border-b border-slate-100 z-50 sticky top-0 h-[69px]">
+      {/* Left: Logo y Buscador */}
+      <div className="flex items-center gap-6 flex-1 max-w-xl">
+        <Link href="/" className="text-xl font-extrabold text-[#0284c7] tracking-tight shrink-0 no-underline">
           Puntualo
         </Link>
+
+        {showSearch && (
+          <div className="relative flex items-center bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 w-full max-w-md focus-within:border-sky-400 focus-within:bg-white transition-all">
+            <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery?.(e.target.value)}
+              placeholder="Buscar por profesor o materia..."
+              className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none"
+            />
+          </div>
+        )}
       </div>
 
-      {/* Center: Links */}
-      <div className="hidden md:flex items-center gap-8 text-sm font-bold">
+      {/* Center: Links con detección automática de ruta */}
+      <div className="hidden md:flex items-center gap-8 text-sm font-bold absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        {/* Pestaña Home */}
         <div className="relative group">
-          <Link href="/" className="text-[#0369a1]">
+          <Link
+            href="/"
+            className={`transition-colors no-underline ${isHomeActive ? 'text-[#0284c7]' : 'text-gray-400 hover:text-gray-900'}`}
+          >
             Home
           </Link>
-          <div className="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-[#0369a1] rounded-full"></div>
+          {isHomeActive && (
+            <div className="absolute -bottom-[23px] left-0 right-0 h-0.5 bg-[#0284c7] rounded-full"></div>
+          )}
         </div>
-        <Link href="/buscador" className="text-gray-500 hover:text-gray-900 transition-colors">
-          Buscador
-        </Link>
-        <Link href="/comparar" className="text-gray-500 hover:text-gray-900 transition-colors">
-          Comparativo
-        </Link>
+
+        {/* Pestaña Buscador */}
+        <div className="relative group">
+          <Link
+            href="/profesores"
+            className={`transition-colors no-underline ${isBuscadorActive ? 'text-[#0284c7]' : 'text-gray-400 hover:text-gray-900'}`}
+          >
+            Buscador
+          </Link>
+          {isBuscadorActive && (
+            <div className="absolute -bottom-[23px] left-0 right-0 h-0.5 bg-[#0284c7] rounded-full"></div>
+          )}
+        </div>
+
+        {/* Pestaña Comparativo */}
+        <div className="relative group">
+          <Link
+            href="/comparar"
+            className={`transition-colors no-underline ${isCompararActive ? 'text-[#0284c7]' : 'text-gray-400 hover:text-gray-900'}`}
+          >
+            Comparativo
+          </Link>
+          {isCompararActive && (
+            <div className="absolute -bottom-[23px] left-0 right-0 h-0.5 bg-[#0284c7] rounded-full"></div>
+          )}
+        </div>
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-4">
-        <button className="text-gray-400 hover:text-gray-600 transition-colors">
+      <div className="flex items-center gap-5 z-10">
+        <button className="text-gray-400 hover:text-gray-600 transition-colors p-1 relative">
           <Bell className="w-5 h-5" />
+          <span className="absolute top-1 right-1 w-2 h-2 bg-[#0284c7] rounded-full"></span>
         </button>
-        <button className="text-gray-400 hover:text-gray-600 transition-colors hidden sm:block">
+        <button className="text-gray-400 hover:text-gray-600 transition-colors hidden sm:block p-1">
           <CircleHelp className="w-5 h-5" />
         </button>
-        <div className="flex items-center gap-4 ml-2 pl-4">
-          <Link 
-            href="/login" 
-            className="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            Iniciar sesión
-          </Link>
-          <Link 
-            href="/register" 
-            className="text-sm font-semibold bg-[#f97316] text-white px-5 py-2.5 rounded-full hover:bg-[#ea580c] transition-colors"
-          >
-            Regístrate
-          </Link>
+        <div className="h-5 w-[1px] bg-gray-200 hidden sm:block mx-1"></div>
+        <div className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300 overflow-hidden cursor-pointer">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Profile" className="w-full h-full object-cover" />
         </div>
       </div>
     </nav>

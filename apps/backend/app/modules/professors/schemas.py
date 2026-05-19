@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from app.schemas.pagination import PaginatedResponse
 
 
-VALIDATION_STATUSES = {"pending_validation", "validated", "rejected"}
+VALIDATION_STATUSES = {"pending_validation", "validated", "rejected", "not_found"}
 
 
 class ProfessorCreate(BaseModel):
@@ -53,3 +53,8 @@ class ProfessorOut(BaseModel):
 
 
 PaginatedProfessors = PaginatedResponse[ProfessorOut]
+
+
+class RevalidateResponse(BaseModel):
+    queued: bool
+    professor_id: str

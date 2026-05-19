@@ -44,5 +44,96 @@ class Settings:
         ""
     )
 
+    # UNMSM directory
+    UNMSM_DIRECTORY_URLS: list = [
+        "https://sistemas.unmsm.edu.pe/site/docentes/directorio/directorio-dacc",
+        "https://sistemas.unmsm.edu.pe/site/docentes/directorio/directorio-daisw",
+        "https://sistemas.unmsm.edu.pe/posgrado/docentes/",
+    ]
+    UNMSM_USER_AGENT: str = os.getenv(
+        "UNMSM_USER_AGENT",
+        "Puntualo-Research/1.0 (mailto:contacto@puntualo.dev)"
+    )
+    UNMSM_RATE_LIMIT_SECONDS: float = float(
+        os.getenv("UNMSM_RATE_LIMIT_SECONDS", "1.0")
+    )
+
+    # OpenAlex
+    OPENALEX_API_BASE: str = os.getenv(
+        "OPENALEX_API_BASE",
+        "https://api.openalex.org"
+    )
+    OPENALEX_INSTITUTION_ID: str = os.getenv(
+        "OPENALEX_INSTITUTION_ID",
+        "I192513696"
+    )
+    OPENALEX_USER_AGENT: str = os.getenv(
+        "OPENALEX_USER_AGENT",
+        "Puntualo/1.0 (mailto:contacto@puntualo.dev)"
+    )
+
+    # ORCID
+    ORCID_API_BASE: str = os.getenv(
+        "ORCID_API_BASE",
+        "https://pub.orcid.org/v3.0"
+    )
+    ORCID_AFFILIATION_NAME: str = os.getenv(
+        "ORCID_AFFILIATION_NAME",
+        "Universidad Nacional Mayor de San Marcos"
+    )
+
+    # Tavily (fallback enrichment con cuota)
+    TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
+    TAVILY_API_BASE: str = os.getenv(
+        "TAVILY_API_BASE",
+        "https://api.tavily.com"
+    )
+    TAVILY_BUDGET_HARD_CAP: int = int(
+        os.getenv("TAVILY_BUDGET_HARD_CAP", "950")
+    )
+    TAVILY_BUDGET_SOFT_WARNING: int = int(
+        os.getenv("TAVILY_BUDGET_SOFT_WARNING", "760")
+    )
+
+    # Pipeline general
+    PIPELINE_TIMEOUT_CONNECT: float = float(
+        os.getenv("PIPELINE_TIMEOUT_CONNECT", "5.0")
+    )
+    PIPELINE_TIMEOUT_READ: float = float(
+        os.getenv("PIPELINE_TIMEOUT_READ", "10.0")
+    )
+    PIPELINE_MAX_RETRIES: int = int(
+        os.getenv("PIPELINE_MAX_RETRIES", "3")
+    )
+    PIPELINE_BACKOFF_BASE: float = float(
+        os.getenv("PIPELINE_BACKOFF_BASE", "2.0")
+    )
+    CIRCUIT_THRESHOLD: int = int(
+        os.getenv("CIRCUIT_THRESHOLD", "5")
+    )
+    CIRCUIT_RESET_SECONDS: int = int(
+        os.getenv("CIRCUIT_RESET_SECONDS", "300")
+    )
+    CACHE_TTL_VALIDATION_SECONDS: int = int(
+        os.getenv("CACHE_TTL_VALIDATION_SECONDS", "86400")
+    )
+    CACHE_TTL_ENRICHMENT_SECONDS: int = int(
+        os.getenv("CACHE_TTL_ENRICHMENT_SECONDS", "604800")
+    )
+
+    # Redis + Celery
+    REDIS_URL: str = os.getenv(
+        "REDIS_URL",
+        "redis://localhost:6379/0"
+    )
+    CELERY_BROKER_URL: str = os.getenv(
+        "CELERY_BROKER_URL",
+        "redis://localhost:6379/1"
+    )
+    CELERY_RESULT_BACKEND: str = os.getenv(
+        "CELERY_RESULT_BACKEND",
+        "redis://localhost:6379/2"
+    )
+
 
 settings = Settings()
