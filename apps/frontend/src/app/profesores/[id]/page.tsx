@@ -6,7 +6,49 @@ import { Navbar } from "@/components/layout/Navbar";
 import { ListaComentarios } from "./ListaComentarios";
 import { ArrowLeft, Bookmark, ClipboardList, GraduationCap, MessageSquare, X } from "lucide-react";
 
-const PROFESORES_DATA: Record<string, any> = {
+type ProfesorReaction = {
+    icon: string;
+    count: number;
+};
+
+type ProfesorComment = {
+    id: number;
+    course: string;
+    semester: string;
+    mode: string;
+    score: string;
+    verified: boolean;
+    text: string;
+    tags: string[];
+    likes: number;
+    dislikes: number;
+    reactions: ProfesorReaction[];
+};
+
+type ProfesorMetrics = {
+    claridad: number;
+    facilidad: number;
+    ayuda: number;
+    total: number;
+};
+
+type ProfesorData = {
+    name: string;
+    rating: string;
+    faculty: string;
+    department: string;
+    avatar: string;
+    aiSummary: string;
+    education: string;
+    university: string;
+    research: string[];
+    experience: string;
+    metrics: ProfesorMetrics;
+    style: string[];
+    comments: ProfesorComment[];
+};
+
+const PROFESORES_DATA: Record<string, ProfesorData> = {
     "1": {
         name: 'Dra. Elena Navarro',
         rating: '4.8 / 5.0',

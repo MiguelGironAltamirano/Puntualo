@@ -45,7 +45,7 @@ export default function CatalogoProfesores() {
                 <div className="bg-[#e0f2fe]/70 border border-sky-100 rounded-2xl p-4 flex items-center gap-4 mb-8 shadow-none">
                     <div className="w-9 h-9 bg-[#0284c7]/10 rounded-xl flex items-center justify-center text-sky-600 text-lg shrink-0">🧠</div>
                     <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                        <span className="font-bold text-sky-950">Análisis de resultados:</span> Hemos encontrado <span className="font-bold">12 docentes</span> que coinciden con tu perfil de "Proyectos Prácticos" y personalidad "Barco". La mayoría pertenece al departamento de Ingeniería.
+                        <span className="font-bold text-sky-950">Análisis de resultados:</span> Hemos encontrado <span className="font-bold">12 docentes</span> que coinciden con tu perfil de &quot;Proyectos Prácticos&quot; y personalidad &quot;Barco&quot;. La mayoría pertenece al departamento de Ingeniería.
                     </p>
                 </div>
 

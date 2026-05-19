@@ -1,8 +1,9 @@
 'use client'
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Bell, CircleHelp, Search } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { Bell, CircleHelp, Search, User } from "lucide-react";
 
 interface NavbarProps {
   showSearch?: boolean;
@@ -12,6 +13,14 @@ interface NavbarProps {
 
 export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: NavbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isAuthMenuOpen, setIsAuthMenuOpen] = useState(false);
+  const [hasSession] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    return Boolean(localStorage.getItem('access_token'));
+  });
 
   // Detectamos dinámicamente qué pestaña debe estar activa según la URL
   const isHomeActive = pathname === "/";
@@ -59,6 +68,12 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
         <div className="relative group">
           <Link
             href="/profesores"
+            onClick={(event) => {
+              if (!hasSession) {
+                event.preventDefault();
+                router.push('/login');
+              }
+            }}
             className={`transition-colors no-underline ${isBuscadorActive ? 'text-[#0284c7]' : 'text-gray-400 hover:text-gray-900'}`}
           >
             Buscador
@@ -92,8 +107,50 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
           <CircleHelp className="w-5 h-5" />
         </button>
         <div className="h-5 w-[1px] bg-gray-200 hidden sm:block mx-1"></div>
-        <div className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300 overflow-hidden cursor-pointer">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Profile" className="w-full h-full object-cover" />
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              setIsAuthMenuOpen((open) => !open);
+            }}
+            aria-haspopup="true"
+            aria-expanded={isAuthMenuOpen}
+            className="w-9 h-9 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-500 transition-colors"
+          >
+            <User className="w-4 h-4" />
+          </button>
+          {!hasSession && isAuthMenuOpen && (
+            <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-100 shadow-lg rounded-xl p-2 flex flex-col gap-1">
+              <Link
+                href="/login"
+                className="px-3 py-2 rounded-lg text-xs font-bold text-[#0284c7] hover:bg-[#f0f9ff] transition-colors"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="px-3 py-2 rounded-lg text-xs font-bold text-white bg-[#ff8a00] hover:bg-[#e67e00] transition-colors"
+              >
+                Register
+              </Link>
+            </div>
+          )}
+          {hasSession && isAuthMenuOpen && (
+            <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-100 shadow-lg rounded-xl p-2 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem('access_token');
+                  localStorage.removeItem('refresh_token');
+                  setIsAuthMenuOpen(false);
+                  router.push('/');
+                }}
+                className="px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors text-left"
+              >
+                Cerrar sesion
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </nav>

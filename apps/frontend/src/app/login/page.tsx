@@ -40,7 +40,7 @@ export default function AuthPage() {
             }
 
             window.location.href = '/profesores';
-        } catch (err) {
+        } catch {
             setError('Error de conexión con el servidor');
             setLoading(false);
         }

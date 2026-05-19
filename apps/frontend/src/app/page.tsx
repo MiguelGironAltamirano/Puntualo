@@ -10,8 +10,20 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
+  const canAccessBuscador = () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      router.push('/login');
+      return false;
+    }
+    return true;
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canAccessBuscador()) {
+      return;
+    }
     if (searchQuery.trim() !== '') {
       // Redirige al buscador pasando el parámetro en la URL
       router.push(`/profesores?query=${encodeURIComponent(searchQuery)}`);
@@ -70,7 +82,11 @@ export default function Home() {
               <button
                 key={tag}
                 type="button"
-                onClick={() => router.push(`/profesores?query=${encodeURIComponent(tag)}`)}
+                onClick={() => {
+                  if (canAccessBuscador()) {
+                    router.push(`/profesores?query=${encodeURIComponent(tag)}`);
+                  }
+                }}
                 className="px-4 py-1.5 bg-[#f8fafc] border border-gray-200 rounded-full text-xs font-bold text-[#64748b] shadow-sm hover:border-gray-300 cursor-pointer transition-colors"
               >
                 {tag}
@@ -140,9 +156,17 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <Link href="/profesores" className="px-6 py-2.5 rounded-full border-2 border-[#bae6fd] text-[#0284c7] font-bold hover:bg-[#f0f9ff] transition-colors whitespace-nowrap text-sm text-center">
+            <button
+              type="button"
+              onClick={() => {
+                if (canAccessBuscador()) {
+                  router.push('/profesores');
+                }
+              }}
+              className="px-6 py-2.5 rounded-full border-2 border-[#bae6fd] text-[#0284c7] font-bold hover:bg-[#f0f9ff] transition-colors whitespace-nowrap text-sm text-center"
+            >
               Explorar Buscador
-            </Link>
+            </button>
           </div>
         </section>
       </main>

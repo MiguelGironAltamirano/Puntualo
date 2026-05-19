@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { BookOpen, GraduationCap, IdCard, Lock, Mail, User } from 'lucide-react';
 
 export default function RegisterPage() {
     // --- ESTADOS DEL FORMULARIO ---
@@ -49,7 +50,7 @@ export default function RegisterPage() {
 
             alert('Registro exitoso. Ahora, por favor verifica tu identidad como alumno de la UNMSM.');
             window.location.href = '/verify';
-        } catch (err) {
+        } catch {
             setError('Error de conexión con el servidor');
             setLoading(false);
         }
@@ -75,7 +76,9 @@ export default function RegisterPage() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Nombre Completo</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600 text-base">👤</span>
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                                <User className="w-4 h-4" />
+                            </span>
                             <input
                                 type="text"
                                 required
@@ -90,7 +93,9 @@ export default function RegisterPage() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Nombre de Usuario</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600 text-base">🎓</span>
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                                <GraduationCap className="w-4 h-4" />
+                            </span>
                             <input
                                 type="text"
                                 required
@@ -105,7 +110,9 @@ export default function RegisterPage() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">DNI (Opcional)</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600 text-base">🪪</span>
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                                <IdCard className="w-4 h-4" />
+                            </span>
                             <input
                                 type="text"
                                 placeholder="12345678"
@@ -120,7 +127,9 @@ export default function RegisterPage() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Correo Universitario</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600 text-base">✉️</span>
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                                <Mail className="w-4 h-4" />
+                            </span>
                             <input
                                 type="email"
                                 required
@@ -136,7 +145,9 @@ export default function RegisterPage() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Contraseña</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600 text-sm">🔒</span>
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                                <Lock className="w-4 h-4" />
+                            </span>
                             <input
                                 type="password"
                                 required
@@ -152,7 +163,9 @@ export default function RegisterPage() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Carrera (Opcional)</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600 text-base">📚</span>
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                                <BookOpen className="w-4 h-4" />
+                            </span>
                             <input
                                 type="text"
                                 placeholder="Ingeniería X"
