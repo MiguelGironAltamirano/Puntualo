@@ -6,7 +6,7 @@ from app.db.base import Base
 
 class Subject(Base):
 
-    __tablename__ = "materias"
+    __tablename__ = "subjects"
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -14,7 +14,7 @@ class Subject(Base):
         autoincrement=True
     )
 
-    nombre: Mapped[str] = mapped_column(
+    name: Mapped[str] = mapped_column(
         String(150),
         nullable=False
     )

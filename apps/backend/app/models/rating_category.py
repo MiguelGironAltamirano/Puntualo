@@ -6,7 +6,7 @@ from app.db.base import Base
 
 class RatingCategory(Base):
 
-    __tablename__ = "categorias_puntuacion"
+    __tablename__ = "rating_categories"
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -14,13 +14,13 @@ class RatingCategory(Base):
         autoincrement=True
     )
 
-    nombre: Mapped[str] = mapped_column(
+    name: Mapped[str] = mapped_column(
         String(100),
         unique=True,
         nullable=False
     )
 
-    descripcion: Mapped[str | None] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         default=None

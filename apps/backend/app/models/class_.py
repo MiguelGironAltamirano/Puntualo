@@ -6,7 +6,7 @@ from app.db.base import Base
 
 class Class(Base):
 
-    __tablename__ = "clases"
+    __tablename__ = "classes"
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -14,41 +14,41 @@ class Class(Base):
         autoincrement=True
     )
 
-    profesor_id: Mapped[int] = mapped_column(
+    teacher_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("profesores.id"),
+        ForeignKey("teachers.id"),
         nullable=False
     )
 
-    universidad_id: Mapped[int] = mapped_column(
+    university_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("universidades.id"),
+        ForeignKey("universities.id"),
         nullable=False
     )
 
-    materia_id: Mapped[int] = mapped_column(
+    subject_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("materias.id"),
+        ForeignKey("subjects.id"),
         nullable=False
     )
 
-    codigo: Mapped[str] = mapped_column(
+    code: Mapped[str] = mapped_column(
         String(50),
         nullable=False
     )
 
-    horario: Mapped[str | None] = mapped_column(
+    schedule: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         default=None
     )
 
-    semestre: Mapped[str] = mapped_column(
+    semester: Mapped[str] = mapped_column(
         String(10),
         nullable=False
     )
 
-    año: Mapped[int] = mapped_column(
+    year: Mapped[int] = mapped_column(
         Integer,
         nullable=False
     )
