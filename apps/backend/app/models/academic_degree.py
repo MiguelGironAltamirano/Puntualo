@@ -6,7 +6,7 @@ from app.db.base import Base
 
 class AcademicDegree(Base):
 
-    __tablename__ = "grados_academicos"
+    __tablename__ = "academic_degrees"
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -14,13 +14,13 @@ class AcademicDegree(Base):
         autoincrement=True
     )
 
-    nombre: Mapped[str] = mapped_column(
+    name: Mapped[str] = mapped_column(
         String(100),
         unique=True,
         nullable=False
     )
 
-    nivel: Mapped[str] = mapped_column(
+    level: Mapped[str] = mapped_column(
         String(50),
         nullable=False
     )

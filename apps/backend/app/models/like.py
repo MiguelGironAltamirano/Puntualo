@@ -10,7 +10,7 @@ class Like(Base):
 
     __tablename__ = "likes"
     __table_args__ = (
-        UniqueConstraint("usuario_id", "resena_id", name="uq_likes_usuario_resena"),
+        UniqueConstraint("user_id", "review_id", name="uq_likes_user_review"),
     )
 
     id: Mapped[int] = mapped_column(
@@ -19,15 +19,15 @@ class Like(Base):
         autoincrement=True
     )
 
-    usuario_id: Mapped[str] = mapped_column(
+    user_id: Mapped[str] = mapped_column(
         String,
         ForeignKey("users.id"),
         nullable=False
     )
 
-    resena_id: Mapped[int] = mapped_column(
+    review_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("resenas.id"),
+        ForeignKey("reviews.id"),
         nullable=False
     )
 

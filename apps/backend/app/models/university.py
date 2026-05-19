@@ -6,7 +6,7 @@ from app.db.base import Base
 
 class University(Base):
 
-    __tablename__ = "universidades"
+    __tablename__ = "universities"
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -14,17 +14,17 @@ class University(Base):
         autoincrement=True
     )
 
-    nombre: Mapped[str] = mapped_column(
+    name: Mapped[str] = mapped_column(
         String(150),
         nullable=False
     )
 
-    ciudad: Mapped[str] = mapped_column(
+    city: Mapped[str] = mapped_column(
         String(100),
         nullable=False
     )
 
-    pais: Mapped[str] = mapped_column(
+    country: Mapped[str] = mapped_column(
         String(100),
         nullable=False
     )
