@@ -19,9 +19,21 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from app.db.base import Base
-from app.models import Professor  # noqa: F401
-from app.models import ProfessorEvidence  # noqa: F401
-from app.models import User  # noqa: F401
+from app.models import (  # noqa: F401
+    User,
+    Professor,
+    ProfessorEvidence
+    AcademicDegree,
+    University,
+    Subject,
+    RatingCategory,
+    Teacher,
+    Class,
+    Review,
+    RatingDetail,
+    Like,
+)
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
