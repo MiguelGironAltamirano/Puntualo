@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Mail, Lock } from 'lucide-react';
 
 export default function AuthPage() {
     // --- ESTADOS DEL FORMULARIO ---
@@ -68,7 +69,9 @@ export default function AuthPage() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Correo Universitario</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600 text-base">✉️</span>
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                                <Mail className="w-4 h-4" />
+                            </span>
                             <input
                                 type="email"
                                 required
@@ -84,7 +87,9 @@ export default function AuthPage() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Contraseña</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600 text-sm">🔒</span>
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                                <Lock className="w-4 h-4" />
+                            </span>
                             <input
                                 type="password"
                                 required
