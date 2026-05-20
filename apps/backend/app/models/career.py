@@ -5,9 +5,9 @@ from app.db.base import Base
 from app.models.mixins import TimestampMixin
 
 
-class Faculty(Base, TimestampMixin):
+class Career(Base, TimestampMixin):
 
-    __tablename__ = "faculties"
+    __tablename__ = "careers"
 
     id: Mapped[int] = mapped_column(
         BigInteger,
@@ -15,9 +15,9 @@ class Faculty(Base, TimestampMixin):
         primary_key=True,
     )
 
-    university_id: Mapped[int] = mapped_column(
+    faculty_id: Mapped[int] = mapped_column(
         BigInteger,
-        ForeignKey("universities.id", ondelete="CASCADE"),
+        ForeignKey("faculties.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -25,5 +25,5 @@ class Faculty(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(150), nullable=False)
 
     __table_args__ = (
-        UniqueConstraint("name", "university_id", name="uq_faculties_name_university"),
+        UniqueConstraint("name", "faculty_id", name="uq_careers_name_faculty"),
     )

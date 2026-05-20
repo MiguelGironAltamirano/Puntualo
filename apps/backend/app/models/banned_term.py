@@ -5,9 +5,9 @@ from app.db.base import Base
 from app.models.mixins import TimestampMixin
 
 
-class AcademicDegree(Base, TimestampMixin):
+class BannedTerm(Base, TimestampMixin):
 
-    __tablename__ = "academic_degrees"
+    __tablename__ = "banned_terms"
 
     id: Mapped[int] = mapped_column(
         BigInteger,
@@ -15,13 +15,13 @@ class AcademicDegree(Base, TimestampMixin):
         primary_key=True,
     )
 
-    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    term: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
 
-    level: Mapped[str] = mapped_column(String(50), nullable=False)
+    severity: Mapped[str] = mapped_column(String(10), nullable=False, default="high")
 
     __table_args__ = (
         CheckConstraint(
-            "level IN ('bachelor','master','doctorate','specialization')",
-            name="ck_academic_degrees_level",
+            "severity IN ('low','medium','high')",
+            name="ck_banned_terms_severity",
         ),
     )

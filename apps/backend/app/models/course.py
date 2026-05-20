@@ -1,6 +1,4 @@
-import uuid
-
-from sqlalchemy import ForeignKey, Index, Integer, String, func, text
+from sqlalchemy import BigInteger, ForeignKey, Identity, Index, String, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -11,31 +9,27 @@ class Course(Base, TimestampMixin, SoftDeleteMixin):
 
     __tablename__ = "courses"
 
-    id: Mapped[str] = mapped_column(
-        String,
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(always=True),
         primary_key=True,
-        default=lambda: str(uuid.uuid4()),
-    )
-
-    name: Mapped[str] = mapped_column(
-        String(150),
-        nullable=False,
-        index=True,
     )
 
     university_id: Mapped[int] = mapped_column(
-        Integer,
+        BigInteger,
         ForeignKey("universities.id", ondelete="RESTRICT"),
         nullable=False,
         index=True,
     )
 
     faculty_id: Mapped[int] = mapped_column(
-        Integer,
+        BigInteger,
         ForeignKey("faculties.id", ondelete="RESTRICT"),
         nullable=False,
         index=True,
     )
+
+    name: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
 
     __table_args__ = (
         Index(

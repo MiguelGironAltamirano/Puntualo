@@ -2,16 +2,8 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import (
-    Boolean,
-    CheckConstraint,
-    DateTime,
-    ForeignKey,
-    Index,
-    Integer,
-    String,
-    Text,
-)
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, text
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -26,65 +18,53 @@ class CommentStatus(str, enum.Enum):
 
 class Comment(Base, TimestampMixin, SoftDeleteMixin):
     """
-    Un comentario por evaluación (UNIQUE evaluation_id). Denormaliza professor_id
-    y course_id para filtros y listados rápidos.
+    Texto anónimo vinculado 1:1 a una evaluación. Todos los comentarios son
+    anónimos en la API pública; user_id se almacena internamente para el sistema
+    de strikes y el pipeline de moderación por IA.
 
-    Counters fijos `helpful_count` / `not_helpful_count` cubren los 2 tipos de
-    Reaction del MVP. Cuando se agreguen más tipos (emojis), reemplazar por
-    agregado dinámico (`reactions_summary: JSONB` o tabla `comment_reaction_summary`).
+    Contadores denormalizados like_count / dislike_count / reports_count para
+    rendimiento en listados. Se actualizan en la capa de servicio al registrar
+    reacciones o denuncias.
     """
 
     __tablename__ = "comments"
 
-    id: Mapped[str] = mapped_column(
-        String,
+    id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True),
         primary_key=True,
-        default=lambda: str(uuid.uuid4()),
+        server_default=text("gen_random_uuid()"),
     )
 
-    evaluation_id: Mapped[str] = mapped_column(
-        String,
+    evaluation_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True),
         ForeignKey("evaluations.id", ondelete="CASCADE"),
         nullable=False,
         unique=True,
     )
 
-    user_id: Mapped[str | None] = mapped_column(
-        String,
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
-    professor_id: Mapped[str] = mapped_column(
-        String,
+    professor_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True),
         ForeignKey("professors.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
 
-    course_id: Mapped[str] = mapped_column(
-        String,
+    course_id: Mapped[int] = mapped_column(
+        BigInteger,
         ForeignKey("courses.id", ondelete="RESTRICT"),
         nullable=False,
     )
 
-    text: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-        default=None,
-    )
+    text: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
 
-    modality: Mapped[str] = mapped_column(
-        String(15),
-        nullable=False,
-    )
-
-    is_verified: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        default=False,
-    )
+    modality: Mapped[str] = mapped_column(String(15), nullable=False)
 
     status: Mapped[str] = mapped_column(
         String(30),
@@ -93,41 +73,13 @@ class Comment(Base, TimestampMixin, SoftDeleteMixin):
         index=True,
     )
 
-    hidden_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        default=None,
-    )
+    hidden_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+    removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+    moderation_verdict: Mapped[str | None] = mapped_column(String(20), nullable=True, default=None)
 
-    removed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        default=None,
-    )
-
-    moderation_verdict: Mapped[str | None] = mapped_column(
-        String(20),
-        nullable=True,
-        default=None,
-    )
-
-    helpful_count: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=0,
-    )
-
-    not_helpful_count: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=0,
-    )
-
-    reports_count: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=0,
-    )
+    like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    dislike_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    reports_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     __table_args__ = (
         Index("ix_comments_professor_status", "professor_id", "status"),

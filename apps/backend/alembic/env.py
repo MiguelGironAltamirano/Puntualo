@@ -21,16 +21,31 @@ if config.config_file_name is not None:
 from app.db.base import Base
 from app.models import (  # noqa: F401
     AcademicDegree,
+    AiJob,
+    BannedTerm,
+    Career,
+    CareerCourse,
+    ChatMessage,
+    ChatSession,
     Comment,
     Course,
     Evaluation,
+    EvaluationHashtag,
     Faculty,
+    Hashtag,
+    ModerationAction,
     Professor,
+    ProfessorAiSummary,
+    ProfessorCourse,
+    ProfessorDegree,
     ProfessorEvidence,
     Reaction,
     Report,
     University,
+    UploadedDocument,
     User,
+    UserStrike,
+    VerificationRequest,
 )
 
 target_metadata = Base.metadata

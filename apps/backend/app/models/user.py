@@ -1,88 +1,46 @@
 import uuid
-from datetime import datetime
 
-from sqlalchemy import Boolean
-from sqlalchemy import DateTime
-from sqlalchemy import String
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, ForeignKey, Integer, String, text
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
+from app.models.mixins import SoftDeleteMixin, TimestampMixin
 
 
-class User(Base):
+class User(Base, TimestampMixin, SoftDeleteMixin):
 
     __tablename__ = "users"
 
-    id: Mapped[str] = mapped_column(
-        String,
+    id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True),
         primary_key=True,
-        default=lambda: str(uuid.uuid4())
+        server_default=text("gen_random_uuid()"),
     )
 
-    email: Mapped[str] = mapped_column(
-        String,
-        unique=True,
-        nullable=False,
-        index=True
-    )
+    email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    full_name: Mapped[str] = mapped_column(String, nullable=False)
+    username: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    dni: Mapped[str | None] = mapped_column(String, unique=True, nullable=True, default=None)
 
-    full_name: Mapped[str] = mapped_column(
-        String,
-        nullable=False
-    )
-
-    username: Mapped[str] = mapped_column(
-        String,
-        unique=True,
+    career_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey("careers.id", ondelete="SET NULL"),
+        nullable=True,
+        default=None,
         index=True,
-        nullable=False
     )
 
-    dni: Mapped[str | None] = mapped_column(
-        String,
-        unique=True,
-        nullable=True,
-        default=None
-    )
+    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
 
-    career: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        default=None
-    )
+    role: Mapped[str] = mapped_column(String, nullable=False, default="student")
 
-    hashed_password: Mapped[str] = mapped_column(
-        String,
-        nullable=False
-    )
+    provider: Mapped[str] = mapped_column(String, nullable=False, default="local")
 
-    role: Mapped[str] = mapped_column(
-        String,
-        default="student",
-        nullable=False
-    )
+    is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    provider: Mapped[str] = mapped_column(
-        String,
-        default="local",
-        nullable=False
-    )
+    strike_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    is_active: Mapped[bool] = mapped_column(
-        Boolean,
-        default=True,
-        nullable=False
-    )
-
-    is_verified: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False,
-        nullable=False
-    )
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
-        nullable=False
+    __table_args__ = (
+        CheckConstraint("role IN ('student','admin')", name="ck_users_role"),
     )
