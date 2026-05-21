@@ -5,24 +5,28 @@ from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.models.academic_degree import AcademicDegree
+from app.models.course import Course
 from app.models.faculty import Faculty
 from app.models.professor import Professor
+from app.models.professor_ai_summary import ProfessorAiSummary
+from app.models.professor_course import ProfessorCourse
+from app.models.professor_degree import ProfessorDegree
 from app.models.professor_evidence import ProfessorEvidence
 from app.models.university import University
 from app.modules.professors.schemas import (
     VALIDATION_STATUSES,
+    DegreeRef,
     ProfessorCreate,
     ProfessorUpdate,
+    SortField,
+    SortOrder,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class ProfessorAlreadyExistsError(Exception):
-    pass
-
-
-class InvalidValidationStatusError(Exception):
     pass
 
 
@@ -34,10 +38,28 @@ class FacultyNotFoundError(Exception):
     pass
 
 
+class CourseNotFoundError(Exception):
+    pass
+
+
+class InvalidCourseFacultyError(Exception):
+    pass
+
+
+class InvalidStateTransitionError(Exception):
+    def __init__(self, current_status: str):
+        self.current_status = current_status
+        super().__init__(
+            f"Solo se puede rechazar profesores en estado 'not_found' (actual: '{current_status}')"
+        )
+
+
 class ProfessorService:
 
     def __init__(self, db: AsyncSession):
         self.db = db
+
+    # ---------- writes ----------
 
     async def create(
         self,
@@ -65,45 +87,8 @@ class ProfessorService:
         await self.db.commit()
         await self.db.refresh(professor)
 
-        # Disparar validación asíncrona — si el broker está caído, el POST no falla
-        try:
-            from app.tasks.professor_validation_tasks import run_professor_validation
-            run_professor_validation.delay(professor.id, professor.full_name)
-        except Exception as exc:
-            logger.warning(
-                f"could not enqueue validation | professor_id={professor.id} | error={exc}"
-            )
-
+        self._enqueue_validation(professor.id, professor.full_name, op="create")
         return professor
-
-    async def get_by_id(self, professor_id: str) -> Professor | None:
-        stmt = select(Professor).where(
-            Professor.id == professor_id,
-            Professor.is_active.is_(True),
-        )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
-
-    def list_query(self, search: str | None = None):
-        """Construye la query base para listar profesores activos con filtro opcional."""
-        base = (
-            select(Professor)
-            .join(University, Professor.university_id == University.id)
-            .join(Faculty, Professor.faculty_id == Faculty.id)
-            .where(Professor.is_active.is_(True))
-        )
-
-        if search:
-            term = f"%{search.strip().lower()}%"
-            base = base.where(
-                or_(
-                    func.lower(Professor.full_name).like(term),
-                    func.lower(University.name).like(term),
-                    func.lower(Faculty.name).like(term),
-                )
-            )
-
-        return base.order_by(Professor.created_at.desc())
 
     async def update(
         self,
@@ -115,12 +100,6 @@ class ProfessorService:
             return None
 
         payload = data.model_dump(exclude_unset=True)
-
-        if "validation_status" in payload:
-            if payload["validation_status"] not in VALIDATION_STATUSES:
-                raise InvalidValidationStatusError(
-                    f"validation_status debe ser uno de {sorted(VALIDATION_STATUSES)}"
-                )
 
         new_university_id = payload.get("university_id", professor.university_id)
         new_faculty_id = payload.get("faculty_id", professor.faculty_id)
@@ -156,8 +135,18 @@ class ProfessorService:
         await self.db.refresh(professor)
         return professor
 
-    async def revalidate(self, professor_id: str) -> bool:
+    async def soft_delete(self, professor_id: str) -> bool:
         professor = await self.get_by_id(professor_id)
+        if not professor:
+            return False
+
+        professor.is_active = False
+        professor.deleted_at = datetime.now(timezone.utc)
+        await self.db.commit()
+        return True
+
+    async def revalidate(self, professor_id: str) -> bool:
+        professor = await self.get_by_id(professor_id, include_inactive=True)
         if not professor:
             return False
 
@@ -170,7 +159,12 @@ class ProfessorService:
             *(f"unmsm_directory:parsed:{url}" for url in settings.UNMSM_DIRECTORY_URLS),
         ]
         for key in cache_keys:
-            await redis_client.delete(key)
+            try:
+                await redis_client.delete(key)
+            except Exception as exc:
+                logger.warning(
+                    f"could not clear cache key {key} | error={exc}"
+                )
 
         await self.db.execute(
             delete(ProfessorEvidence).where(ProfessorEvidence.professor_id == professor_id)
@@ -179,25 +173,258 @@ class ProfessorService:
         professor.validation_status = "pending_validation"
         await self.db.commit()
 
-        try:
-            from app.tasks.professor_validation_tasks import run_professor_validation
-            run_professor_validation.delay(professor.id, professor.full_name)
-        except Exception as exc:
-            logger.warning(
-                f"could not enqueue revalidation | professor_id={professor_id} | error={exc}"
-            )
+        return self._enqueue_validation(
+            professor.id, professor.full_name, op="revalidate"
+        )
 
-        return True
+    async def reject(self, professor_id: str) -> Professor | None:
+        professor = await self.get_by_id(professor_id, include_inactive=True)
+        if not professor:
+            return None
 
-    async def soft_delete(self, professor_id: str) -> bool:
+        if professor.validation_status == "rejected":
+            return professor  # idempotente
+
+        if professor.validation_status != "not_found":
+            raise InvalidStateTransitionError(professor.validation_status)
+
+        professor.validation_status = "rejected"
+        await self.db.commit()
+        await self.db.refresh(professor)
+        return professor
+
+    async def add_course(self, professor_id: str, course_id: int) -> bool:
         professor = await self.get_by_id(professor_id)
         if not professor:
             return False
 
-        professor.is_active = False
-        professor.deleted_at = datetime.now(timezone.utc)
+        course = await self.db.get(Course, course_id)
+        if course is None or not course.is_active:
+            raise CourseNotFoundError(f"No existe curso con id={course_id}")
+
+        if course.faculty_id != professor.faculty_id:
+            raise InvalidCourseFacultyError(
+                f"El curso id={course_id} no pertenece a la facultad del profesor"
+            )
+
+        existing = await self.db.execute(
+            select(ProfessorCourse).where(
+                ProfessorCourse.professor_id == professor_id,
+                ProfessorCourse.course_id == course_id,
+            )
+        )
+        if existing.scalar_one_or_none():
+            return True  # idempotente
+
+        self.db.add(ProfessorCourse(professor_id=professor_id, course_id=course_id))
         await self.db.commit()
         return True
+
+    async def remove_course(self, professor_id: str, course_id: int) -> bool:
+        result = await self.db.execute(
+            delete(ProfessorCourse).where(
+                ProfessorCourse.professor_id == professor_id,
+                ProfessorCourse.course_id == course_id,
+            )
+        )
+        await self.db.commit()
+        return result.rowcount > 0
+
+    # ---------- reads ----------
+
+    async def get_by_id(
+        self,
+        professor_id: str,
+        include_inactive: bool = False,
+    ) -> Professor | None:
+        stmt = select(Professor).where(Professor.id == professor_id)
+        if not include_inactive:
+            stmt = stmt.where(Professor.is_active.is_(True))
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    def list_query(
+        self,
+        *,
+        search: str | None = None,
+        university_id: int | None = None,
+        faculty_id: int | None = None,
+        course_id: int | None = None,
+        validation_status: str | None = None,
+        include_deleted: bool = False,
+        hide_rejected: bool = True,
+        sort_by: SortField = "created_at",
+        sort_order: SortOrder = "desc",
+    ):
+        base = (
+            select(Professor)
+            .join(University, Professor.university_id == University.id)
+            .join(Faculty, Professor.faculty_id == Faculty.id)
+        )
+
+        if not include_deleted:
+            base = base.where(Professor.is_active.is_(True))
+
+        if search:
+            term = f"%{search.strip().lower()}%"
+            base = base.where(
+                or_(
+                    func.lower(Professor.full_name).like(term),
+                    func.lower(University.name).like(term),
+                    func.lower(Faculty.name).like(term),
+                )
+            )
+
+        if university_id is not None:
+            base = base.where(Professor.university_id == university_id)
+
+        if faculty_id is not None:
+            base = base.where(Professor.faculty_id == faculty_id)
+
+        if course_id is not None:
+            base = base.where(
+                select(ProfessorCourse.professor_id)
+                .where(
+                    ProfessorCourse.professor_id == Professor.id,
+                    ProfessorCourse.course_id == course_id,
+                )
+                .exists()
+            )
+
+        if validation_status is not None:
+            base = base.where(Professor.validation_status == validation_status)
+        elif hide_rejected:
+            base = base.where(Professor.validation_status != "rejected")
+
+        sort_column = {
+            "created_at": Professor.created_at,
+            "global_score": Professor.global_score,
+            "total_evaluations": Professor.total_evaluations,
+        }[sort_by]
+
+        order = sort_column.desc() if sort_order == "desc" else sort_column.asc()
+        return base.order_by(order, Professor.id.desc())
+
+    async def list_courses(self, professor_id: str) -> list[Course]:
+        stmt = (
+            select(Course)
+            .join(ProfessorCourse, ProfessorCourse.course_id == Course.id)
+            .where(
+                ProfessorCourse.professor_id == professor_id,
+                Course.is_active.is_(True),
+            )
+            .order_by(Course.name.asc())
+        )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_detail(
+        self,
+        professor_id: str,
+        include_deleted: bool = False,
+    ) -> tuple[Professor, list[Course], list[DegreeRef], list[ProfessorEvidence], str | None] | None:
+        professor = await self.get_by_id(
+            professor_id, include_inactive=include_deleted
+        )
+        if not professor:
+            return None
+
+        courses = await self.list_courses(professor_id)
+
+        degree_stmt = (
+            select(
+                AcademicDegree.id,
+                AcademicDegree.name,
+                AcademicDegree.level,
+                ProfessorDegree.institution,
+                ProfessorDegree.year_obtained,
+            )
+            .join(ProfessorDegree, ProfessorDegree.degree_id == AcademicDegree.id)
+            .where(ProfessorDegree.professor_id == professor_id)
+            .order_by(ProfessorDegree.year_obtained.desc().nulls_last())
+        )
+        degree_rows = (await self.db.execute(degree_stmt)).all()
+        degrees = [
+            DegreeRef(
+                id=row.id,
+                name=row.name,
+                level=row.level,
+                institution=row.institution,
+                year_obtained=row.year_obtained,
+            )
+            for row in degree_rows
+        ]
+
+        evidence_stmt = (
+            select(ProfessorEvidence)
+            .where(
+                ProfessorEvidence.professor_id == professor_id,
+                ProfessorEvidence.affiliation_confirmed.is_(True),
+            )
+            .order_by(ProfessorEvidence.fetched_at.desc())
+        )
+        evidence = list((await self.db.execute(evidence_stmt)).scalars().all())
+
+        summary = await self._build_summary(professor, courses, degrees)
+
+        return professor, courses, degrees, evidence, summary
+
+    # ---------- helpers ----------
+
+    async def _build_summary(
+        self,
+        professor: Professor,
+        courses: list[Course],
+        degrees: list[DegreeRef],
+    ) -> str | None:
+        """Placeholder hasta que la 4.4 entregue resúmenes NLP reales.
+
+        Lee professor_ai_summaries si existe; si no, genera un texto factual
+        a partir de los datos disponibles.
+        """
+        try:
+            summary_stmt = (
+                select(ProfessorAiSummary)
+                .where(ProfessorAiSummary.professor_id == professor.id)
+                .limit(1)
+            )
+            existing = (await self.db.execute(summary_stmt)).scalar_one_or_none()
+            if existing is not None:
+                return existing.summary
+        except Exception as exc:
+            # En tests SQLite la tabla puede no existir; en prod cualquier error
+            # de lectura no debe romper el detalle del profesor.
+            logger.debug(f"ai_summary read fallback: {exc}")
+
+        parts: list[str] = [f"{professor.full_name}"]
+        if courses:
+            course_names = ", ".join(c.name for c in courses[:5])
+            extra = f" y {len(courses) - 5} más" if len(courses) > 5 else ""
+            parts.append(f"dicta {course_names}{extra}")
+        if professor.total_evaluations:
+            parts.append(f"con {professor.total_evaluations} evaluaciones registradas")
+        if professor.global_score is not None:
+            parts.append(f"y un puntaje global de {float(professor.global_score):.2f}/5")
+        if degrees:
+            top = degrees[0]
+            parts.append(f"Grado destacado: {top.name}")
+        return ". ".join(parts) + "."
+
+    def _enqueue_validation(
+        self,
+        professor_id: str,
+        full_name: str,
+        op: str,
+    ) -> bool:
+        try:
+            from app.tasks.professor_validation_tasks import run_professor_validation
+            run_professor_validation.delay(professor_id, full_name)
+            return True
+        except Exception as exc:
+            logger.warning(
+                f"could not enqueue {op} | professor_id={professor_id} | error={exc}"
+            )
+            return False
 
     async def _find_duplicate(
         self,
@@ -220,7 +447,6 @@ class ProfessorService:
         university_id: int,
         faculty_id: int,
     ) -> None:
-        """Valida que university_id exista y que faculty_id pertenezca a esa university."""
         university = await self.db.get(University, university_id)
         if university is None:
             raise UniversityNotFoundError(

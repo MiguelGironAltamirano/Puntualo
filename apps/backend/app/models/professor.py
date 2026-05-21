@@ -68,7 +68,7 @@ class Professor(Base, TimestampMixin, SoftDeleteMixin):
             postgresql_where=text("is_active = true"),
         ),
         CheckConstraint(
-            "validation_status IN ('pending_validation','validated','rejected')",
+            "validation_status IN ('pending_validation','validated','not_found','rejected')",
             name="ck_professors_validation_status",
         ),
         CheckConstraint(
