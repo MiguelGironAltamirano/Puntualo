@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timezone
 
 import redis.asyncio as aioredis
 from celery import shared_task
@@ -9,9 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
+from app.models.ai_job import AiJob
 from app.models.professor import Professor
 from app.models.professor_evidence import ProfessorEvidence
 from app.services.professor_validation.budget import BudgetTracker
+from app.services.professor_validation.degrees_extractor import extract_and_persist_degrees
 from app.services.professor_validation.pipeline import ProfessorValidationPipeline
 from app.services.professor_validation.sources.openalex import OpenAlexSource
 from app.services.professor_validation.sources.orcid import OrcidSource
@@ -22,10 +25,11 @@ logger = logging.getLogger(__name__)
 
 
 def _make_db_session() -> async_sessionmaker[AsyncSession]:
-    """Create a fresh async engine + session factory using NullPool.
+    """Engine + session factory con NullPool.
 
-    NullPool prevents connection reuse across event loops — required in Celery prefork workers
-    because asyncio.run() creates and destroys a new loop for each task.
+    NullPool evita reutilización de conexiones entre event loops —
+    requerido en workers Celery prefork donde asyncio.run() crea y destruye
+    un loop por tarea.
     """
     url = settings.DATABASE_URL
     if url.startswith("postgresql://"):
@@ -49,27 +53,25 @@ def run_professor_validation(self, professor_id: str, full_name: str) -> None:
     Ejecuta el ProfessorValidationPipeline contra los 4 sources y persiste resultados.
     En caso de crash no marca rejected — deja pending para retry o revalidación manual.
     """
-    # Reset the module-level redis_client singleton so it binds to the fresh event loop.
-    # Celery prefork: asyncio.run() closes its loop after each task; the singleton would
-    # hold connections tied to that dead loop on subsequent tasks in the same worker process.
+    # Resetear el singleton de redis_client para que apunte al loop fresco de este task.
+    # Celery prefork: asyncio.run() cierra su loop al terminar; el singleton quedaría
+    # con conexiones ligadas a ese loop muerto en tasks subsiguientes del mismo proceso.
     import app.utils.cache as _cache
     _cache.redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
 
-    logger.info(f"validation start | professor_id={professor_id} | name={full_name}")
+    logger.info("validation start | professor_id=%s | name=%s", professor_id, full_name)
     try:
         asyncio.run(_run(professor_id, full_name))
-        logger.info(f"validation done  | professor_id={professor_id}")
+        logger.info("validation done  | professor_id=%s", professor_id)
     except Exception as exc:
-        logger.error(f"validation crash | professor_id={professor_id} | error={exc}")
+        logger.error("validation crash | professor_id=%s | error=%s", professor_id, exc)
         raise self.retry(exc=exc)
 
 
 async def _run(professor_id: str, full_name: str) -> None:
-    # Fresh Redis client for BudgetTracker (bound to this event loop)
     _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
-
-    # Fresh DB session factory with NullPool (no cross-loop connection reuse)
     SessionLocal = _make_db_session()
+    now = datetime.now(timezone.utc)
 
     try:
         budget = BudgetTracker(_redis, env="prod")
@@ -83,31 +85,123 @@ async def _run(professor_id: str, full_name: str) -> None:
             budget=budget,
         )
 
-        professor = _ProfessorStub(professor_id, full_name)
-        new_status, evidence_records = await pipeline.run(professor)
-
         async with SessionLocal() as db:
+            # ------------------------------------------------------------------
+            # Idempotencia: no reprocesar si ya fue validado (o rechazado).
+            # El endpoint /revalidate siempre resetea a pending_validation antes
+            # de encolar, así que encontrar otro estado aquí indica procesamiento
+            # duplicado o concurrente.
+            # ------------------------------------------------------------------
             prof = await db.get(Professor, professor_id)
             if prof is None:
-                logger.warning(f"professor_id={professor_id} not found in DB, skipping persist")
+                logger.warning("professor_id=%s not found in DB, skipping", professor_id)
                 return
 
-            prof.validation_status = new_status
+            if prof.validation_status != "pending_validation":
+                logger.info(
+                    "skipping validation | professor_id=%s | status=%s (already processed)",
+                    professor_id, prof.validation_status,
+                )
+                return
 
-            for source_name, payload in evidence_records:
-                role = "enrichment" if _is_enrichment_payload(payload) else "validation"
+            # ------------------------------------------------------------------
+            # Registrar el job de IA como 'running'
+            # ------------------------------------------------------------------
+            job = AiJob(
+                job_type="professor_validation",
+                status="running",
+                started_at=now,
+                input_payload={"professor_id": professor_id, "full_name": full_name},
+            )
+            db.add(job)
+            await db.flush()  # obtener job.id antes de continuar
+
+            # ------------------------------------------------------------------
+            # Ejecutar pipeline
+            # ------------------------------------------------------------------
+            stub = _ProfessorStub(professor_id, full_name)
+            new_status, evidence_records = await pipeline.run(stub)
+
+            # ------------------------------------------------------------------
+            # Persistir evidencia
+            # ------------------------------------------------------------------
+            for rec in evidence_records:
+                source_name = rec["source"]
+                role = rec["role"]
+                payload = rec["payload"]
+
                 db.add(ProfessorEvidence(
                     professor_id=professor_id,
                     source=source_name,
                     role=role,
+                    found=rec["found"],
+                    affiliation_confirmed=rec["affiliation_confirmed"],
+                    confidence=rec["confidence"],
                     raw_payload=_serialize_payload(payload),
                 ))
 
+            # ------------------------------------------------------------------
+            # Derivar grados académicos desde ORCID (solo si validado)
+            # ------------------------------------------------------------------
+            degrees_inserted = 0
+            if new_status == "validated":
+                for rec in evidence_records:
+                    if rec["source"] == "orcid" and rec["role"] == "enrichment":
+                        edu_field = rec["payload"].get("educations")
+                        if edu_field is not None:
+                            educations = (
+                                edu_field.value
+                                if hasattr(edu_field, "value")
+                                else []
+                            )
+                            degrees_inserted = await extract_and_persist_degrees(
+                                professor_id, educations, db
+                            )
+                        break
+
+            # ------------------------------------------------------------------
+            # Actualizar profesor y job
+            # ------------------------------------------------------------------
+            prof.validation_status = new_status
+
+            finished = datetime.now(timezone.utc)
+            job.status = "completed"
+            job.finished_at = finished
+            job.result_payload = {
+                "new_status": new_status,
+                "evidence_count": len(evidence_records),
+                "degrees_inserted": degrees_inserted,
+            }
+
             await db.commit()
             logger.info(
-                f"validation persisted | professor_id={professor_id} | status={new_status} "
-                f"| evidence_count={len(evidence_records)}"
+                "validation persisted | professor_id=%s | status=%s | "
+                "evidence=%d | degrees=%d",
+                professor_id, new_status, len(evidence_records), degrees_inserted,
             )
+
+    except Exception as exc:
+        # Intentar marcar el job como fallido antes de propagar
+        try:
+            async with SessionLocal() as db_err:
+                from sqlalchemy import update
+                await db_err.execute(
+                    update(AiJob)
+                    .where(
+                        AiJob.job_type == "professor_validation",
+                        AiJob.status == "running",
+                    )
+                    .values(
+                        status="failed",
+                        finished_at=datetime.now(timezone.utc),
+                        error_message=str(exc)[:500],
+                    )
+                )
+                await db_err.commit()
+        except Exception as inner:
+            logger.warning("could not mark job as failed | error=%s", inner)
+        raise
+
     finally:
         await _redis.aclose()
         import app.utils.cache as _cache
@@ -119,21 +213,13 @@ async def _run(professor_id: str, full_name: str) -> None:
 # ---------------------------------------------------------------------------
 
 class _ProfessorStub:
-    """Objeto mínimo que el pipeline necesita para acceder a full_name."""
     def __init__(self, professor_id: str, full_name: str) -> None:
         self.id = professor_id
         self.full_name = full_name
 
 
-def _is_enrichment_payload(payload: dict) -> bool:
-    """True si el payload contiene FieldWithProvenance (fase enrichment)."""
-    if not payload:
-        return False
-    return any(hasattr(v, "model_dump") for v in payload.values())
-
-
 def _serialize_payload(payload: dict) -> dict:
-    """Convierte FieldWithProvenance a dict JSON-serializable."""
+    """Convierte FieldWithProvenance a dict JSON-serializable para almacenar en JSONB."""
     if not payload:
         return {}
     result = {}

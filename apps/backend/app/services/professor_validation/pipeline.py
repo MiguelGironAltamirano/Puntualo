@@ -1,52 +1,22 @@
 from __future__ import annotations
 
+import asyncio
 import logging
-from datetime import datetime
-from typing import Any, Literal, Protocol
+from typing import Any
 
-from pydantic import BaseModel, Field
-
-from app.core.config import settings
-import app.utils.cache as _cache_mod
+from app.services.professor_validation.circuit_breaker import CircuitBreaker
 
 logger = logging.getLogger(__name__)
 
-
-class ValidationResult(BaseModel):
-    found: bool
-    affiliation_confirmed: bool
-    source: str
-    confidence: float = Field(ge=0.0, le=1.0)
-    evidence: dict
-
-
-class FieldWithProvenance(BaseModel):
-    value: Any
-    source: str
-    fetched_at: datetime
-    confidence: float
-
-
-class EnrichmentResult(BaseModel):
-    fields: dict[str, FieldWithProvenance]
-    source: str
-
-
-class ProfessorSource(Protocol):
-    name: str
-    role: Literal["validation", "enrichment", "both"]
-    priority: int
-    cost_per_call: int
-
-    async def validate(self, full_name: str) -> ValidationResult: ...
-    async def enrich(self, full_name: str, hints: dict) -> EnrichmentResult: ...
+# Tipo de los registros de evidencia que retorna pipeline.run()
+EvidenceRecord = dict  # {source, role, found, affiliation_confirmed, confidence, payload}
 
 
 class ProfessorValidationPipeline:
     """
-    Orquesta sources en orden de prioridad.
-    Fase validación: corta apenas un source confirma afiliación UNMSM.
-    Fase enriquecimiento: ejecuta todos los enrichers restantes dentro de budget.
+    Orquesta sources en dos fases:
+    - Fase 1 Validación: corte temprano en cuanto una fuente confirma afiliación.
+    - Fase 2 Enrichment: todas las fuentes en paralelo, sin corte temprano.
     """
 
     def __init__(self, sources: list, budget: Any = None) -> None:
@@ -59,66 +29,89 @@ class ProfessorValidationPipeline:
             key=lambda s: s.priority,
         )
         self._budget = budget
+        self._cb = CircuitBreaker()
 
-    async def run(self, professor: Any) -> tuple[str, list]:
-        evidence_records: list = []
+    async def run(self, professor: Any) -> tuple[str, list[EvidenceRecord]]:
+        evidence_records: list[EvidenceRecord] = []
+
+        # ------------------------------------------------------------------
+        # Fase 1 — Validación (corte temprano)
+        # ------------------------------------------------------------------
         affiliation_confirmed = False
 
-        # Fase 1: validation chain con corte temprano
         for source in self._validation_sources:
-            if await self._is_circuit_open(source.name):
+            if await self._cb.is_open(source.name):
+                logger.info("circuit open | source=%s, skipping validation", source.name)
                 continue
             try:
                 result = await source.validate(professor.full_name)
-                evidence_records.append((source.name, result.evidence))
+                evidence_records.append({
+                    "source": source.name,
+                    "role": "validation",
+                    "found": result.found,
+                    "affiliation_confirmed": result.affiliation_confirmed,
+                    "confidence": result.confidence,
+                    "payload": result.evidence,
+                })
                 if result.affiliation_confirmed:
                     affiliation_confirmed = True
                     break
-            except Exception as e:
-                await self._register_failure(source.name)
-                logger.warning(f"validation source {source.name} failed: {e}")
+            except Exception as exc:
+                await self._cb.register_failure(source.name)
+                logger.warning("validation source failed | source=%s | error=%s", source.name, exc)
 
         if not affiliation_confirmed:
             return "not_found", evidence_records
 
-        # Fase 2: enrichment chain (no corta temprano)
-        merged_fields: dict[str, FieldWithProvenance] = {}
-        for source in self._enrichment_sources:
-            if await self._is_circuit_open(source.name):
-                continue
-            if source.cost_per_call > 0 and self._budget is not None:
-                if not await self._budget.try_consume(source.cost_per_call):
-                    continue
-            try:
-                result = await source.enrich(professor.full_name, hints=merged_fields)
-                evidence_records.append((source.name, result.fields))
-                self._merge_with_provenance(merged_fields, result.fields)
-            except Exception as e:
-                await self._register_failure(source.name)
-                logger.warning(f"enrichment source {source.name} failed: {e}")
+        # ------------------------------------------------------------------
+        # Fase 2 — Enrichment (paralelo)
+        # Hints iniciales: extraídos de la evidencia de la fase de validación.
+        # ------------------------------------------------------------------
+        initial_hints: dict = {}
+        for rec in evidence_records:
+            if rec["role"] == "validation" and rec["payload"]:
+                for k, v in rec["payload"].items():
+                    if k not in initial_hints:
+                        initial_hints[k] = v
+
+        enrichment_results = await asyncio.gather(
+            *[self._run_enrichment(source, professor.full_name, initial_hints)
+              for source in self._enrichment_sources],
+            return_exceptions=True,
+        )
+
+        for item in enrichment_results:
+            if item is not None and not isinstance(item, BaseException):
+                evidence_records.append(item)
 
         return "validated", evidence_records
 
-    async def _is_circuit_open(self, source_name: str) -> bool:
-        key = f"circuit:{source_name}:failures"
-        value = await _cache_mod.redis_client.get(key)
-        if value is None:
-            return False
-        return int(value) >= settings.CIRCUIT_THRESHOLD
-
-    async def _register_failure(self, source_name: str) -> None:
-        key = f"circuit:{source_name}:failures"
-        new_value = await _cache_mod.redis_client.incr(key)
-        if new_value == 1:
-            await _cache_mod.redis_client.expire(key, settings.CIRCUIT_RESET_SECONDS)
-
-    def _merge_with_provenance(
+    async def _run_enrichment(
         self,
-        merged: dict[str, FieldWithProvenance],
-        new_fields: dict[str, FieldWithProvenance],
-    ) -> None:
-        # Higher-priority sources (lower priority number) are processed first;
-        # their fields are never overwritten by lower-priority sources.
-        for field_name, field_value in new_fields.items():
-            if field_name not in merged:
-                merged[field_name] = field_value
+        source: Any,
+        full_name: str,
+        hints: dict,
+    ) -> EvidenceRecord | None:
+        if await self._cb.is_open(source.name):
+            logger.info("circuit open | source=%s, skipping enrichment", source.name)
+            return None
+
+        if source.cost_per_call > 0 and self._budget is not None:
+            if not await self._budget.try_consume(source.cost_per_call):
+                logger.warning("budget exhausted | source=%s, skipping", source.name)
+                return None
+
+        try:
+            result = await source.enrich(full_name, hints=hints)
+            return {
+                "source": source.name,
+                "role": "enrichment",
+                "found": bool(result.fields),
+                "affiliation_confirmed": False,
+                "confidence": None,
+                "payload": result.fields,
+            }
+        except Exception as exc:
+            await self._cb.register_failure(source.name)
+            logger.warning("enrichment source failed | source=%s | error=%s", source.name, exc)
+            return None

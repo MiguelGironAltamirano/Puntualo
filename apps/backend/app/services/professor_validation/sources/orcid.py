@@ -9,7 +9,7 @@ from urllib.parse import quote
 import httpx
 
 from app.core.config import settings
-from app.services.professor_validation.pipeline import (
+from app.services.professor_validation.sources.base import (
     EnrichmentResult,
     FieldWithProvenance,
     ValidationResult,
@@ -108,9 +108,16 @@ def _extract_educations(educations_section: dict) -> list[dict]:
     for group in educations_section.get("affiliation-group", []):
         for summary in group.get("summaries", []):
             edu = summary.get("education-summary", {})
+            end_date = edu.get("end-date") or {}
+            start_date = edu.get("start-date") or {}
+            year_raw = (
+                (end_date.get("year") or {}).get("value")
+                or (start_date.get("year") or {}).get("value")
+            )
             result.append({
                 "organization": edu.get("organization", {}).get("name", ""),
-                "role": edu.get("role-title", ""),
+                "role": edu.get("role-title", "") or "",
+                "year_obtained": int(year_raw) if year_raw else None,
             })
     return result
 

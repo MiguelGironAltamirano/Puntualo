@@ -9,7 +9,7 @@ from urllib.parse import quote
 import httpx
 
 from app.core.config import settings
-from app.services.professor_validation.pipeline import (
+from app.services.professor_validation.sources.base import (
     EnrichmentResult,
     FieldWithProvenance,
     ValidationResult,
