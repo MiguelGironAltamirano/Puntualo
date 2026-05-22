@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import unicodedata
-import uuid as _uuid_mod
+import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,7 +35,7 @@ def _map_level(role_title: str) -> str | None:
 
 
 async def extract_and_persist_degrees(
-    professor_id: str,
+    professor_id: str | uuid.UUID,
     educations: list[dict],
     db: AsyncSession,
 ) -> int:
@@ -45,7 +45,7 @@ async def extract_and_persist_degrees(
     Retorna el número de filas insertadas en professor_degrees.
     """
     # PGUUID(as_uuid=True) espera uuid.UUID, no str — convertir para compatibilidad SQLite/PG.
-    prof_uuid = _uuid_mod.UUID(professor_id) if isinstance(professor_id, str) else professor_id
+    prof_uuid = uuid.UUID(professor_id) if isinstance(professor_id, str) else professor_id
 
     inserted = 0
 

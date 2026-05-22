@@ -96,9 +96,13 @@ class ProfessorValidationPipeline:
             logger.info("circuit open | source=%s, skipping enrichment", source.name)
             return None
 
-        # NOTA: las fuentes con cost_per_call > 0 manejan su propio budget por
-        # llamada HTTP real (ej. Tavily descuenta 1 por search y 1 por extract).
-        # Pre-descontar aquí causaba doble cobro.
+        # Peek no-consumidor: si el budget está agotado, ni siquiera invocamos
+        # la fuente. El consume real (atómico) ocurre dentro de la fuente por
+        # cada llamada HTTP, así no se duplica el cobro.
+        if source.cost_per_call > 0 and self._budget is not None:
+            if not await self._budget.has_capacity(source.cost_per_call):
+                logger.warning("budget exhausted | source=%s, skipping", source.name)
+                return None
 
         try:
             result = await source.enrich(full_name, hints=hints)

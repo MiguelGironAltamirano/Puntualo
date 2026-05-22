@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import delete, func, or_, select
@@ -64,7 +65,7 @@ class ProfessorService:
     async def create(
         self,
         data: ProfessorCreate,
-        registered_by_id: str | None = None,
+        registered_by_id: str | uuid.UUID | None = None,
     ) -> Professor:
         await self._validate_university_and_faculty(
             data.university_id, data.faculty_id
@@ -92,7 +93,7 @@ class ProfessorService:
 
     async def update(
         self,
-        professor_id: str,
+        professor_id: str | uuid.UUID,
         data: ProfessorUpdate,
     ) -> Professor | None:
         professor = await self.get_by_id(professor_id)
@@ -135,7 +136,7 @@ class ProfessorService:
         await self.db.refresh(professor)
         return professor
 
-    async def soft_delete(self, professor_id: str) -> bool:
+    async def soft_delete(self, professor_id: str | uuid.UUID) -> bool:
         professor = await self.get_by_id(professor_id)
         if not professor:
             return False
@@ -145,7 +146,7 @@ class ProfessorService:
         await self.db.commit()
         return True
 
-    async def revalidate(self, professor_id: str) -> bool:
+    async def revalidate(self, professor_id: str | uuid.UUID) -> bool:
         professor = await self.get_by_id(professor_id, include_inactive=True)
         if not professor:
             return False
@@ -177,7 +178,7 @@ class ProfessorService:
             professor.id, professor.full_name, op="revalidate"
         )
 
-    async def reject(self, professor_id: str) -> Professor | None:
+    async def reject(self, professor_id: str | uuid.UUID) -> Professor | None:
         professor = await self.get_by_id(professor_id, include_inactive=True)
         if not professor:
             return None
@@ -193,7 +194,7 @@ class ProfessorService:
         await self.db.refresh(professor)
         return professor
 
-    async def add_course(self, professor_id: str, course_id: int) -> bool:
+    async def add_course(self, professor_id: str | uuid.UUID, course_id: int) -> bool:
         professor = await self.get_by_id(professor_id)
         if not professor:
             return False
@@ -220,7 +221,7 @@ class ProfessorService:
         await self.db.commit()
         return True
 
-    async def remove_course(self, professor_id: str, course_id: int) -> bool:
+    async def remove_course(self, professor_id: str | uuid.UUID, course_id: int) -> bool:
         result = await self.db.execute(
             delete(ProfessorCourse).where(
                 ProfessorCourse.professor_id == professor_id,
@@ -234,7 +235,7 @@ class ProfessorService:
 
     async def get_by_id(
         self,
-        professor_id: str,
+        professor_id: str | uuid.UUID,
         include_inactive: bool = False,
     ) -> Professor | None:
         stmt = select(Professor).where(Professor.id == professor_id)
@@ -305,7 +306,7 @@ class ProfessorService:
         order = sort_column.desc() if sort_order == "desc" else sort_column.asc()
         return base.order_by(order, Professor.id.desc())
 
-    async def list_courses(self, professor_id: str) -> list[Course]:
+    async def list_courses(self, professor_id: str | uuid.UUID) -> list[Course]:
         stmt = (
             select(Course)
             .join(ProfessorCourse, ProfessorCourse.course_id == Course.id)
@@ -320,7 +321,7 @@ class ProfessorService:
 
     async def get_detail(
         self,
-        professor_id: str,
+        professor_id: str | uuid.UUID,
         include_deleted: bool = False,
     ) -> tuple[Professor, list[Course], list[DegreeRef], list[ProfessorEvidence], str | None] | None:
         professor = await self.get_by_id(
@@ -412,17 +413,19 @@ class ProfessorService:
 
     def _enqueue_validation(
         self,
-        professor_id: str,
+        professor_id: str | uuid.UUID,
         full_name: str,
         op: str,
     ) -> bool:
+        # Celery serializa los args a JSON; pasar str evita ambigüedad de serializer.
+        pid = str(professor_id)
         try:
             from app.tasks.professor_validation_tasks import run_professor_validation
-            run_professor_validation.delay(professor_id, full_name)
+            run_professor_validation.delay(pid, full_name)
             return True
         except Exception as exc:
             logger.warning(
-                f"could not enqueue {op} | professor_id={professor_id} | error={exc}"
+                f"could not enqueue {op} | professor_id={pid} | error={exc}"
             )
             return False
 
@@ -430,7 +433,7 @@ class ProfessorService:
         self,
         full_name: str,
         university_id: int,
-        exclude_id: str | None = None,
+        exclude_id: str | uuid.UUID | None = None,
     ) -> Professor | None:
         stmt = select(Professor).where(
             func.lower(Professor.full_name) == full_name.strip().lower(),

@@ -70,3 +70,12 @@ class BudgetTracker:
         key = self._current_key()
         value = await self._redis.get(key)
         return int(value) if value else 0
+
+    async def has_capacity(self, n: int = 1) -> bool:
+        """
+        Peek no-consumidor: ¿`try_consume(n)` tendría éxito ahora mismo?
+        Útil para que el pipeline evite invocar fuentes costosas cuando el
+        budget está agotado, sin pre-descontar (lo que causaba doble cobro).
+        El enforcement real sigue siendo atómico via `try_consume`.
+        """
+        return (await self.current_usage()) + n <= self._cap

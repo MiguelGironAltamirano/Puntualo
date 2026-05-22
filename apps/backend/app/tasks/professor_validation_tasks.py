@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import uuid as _uuid_mod
+import uuid
 from datetime import datetime, timezone
 
 import httpx
@@ -64,7 +64,7 @@ def _make_db_session() -> async_sessionmaker[AsyncSession]:
     acks_late=True,
     name="professor_validation.run",
 )
-def run_professor_validation(self, professor_id: str, full_name: str) -> None:
+def run_professor_validation(self, professor_id: str | uuid.UUID, full_name: str) -> None:
     """
     Ejecuta el ProfessorValidationPipeline contra los 4 sources y persiste resultados.
     En caso de crash no marca rejected — deja pending para retry o revalidación manual.
@@ -111,7 +111,7 @@ async def _run(professor_id: str, full_name: str) -> None:
 
         async with SessionLocal() as db:
             # PGUUID(as_uuid=True) espera uuid.UUID, no str.
-            _prof_uuid = _uuid_mod.UUID(professor_id) if isinstance(professor_id, str) else professor_id
+            _prof_uuid = uuid.UUID(professor_id) if isinstance(professor_id, str) else professor_id
 
             # ------------------------------------------------------------------
             # Idempotencia: no reprocesar si ya fue validado (o rechazado).
