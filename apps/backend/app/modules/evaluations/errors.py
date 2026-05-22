@@ -70,3 +70,44 @@ class CourseNotFoundError(DomainError):
     code = "CURSO_NOT_FOUND"
     status_code = status.HTTP_404_NOT_FOUND
     default_message = "Curso no encontrado."
+
+
+class CourseNotTaughtByProfessorError(DomainError):
+    code = "COURSE_NOT_TAUGHT_BY_PROFESSOR"
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+    default_message = "El curso no esta asociado al profesor."
+
+
+class ProfessorNotValidatedError(DomainError):
+    code = "PROFESSOR_NOT_VALIDATED"
+    status_code = status.HTTP_403_FORBIDDEN
+    default_message = "El profesor no esta validado aun."
+
+
+class HashtagLimitExceededError(DomainError):
+    code = "HASHTAG_LIMIT_EXCEEDED"
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+    default_message = "Maximo 5 hashtags por evaluacion."
+
+
+class HashtagInvalidFormatError(DomainError):
+    code = "HASHTAG_INVALID_FORMAT"
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+
+    def __init__(self, label: str):
+        super().__init__(
+            f"Hashtag '{label}' no cumple el formato ^[a-z0-9_]{{1,30}}$."
+        )
+        self.label = label
+
+
+class HashtagBannedTermsError(DomainError):
+    code = "HASHTAG_BANNED_TERMS"
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+
+    def __init__(self, label: str, term: str):
+        super().__init__(
+            f"Hashtag '{label}' contiene termino prohibido: '{term}'."
+        )
+        self.label = label
+        self.term = term

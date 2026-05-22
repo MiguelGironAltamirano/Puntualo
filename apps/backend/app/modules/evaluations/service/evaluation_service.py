@@ -76,7 +76,6 @@ class EvaluationService:
             easiness=payload.easiness,
             helpfulness=payload.helpfulness,
             punctuality=payload.punctuality,
-            course_difficulty=payload.course_difficulty,
             modality=payload.modality,
         )
         self.db.add(evaluation)
@@ -91,7 +90,6 @@ class EvaluationService:
 
         comment: Comment | None = None
         if normalized_comment is not None:
-            is_verified = self._is_email_verified(user.email)
             comment = Comment(
                 evaluation_id=evaluation.id,
                 user_id=user.id,
@@ -99,7 +97,6 @@ class EvaluationService:
                 course_id=payload.course_id,
                 text=normalized_comment,
                 modality=payload.modality,
-                is_verified=is_verified,
                 status=CommentStatus.PUBLISHED.value,
             )
             self.db.add(comment)
@@ -172,15 +169,6 @@ class EvaluationService:
         if course is None or not course.is_active:
             raise CourseNotFoundError()
         return course
-
-    @staticmethod
-    def _is_email_verified(email: str | None) -> bool:
-        """True si el email pertenece al dominio institucional verificado."""
-        if not email:
-            return False
-        return email.lower().endswith(
-            f"@{settings.MODERATION_VERIFIED_EMAIL_DOMAIN.lower()}"
-        )
 
     async def _recompute_professor_score(self, professor_id: str) -> None:
         """Recalcula `global_score` + `total_evaluations` desde scratch.
