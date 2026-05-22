@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import uuid as _uuid_mod
 from datetime import datetime, timezone
 
+import httpx
 import redis.asyncio as aioredis
 from celery import shared_task
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import TimeoutError as RedisTimeoutError
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -22,6 +27,17 @@ from app.services.professor_validation.sources.tavily import TavilySource
 from app.services.professor_validation.sources.unmsm_directory import UnmsmDirectorySource
 
 logger = logging.getLogger(__name__)
+
+# Solo reintentar en errores transitorios de infraestructura.
+# httpx.HTTPStatusError (4xx/5xx) NO entra aquí: es un error lógico de la fuente
+# que el pipeline ya atrapa internamente y maneja vía circuit breaker.
+_RETRYABLE_EXCEPTIONS: tuple[type[BaseException], ...] = (
+    httpx.TransportError,
+    RedisConnectionError,
+    RedisTimeoutError,
+    OperationalError,
+    ConnectionError,
+)
 
 
 def _make_db_session() -> async_sessionmaker[AsyncSession]:
@@ -53,6 +69,9 @@ def run_professor_validation(self, professor_id: str, full_name: str) -> None:
     Ejecuta el ProfessorValidationPipeline contra los 4 sources y persiste resultados.
     En caso de crash no marca rejected — deja pending para retry o revalidación manual.
     """
+    # Coerce a str — Celery puede pasar UUID si el serializer no lo convierte.
+    professor_id = str(professor_id)
+
     # Resetear el singleton de redis_client para que apunte al loop fresco de este task.
     # Celery prefork: asyncio.run() cierra su loop al terminar; el singleton quedaría
     # con conexiones ligadas a ese loop muerto en tasks subsiguientes del mismo proceso.
@@ -65,7 +84,12 @@ def run_professor_validation(self, professor_id: str, full_name: str) -> None:
         logger.info("validation done  | professor_id=%s", professor_id)
     except Exception as exc:
         logger.error("validation crash | professor_id=%s | error=%s", professor_id, exc)
-        raise self.retry(exc=exc)
+        if isinstance(exc, _RETRYABLE_EXCEPTIONS):
+            raise self.retry(exc=exc)
+        # Errores no transitorios (4xx, bugs, validation errors) no se reintentan:
+        # Celery los marcará como FAILED y el profesor queda en pending_validation
+        # para revalidación manual.
+        raise
 
 
 async def _run(professor_id: str, full_name: str) -> None:
@@ -86,13 +110,16 @@ async def _run(professor_id: str, full_name: str) -> None:
         )
 
         async with SessionLocal() as db:
+            # PGUUID(as_uuid=True) espera uuid.UUID, no str.
+            _prof_uuid = _uuid_mod.UUID(professor_id) if isinstance(professor_id, str) else professor_id
+
             # ------------------------------------------------------------------
             # Idempotencia: no reprocesar si ya fue validado (o rechazado).
             # El endpoint /revalidate siempre resetea a pending_validation antes
             # de encolar, así que encontrar otro estado aquí indica procesamiento
             # duplicado o concurrente.
             # ------------------------------------------------------------------
-            prof = await db.get(Professor, professor_id)
+            prof = await db.get(Professor, _prof_uuid)
             if prof is None:
                 logger.warning("professor_id=%s not found in DB, skipping", professor_id)
                 return
@@ -131,7 +158,7 @@ async def _run(professor_id: str, full_name: str) -> None:
                 payload = rec["payload"]
 
                 db.add(ProfessorEvidence(
-                    professor_id=professor_id,
+                    professor_id=_prof_uuid,
                     source=source_name,
                     role=role,
                     found=rec["found"],

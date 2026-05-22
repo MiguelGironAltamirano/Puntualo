@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import unicodedata
+import uuid as _uuid_mod
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,6 +44,9 @@ async def extract_and_persist_degrees(
     Cada dict debe tener: role (título), organization (institución), year_obtained (int|None).
     Retorna el número de filas insertadas en professor_degrees.
     """
+    # PGUUID(as_uuid=True) espera uuid.UUID, no str — convertir para compatibilidad SQLite/PG.
+    prof_uuid = _uuid_mod.UUID(professor_id) if isinstance(professor_id, str) else professor_id
+
     inserted = 0
 
     for edu in educations:
@@ -72,14 +76,14 @@ async def extract_and_persist_degrees(
 
         # Verificar si la asociación ya existe (idempotente)
         pd_stmt = select(ProfessorDegree).where(
-            ProfessorDegree.professor_id == professor_id,
+            ProfessorDegree.professor_id == prof_uuid,
             ProfessorDegree.degree_id == degree.id,
         )
         if (await db.execute(pd_stmt)).scalar_one_or_none() is not None:
             continue
 
         db.add(ProfessorDegree(
-            professor_id=professor_id,
+            professor_id=prof_uuid,
             degree_id=degree.id,
             institution=institution,
             year_obtained=int(year_obtained) if year_obtained is not None else None,

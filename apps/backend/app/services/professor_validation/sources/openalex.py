@@ -114,17 +114,19 @@ class OpenAlexSource:
             "affiliation_years": _affiliation_years(principal),
         }
 
+        ambiguous = False
         if len(results) >= 2:
             top1 = principal.get("works_count", 0) or 0
             top2 = results[1].get("works_count", 0) or 0
             if top1 > 0 and top2 / top1 > 0.5:
+                ambiguous = True
                 evidence["validation_with_ambiguity"] = True
 
         result = ValidationResult(
             found=True,
-            affiliation_confirmed=True,
+            affiliation_confirmed=not ambiguous,
             source=self.name,
-            confidence=0.9,
+            confidence=0.5 if ambiguous else 0.9,
             evidence=evidence,
         )
         await _cache_mod.redis_client.set(cache_key, result.model_dump_json(), ex=settings.CACHE_TTL_VALIDATION_SECONDS)
