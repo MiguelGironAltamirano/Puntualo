@@ -146,10 +146,6 @@ class Settings:
     # --- Tarea 2.6: validacion de comentarios
     COMMENT_MIN_LENGTH: int = int(os.getenv("COMMENT_MIN_LENGTH", "20"))
     COMMENT_MAX_LENGTH: int = int(os.getenv("COMMENT_MAX_LENGTH", "2000"))
-    COMMENT_PROFANITY_BLOCKLIST_FILE: str = os.getenv(
-        "COMMENT_PROFANITY_BLOCKLIST_FILE",
-        "app/modules/evaluations/data/profanity_es.txt",
-    )
     COMMENT_REPORT_REASON_MAX_LENGTH: int = int(
         os.getenv("COMMENT_REPORT_REASON_MAX_LENGTH", "500")
     )

@@ -1,13 +1,23 @@
-"""Evaluation service — Tarea 6.
+"""Evaluation service.
 
-Crea una evaluacion (5 metricas) + comentario embebido opcional + recalcula
-el score del profesor en una sola transaccion atomica. Post-commit dispara
-invalidacion de cache (Tarea 11 stub) y SummaryTrigger (Tarea 10 stub).
+Crea atomicamente: evaluacion + comentario opcional + hashtags opcionales.
+Delega el recalculo de professor.global_score a una task Celery
+(`recalculate_professor_score`) — fuera de la transaccion.
+
+Validaciones (en orden):
+  1. Comentario: longitud + banned_terms (severity threshold 'medium').
+  2. Profesor activo y validation_status='validated'.
+  3. Curso activo.
+  4. Curso pertenece a professor_courses.
+  5. Hashtags: normalizar + limit + banned_terms (severity threshold 'low').
+  6. UNIQUE(user, professor, course, semester) — IntegrityError -> 409.
 """
-import logging
-from dataclasses import dataclass
+from __future__ import annotations
 
-from sqlalchemy import func, select, update
+import logging
+from dataclasses import dataclass, field
+
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,20 +25,25 @@ from app.core.config import settings
 from app.models.comment import Comment, CommentStatus
 from app.models.course import Course
 from app.models.evaluation import Evaluation
+from app.models.evaluation_hashtag import EvaluationHashtag
 from app.models.professor import Professor
+from app.models.professor_course import ProfessorCourse
 from app.models.user import User
 from app.modules.evaluations.errors import (
     CommentTooShortError,
     CourseNotFoundError,
+    CourseNotTaughtByProfessorError,
     EvaluationDuplicateError,
+    OffensiveContentError,
     ProfessorNotFoundError,
+    ProfessorNotValidatedError,
 )
-from app.modules.evaluations.profanity import check as profanity_check
 from app.modules.evaluations.schemas import EvaluationCreate
-from app.modules.evaluations.scoring import compute_global_score
 from app.modules.evaluations.semester import current_semester
+from app.modules.evaluations.service.hashtag_service import HashtagService
 from app.modules.evaluations.summary_hook import SummaryTrigger
 from app.utils.cache import invalidate_professor
+from app.utils.moderation import banned_terms_filter
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +55,7 @@ class EvaluationCreateResult:
     evaluation: Evaluation
     comment: Comment | None
     professor: Professor
+    hashtags: list[str] = field(default_factory=list)
 
 
 class EvaluationService:
@@ -56,17 +72,32 @@ class EvaluationService:
         user: User,
         payload: EvaluationCreate,
     ) -> EvaluationCreateResult:
-        """Crea evaluacion + comentario opcional + recalcula score (todo en una tx)."""
-        # 1) Pre-tx: validar comentario (longitud + profanity) antes de tocar DB.
-        normalized_comment = self._validate_comment(payload.comment_text)
+        """Crea evaluacion + comentario opcional + hashtags + delega recalc score."""
+        # 1) Pre-tx: validar longitud + banned_terms del comment.
+        normalized_comment = await self._validate_comment(payload.comment_text)
 
         semester = current_semester()
 
-        # 2) Existencia de profesor y curso (cheap reads).
-        professor = await self._get_active_professor(payload.professor_id)
+        # 2) Profesor existe, activo, validated.
+        professor = await self._get_validated_professor(payload.professor_id)
+
+        # 3) Curso existe y activo.
         course = await self._get_active_course(payload.course_id)
 
-        # 3) Tx unica: INSERT eval -> [INSERT comment] -> UPDATE professor.
+        # 4) Curso es dictado por el profesor.
+        await self._assert_course_taught_by_professor(
+            professor_id=professor.id, course_id=course.id
+        )
+
+        # 5) Procesar hashtags (puede levantar HashtagLimitExceededError /
+        #    HashtagInvalidFormatError / HashtagBannedTermsError ANTES de insertar
+        #    la evaluacion — si revientan, no se persiste nada).
+        hashtag_svc = HashtagService(self.db)
+        hashtags = await hashtag_svc.normalize_upsert_many(
+            raw_labels=payload.hashtags, created_by_id=user.id
+        )
+
+        # 6) Tx: INSERT eval -> [INSERT comment] -> INSERT eval_hashtags.
         evaluation = Evaluation(
             user_id=user.id,
             professor_id=payload.professor_id,
@@ -82,9 +113,6 @@ class EvaluationService:
         try:
             await self.db.flush()
         except IntegrityError as exc:
-            # Unica IntegrityError esperada aca: violacion del UNIQUE
-            # (user, professor, course, semester). Otras CHECK constraints
-            # estan cubiertas por Pydantic upstream.
             await self.db.rollback()
             raise EvaluationDuplicateError() from exc
 
@@ -102,21 +130,26 @@ class EvaluationService:
             self.db.add(comment)
             await self.db.flush()
 
-        await self._recompute_professor_score(payload.professor_id)
-        await self.db.commit()
+        for h in hashtags:
+            self.db.add(EvaluationHashtag(evaluation_id=evaluation.id, hashtag_id=h.id))
+        if hashtags:
+            await self.db.flush()
 
+        await self.db.commit()
         await self.db.refresh(evaluation)
         if comment is not None:
             await self.db.refresh(comment)
         await self.db.refresh(professor)
 
-        # 4) Post-commit hooks (errores no rompen la respuesta).
-        await self._post_commit_hooks(payload.professor_id)
+        # 7) Post-commit: hooks idempotentes (errores no rompen la respuesta).
+        await self._enqueue_score_recalc(str(payload.professor_id))
+        await self._post_commit_hooks(str(payload.professor_id))
 
         return EvaluationCreateResult(
             evaluation=evaluation,
             comment=comment,
             professor=professor,
+            hashtags=[h.label for h in hashtags],
         )
 
     # -----------------------------------------------------------------------
@@ -127,7 +160,7 @@ class EvaluationService:
         self,
         user: User,
         professor_id: str | None = None,
-        course_id: str | None = None,
+        course_id: int | None = None,
         semester: str | None = None,
     ) -> list[Evaluation]:
         stmt = select(Evaluation).where(Evaluation.user_id == user.id)
@@ -145,8 +178,12 @@ class EvaluationService:
     # Helpers privados
     # -----------------------------------------------------------------------
 
-    def _validate_comment(self, comment_text: str | None) -> str | None:
-        """Devuelve el texto stripped si es valido, None si no hay comentario."""
+    async def _validate_comment(self, comment_text: str | None) -> str | None:
+        """Devuelve el texto stripped si es valido, None si no hay comentario.
+
+        Reemplaza el viejo profanity.check (archivo de texto) por
+        moderation.banned_terms_filter (BD), con threshold 'medium'.
+        """
         if comment_text is None:
             return None
         stripped = comment_text.strip()
@@ -154,57 +191,53 @@ class EvaluationService:
             raise CommentTooShortError(
                 f"El comentario debe tener al menos {settings.COMMENT_MIN_LENGTH} caracteres."
             )
-        # profanity.check raisea OffensiveContentError si matchea
-        profanity_check(stripped)
+        banned = await banned_terms_filter(self.db, stripped, severity_threshold="medium")
+        if banned:
+            raise OffensiveContentError(
+                f"El comentario contiene un termino prohibido: '{banned}'."
+            )
         return stripped
 
-    async def _get_active_professor(self, professor_id: str) -> Professor:
+    async def _get_validated_professor(self, professor_id: str) -> Professor:
+        """Obtiene el profesor validando existencia, estado activo y validation_status."""
         professor = await self.db.get(Professor, professor_id)
         if professor is None or not professor.is_active:
             raise ProfessorNotFoundError()
+        if professor.validation_status != "validated":
+            raise ProfessorNotValidatedError()
         return professor
 
-    async def _get_active_course(self, course_id: str) -> Course:
+    async def _get_active_course(self, course_id: int) -> Course:
         course = await self.db.get(Course, course_id)
         if course is None or not course.is_active:
             raise CourseNotFoundError()
         return course
 
-    async def _recompute_professor_score(self, professor_id: str) -> None:
-        """Recalcula `global_score` + `total_evaluations` desde scratch.
+    async def _assert_course_taught_by_professor(
+        self, *, professor_id, course_id: int
+    ) -> None:
+        stmt = select(ProfessorCourse).where(
+            ProfessorCourse.professor_id == professor_id,
+            ProfessorCourse.course_id == course_id,
+        )
+        row = (await self.db.execute(stmt)).first()
+        if row is None:
+            raise CourseNotTaughtByProfessorError()
 
-        Solo 4 metricas entran al score (clarity, easiness, helpfulness,
-        punctuality). `course_difficulty` se ignora a nivel agregado — se
-        captura por evaluacion como metadato del curso, no del profe.
+    async def _enqueue_score_recalc(self, professor_id: str) -> None:
+        """Encola la recalculacion del score del profesor via Celery.
+
+        Si Redis no esta disponible o el broker falla, solo se loggea un warning
+        — la evaluacion ya fue commiteada y no se rompe la respuesta.
         """
-        stmt = select(
-            func.avg(Evaluation.clarity),
-            func.avg(Evaluation.easiness),
-            func.avg(Evaluation.helpfulness),
-            func.avg(Evaluation.punctuality),
-            func.count(Evaluation.id),
-        ).where(Evaluation.professor_id == professor_id)
-        avg_c, avg_e, avg_h, avg_p, count = (await self.db.execute(stmt)).one()
-
-        if not count:
-            await self.db.execute(
-                update(Professor)
-                .where(Professor.id == professor_id)
-                .values(global_score=None, total_evaluations=0)
+        try:
+            from app.tasks.score_recalculation_tasks import recalculate_professor_score
+            recalculate_professor_score.delay(professor_id)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "score_recalc_enqueue_failed | professor_id=%s | error=%s",
+                professor_id, exc,
             )
-            return
-
-        score = compute_global_score(
-            float(avg_c),
-            float(avg_e),
-            float(avg_h),
-            float(avg_p),
-        )
-        await self.db.execute(
-            update(Professor)
-            .where(Professor.id == professor_id)
-            .values(global_score=score, total_evaluations=int(count))
-        )
 
     async def _post_commit_hooks(self, professor_id: str) -> None:
         """Llama a cache.invalidate_professor + SummaryTrigger.maybe_dispatch.
