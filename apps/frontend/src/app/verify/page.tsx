@@ -70,7 +70,7 @@ export default function VerifyPage() {
                     {/* Botones de Acción de Figma */}
                     <div className="w-full flex flex-col sm:flex-row gap-4">
                         <button
-                            onClick={() => router.push('/profesores')}
+                            onClick={() => router.push('/teachers')}
                             className="flex-1 py-4 bg-[#ff8a00] hover:bg-[#ea580c] text-white font-bold rounded-2xl shadow-md transition-all active:scale-[0.98] text-sm"
                         >
                             Continuar al Buscador
@@ -146,7 +146,7 @@ export default function VerifyPage() {
                     </button>
 
                     <button
-                        onClick={() => router.push('/profesores')}
+                        onClick={() => router.push('/teachers')}
                         className="text-sm font-bold text-[#94a3b8] hover:text-[#0f172a] transition-colors"
                     >
                         Omitir paso por ahora

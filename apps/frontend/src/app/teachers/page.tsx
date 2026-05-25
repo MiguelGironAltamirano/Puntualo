@@ -3,10 +3,10 @@
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from "@/components/layout/Navbar";
-import SidebarFiltros from "./SidebarFiltros";
-import CatalogoProfesores from "./CatalogoProfesores";
+import FilterSidebar from "@/components/teachers/FilterSidebar";
+import TeacherCatalog from "@/components/teachers/TeacherCatalog";
 
-function BuscadorContenido() {
+function SearchContent() {
     const searchParams = useSearchParams();
     const initialQuery = searchParams.get('query') ?? '';
     const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -23,20 +23,20 @@ function BuscadorContenido() {
             {/* Layout principal del Buscador */}
             <div className="flex-1 flex w-full overflow-hidden">
                 {/* Barra Lateral Izquierda de Filtros Quirúrgicos */}
-                <SidebarFiltros />
+                <FilterSidebar />
 
                 {/* Catálogo Central con las tarjetas de los docentes */}
-                <CatalogoProfesores />
+                <TeacherCatalog />
             </div>
         </div>
     );
 }
 
-export default function ProfesoresPage() {
+export default function TeachersPage() {
     return (
         // Usamos Suspense porque useSearchParams lo requiere en el nuevo router de Next.js
         <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center font-bold text-slate-400">Cargando Buscador Inteligente...</div>}>
-            <BuscadorContenido />
+            <SearchContent />
         </Suspense>
     );
 }

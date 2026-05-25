@@ -26,7 +26,7 @@ export default function Home() {
     }
     if (searchQuery.trim() !== '') {
       // Redirige al buscador pasando el parámetro en la URL
-      router.push(`/profesores?query=${encodeURIComponent(searchQuery)}`);
+      router.push(`/teachers?query=${encodeURIComponent(searchQuery)}`);
     }
   };
 
@@ -84,7 +84,7 @@ export default function Home() {
                 type="button"
                 onClick={() => {
                   if (canAccessBuscador()) {
-                    router.push(`/profesores?query=${encodeURIComponent(tag)}`);
+                    router.push(`/teachers?query=${encodeURIComponent(tag)}`);
                   }
                 }}
                 className="px-4 py-1.5 bg-[#f8fafc] border border-gray-200 rounded-full text-xs font-bold text-[#64748b] shadow-sm hover:border-gray-300 cursor-pointer transition-colors"
@@ -160,7 +160,7 @@ export default function Home() {
               type="button"
               onClick={() => {
                 if (canAccessBuscador()) {
-                  router.push('/profesores');
+                  router.push('/teachers');
                 }
               }}
               className="px-6 py-2.5 rounded-full border-2 border-[#bae6fd] text-[#0284c7] font-bold hover:bg-[#f0f9ff] transition-colors whitespace-nowrap text-sm text-center"

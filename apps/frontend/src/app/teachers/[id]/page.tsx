@@ -3,52 +3,12 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from "@/components/layout/Navbar";
-import { ListaComentarios } from "./ListaComentarios";
+import { CommentList } from "@/components/teachers/CommentList";
+import { EvaluarModal } from "@/components/teachers/EvaluarModal";
 import { ArrowLeft, Bookmark, ClipboardList, GraduationCap, MessageSquare, X } from "lucide-react";
+import { TeacherData } from "@/components/teachers/types";
 
-type ProfesorReaction = {
-    icon: string;
-    count: number;
-};
-
-type ProfesorComment = {
-    id: number;
-    course: string;
-    semester: string;
-    mode: string;
-    score: string;
-    verified: boolean;
-    text: string;
-    tags: string[];
-    likes: number;
-    dislikes: number;
-    reactions: ProfesorReaction[];
-};
-
-type ProfesorMetrics = {
-    claridad: number;
-    facilidad: number;
-    ayuda: number;
-    total: number;
-};
-
-type ProfesorData = {
-    name: string;
-    rating: string;
-    faculty: string;
-    department: string;
-    avatar: string;
-    aiSummary: string;
-    education: string;
-    university: string;
-    research: string[];
-    experience: string;
-    metrics: ProfesorMetrics;
-    style: string[];
-    comments: ProfesorComment[];
-};
-
-const PROFESORES_DATA: Record<string, ProfesorData> = {
+const TEACHERS_DATA: Record<string, TeacherData> = {
     "1": {
         name: 'Dra. Elena Navarro',
         rating: '4.8 / 5.0',
@@ -124,23 +84,14 @@ const PROFESORES_DATA: Record<string, ProfesorData> = {
     }
 };
 
-export default function PerfilProfesorPage() {
+export default function TeacherProfilePage() {
     const params = useParams();
     const router = useRouter();
     const id = params?.id as string;
-    const profesor = PROFESORES_DATA[id] || PROFESORES_DATA["1"];
+    const teacher = TEACHERS_DATA[id] || TEACHERS_DATA["1"];
 
     // Estados para controlar el Modal de Formulario
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [ratingInput, setRatingInput] = useState(5);
-    const [claridadInput, setClaridadInput] = useState(50);
-    const [dificultadInput, setDificultadInput] = useState(50);
-    const [comentario, setComentario] = useState('');
-    const [tagsForm, setTagsForm] = useState<string[]>([]);
-
-    const toggleTagForm = (tag: string) => {
-        setTagsForm(tagsForm.includes(tag) ? tagsForm.filter(t => t !== tag) : [...tagsForm, tag]);
-    };
 
     return (
         <div className="min-h-screen bg-white flex flex-col font-sans text-left selection:bg-sky-100 selection:text-sky-900 relative">
@@ -150,7 +101,7 @@ export default function PerfilProfesorPage() {
 
                 {/* BOTÓN VOLVER */}
                 <button
-                    onClick={() => router.push('/profesores')}
+                    onClick={() => router.push('/teachers')}
                     className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-slate-800 transition-colors mb-2 focus:outline-none cursor-pointer"
                 >
                     <ArrowLeft className="w-4 h-4" /> Volver a Resultados
@@ -160,17 +111,17 @@ export default function PerfilProfesorPage() {
                 <div className="bg-white border border-slate-100 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
                         <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
-                            <img src={profesor.avatar} alt={profesor.name} className="w-full h-full object-cover object-top" />
+                            <img src={teacher.avatar} alt={teacher.name} className="w-full h-full object-cover object-top" />
                         </div>
                         <div className="space-y-1">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-center sm:justify-start">
-                                <h1 className="text-xl font-black text-slate-900 tracking-tight">{profesor.name}</h1>
+                                <h1 className="text-xl font-black text-slate-900 tracking-tight">{teacher.name}</h1>
                                 <span className="bg-[#ff8a00] text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-sm">
-                                    {profesor.rating}
+                                    {teacher.rating}
                                 </span>
                             </div>
                             <p className="text-xs font-semibold text-slate-500 flex flex-wrap items-center justify-center sm:justify-start gap-1">
-                                <ClipboardList className="w-3.5 h-3.5 text-slate-400" /> {profesor.faculty} • {profesor.department}
+                                <ClipboardList className="w-3.5 h-3.5 text-slate-400" /> {teacher.faculty} • {teacher.department}
                             </p>
                         </div>
                     </div>
@@ -197,7 +148,7 @@ export default function PerfilProfesorPage() {
                                 <h3 className="text-xs font-black text-sky-950 tracking-wider uppercase">Síntesis de IA</h3>
                                 <span className="bg-sky-500/10 text-sky-700 text-[8px] font-black px-1.5 py-0.5 rounded-md tracking-widest">Beta</span>
                             </div>
-                            <p className="text-xs text-slate-600 font-medium leading-relaxed">{profesor.aiSummary}</p>
+                            <p className="text-xs text-slate-600 font-medium leading-relaxed">{teacher.aiSummary}</p>
                         </div>
                     </div>
                 </div>
@@ -211,20 +162,20 @@ export default function PerfilProfesorPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-slate-600">
                         <div>
                             <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-wider">Educación</span>
-                            <p className="font-bold text-slate-800">{profesor.education}</p>
-                            <p className="text-[11px] text-slate-400">{profesor.university}</p>
+                            <p className="font-bold text-slate-800">{teacher.education}</p>
+                            <p className="text-[11px] text-slate-400">{teacher.university}</p>
                         </div>
                         <div>
                             <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-wider">Áreas de Investigación</span>
                             <div className="flex flex-wrap gap-1.5 mt-1">
-                                {profesor.research.map((item: string) => (
+                                {teacher.research.map((item: string) => (
                                     <span key={item} className="px-2 py-0.5 bg-slate-50 border border-slate-200 text-slate-500 font-bold text-[9px] rounded-md">{item}</span>
                                 ))}
                             </div>
                         </div>
                         <div>
                             <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-wider">Experiencia</span>
-                            <p className="font-bold text-slate-800">{profesor.experience}</p>
+                            <p className="font-bold text-slate-800">{teacher.experience}</p>
                         </div>
                     </div>
                 </div>
@@ -238,79 +189,43 @@ export default function PerfilProfesorPage() {
                             <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Métricas Promedio</h4>
                             <div className="space-y-3">
                                 <div>
-                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1"><span>Claridad</span> <span className="text-slate-700 font-black">{profesor.metrics.claridad}</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1"><span>Claridad</span> <span className="text-slate-700 font-black">{teacher.metrics.claridad}</span></div>
                                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                        <div className="bg-[#ff8a00] h-full" style={{ width: `${(profesor.metrics.claridad / 5) * 100}%` }}></div>
+                                        <div className="bg-[#ff8a00] h-full" style={{ width: `${(teacher.metrics.claridad / 5) * 100}%` }}></div>
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1"><span>Facilidad</span> <span className="text-slate-700 font-black">{profesor.metrics.facilidad}</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1"><span>Facilidad</span> <span className="text-slate-700 font-black">{teacher.metrics.facilidad}</span></div>
                                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                        <div className="bg-[#ff8a00] h-full" style={{ width: `${(profesor.metrics.facilidad / 5) * 100}%` }}></div>
+                                        <div className="bg-[#ff8a00] h-full" style={{ width: `${(teacher.metrics.facilidad / 5) * 100}%` }}></div>
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1"><span>Ayuda</span> <span className="text-slate-700 font-black">{profesor.metrics.ayuda}</span></div>
+                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1"><span>Ayuda</span> <span className="text-slate-700 font-black">{teacher.metrics.ayuda}</span></div>
                                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                        <div className="bg-[#ff8a00] h-full" style={{ width: `${(profesor.metrics.ayuda / 5) * 100}%` }}></div>
+                                        <div className="bg-[#ff8a00] h-full" style={{ width: `${(teacher.metrics.ayuda / 5) * 100}%` }}></div>
                                     </div>
                                 </div>
                             </div>
-                            <p className="text-[10px] font-medium text-slate-400 pt-1 text-center">ℹ Basado en {profesor.metrics.total} evaluaciones</p>
+                            <p className="text-[10px] font-medium text-slate-400 pt-1 text-center">ℹ Basado en {teacher.metrics.total} evaluaciones</p>
                         </div>
 
                         <div className="bg-sky-50/40 border border-sky-100/60 rounded-2xl p-5">
                             <h4 className="text-[10px] font-black text-[#0284c7] uppercase tracking-wider mb-3">Estilo de Enseñanza</h4>
                             <ul className="space-y-1.5 text-xs font-semibold text-slate-600">
-                                {profesor.style.map((item: string) => <li key={item} className="flex items-center gap-2"><span className="text-sky-500">✓</span> {item}</li>)}
+                                {teacher.style.map((item: string) => <li key={item} className="flex items-center gap-2"><span className="text-sky-500">✓</span> {item}</li>)}
                             </ul>
                         </div>
                     </div>
 
                     {/* Bloque Derecho Inyectado de forma limpia usando tu nuevo componente */}
-                    <ListaComentarios comments={profesor.comments} />
+                    <CommentList comments={teacher.comments} />
 
                 </div>
             </main>
 
-            {/* POP-UP MODAL */}
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-                    <div className="bg-white rounded-2xl border border-slate-100 w-full max-w-md p-6 relative shadow-2xl my-auto text-left">
-                        <button onClick={() => setIsModalOpen(false)} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer focus:outline-none"><X className="w-4 h-4" /></button>
-                        <h2 className="text-base font-black text-slate-900 tracking-tight mb-1">Califica a este docente</h2>
-                        <p className="text-[11px] text-slate-400 font-medium mb-5">Tu evaluación es anónima y apoya a la comunidad de San Marcos.</p>
-                        <form onSubmit={(e) => { e.preventDefault(); setIsModalOpen(false); }} className="space-y-4">
-                            <div>
-                                <div className="flex justify-between items-center mb-1"><label className="text-[10px] font-black text-slate-700 uppercase">Puntaje General</label><span className="text-xs font-black text-[#ff8a00]">{ratingInput} / 10</span></div>
-                                <input type="range" min="1" max="10" step="0.5" value={ratingInput} onChange={(e) => setRatingInput(Number(e.target.value))} className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]" />
-                            </div>
-                            <div>
-                                <div className="flex justify-between items-center mb-1"><label className="text-[10px] font-black text-slate-700 uppercase">Claridad Explicativa</label><span className="text-xs font-bold text-slate-700">{claridadInput}%</span></div>
-                                <input type="range" min="0" max="100" value={claridadInput} onChange={(e) => setClaridadInput(Number(e.target.value))} className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]" />
-                            </div>
-                            <div>
-                                <div className="flex justify-between items-center mb-1"><label className="text-[10px] font-black text-slate-700 uppercase">Nivel de Exigencia</label><span className="text-xs font-bold text-slate-700">{dificultadInput}%</span></div>
-                                <input type="range" min="0" max="100" value={dificultadInput} onChange={(e) => setDificultadInput(Number(e.target.value))} className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-slate-500" />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-black text-slate-700 uppercase block mb-1.5">Etiquetas</label>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {['Barco', 'Exigente', 'Justo', 'Proyectos', 'Teórico'].map((tag) => {
-                                        const active = tagsForm.includes(tag);
-                                        return <button key={tag} type="button" onClick={() => toggleTagForm(tag)} className={`px-2.5 py-1 rounded-md text-[9px] font-bold border cursor-pointer ${active ? 'bg-sky-50 text-sky-700 border-sky-300' : 'bg-white text-slate-400 border-slate-200'}`}>{tag}</button>
-                                    })}
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-black text-slate-700 uppercase block mb-1">Reseña Detallada</label>
-                                <textarea rows={3} value={comentario} onChange={(e) => setComentario(e.target.value)} required placeholder="Metodología de enseñanza, parciales, etc..." className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-400 shadow-sm resize-none" />
-                            </div>
-                            <button type="submit" className="w-full py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer mt-2">Enviar Calificación</button>
-                        </form>
-                    </div>
-                </div>
-            )}
+            {/* POP-UP MODAL EXTRACTED */}
+            <EvaluarModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} teacher={teacher} />
 
         </div>
     );

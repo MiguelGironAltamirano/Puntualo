@@ -40,7 +40,7 @@ export default function AuthPage() {
                 localStorage.setItem('refresh_token', data.refresh_token);
             }
 
-            window.location.href = '/profesores';
+            window.location.href = '/teachers';
         } catch {
             setError('Error de conexión con el servidor');
             setLoading(false);
