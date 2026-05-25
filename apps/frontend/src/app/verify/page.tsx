@@ -4,9 +4,9 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function VerifyPage() {
-    const [step, setStep] = useState(1); // 1: Frontal, 2: Trasera
+    const [step, setStep] = useState(1); // 1: Frontal, 2: Trasera, 3: Éxito (Documentos Recibidos)
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null); // LA REFERENCIA
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
 
     // FUNCIÓN PARA ABRIR EL EXPLORADOR DE ARCHIVOS
@@ -26,15 +26,74 @@ export default function VerifyPage() {
         if (step === 1) {
             setStep(2);
             setSelectedFile(null); // Limpiamos para la cara trasera
-        } else {
-            router.push('/profesores');
+        } else if (step === 2) {
+            setStep(3); // Pasamos a la pantalla de éxito que pide Figma
         }
     };
 
+    // --- PANTALLA DE ÉXITO: DOCUMENTOS RECIBIDOS (PASO 3) ---
+    if (step === 3) {
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-[#f0f9ff] p-4 font-sans">
+                <div className="w-full max-w-xl bg-white rounded-3xl shadow-xl p-10 border border-gray-100 text-center flex flex-col items-center">
+
+                    {/* Logotipo o Nombre del Sistema */}
+                    <span className="text-sm font-semibold text-[#0ea5e9] tracking-wide mb-4">Puntúalo</span>
+
+                    {/* Icono de Check con Sombra Difuminada */}
+                    <div className="w-20 h-20 bg-white border border-gray-50 rounded-full shadow-lg flex items-center justify-center mb-8 relative">
+                        <div className="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full flex items-center justify-center text-white text-2xl shadow-md">
+                            ✓
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-orange-400 border-2 border-white rounded-full"></div>
+                    </div>
+
+                    {/* Título y Mensaje de Figma */}
+                    <h2 className="text-3xl font-extrabold text-[#0f172a] mb-4">¡Documentos recibidos!</h2>
+                    <p className="text-sm text-[#64748b] leading-relaxed mb-8 max-w-sm">
+                        Hemos recibido las fotos de tu carnet universitario correctamente. Nuestro equipo de verificación revisará la información y el proceso tardará aproximadamente <span className="font-bold text-[#0f172a]">1 día hábil</span>.
+                    </p>
+
+                    {/* Caja Informativa de Próximos Pasos */}
+                    <div className="w-full bg-[#f8fafc] rounded-2xl p-5 border border-gray-100 flex gap-4 text-left mb-10">
+                        <div className="w-10 h-10 bg-[#e0f2fe] rounded-xl flex items-center justify-center text-xl shrink-0">
+                            ✉️
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-[#0f172a] mb-1">Próximos pasos</h4>
+                            <p className="text-xs text-[#64748b] leading-relaxed">
+                                Recibirás la confirmación de tu estado de verificación directamente en tu correo electrónico de Gmail registrado. Mantente atento a tu bandeja de entrada.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Botones de Acción de Figma */}
+                    <div className="w-full flex flex-col sm:flex-row gap-4">
+                        <button
+                            onClick={() => router.push('/profesores')}
+                            className="flex-1 py-4 bg-[#ff8a00] hover:bg-[#ea580c] text-white font-bold rounded-2xl shadow-md transition-all active:scale-[0.98] text-sm"
+                        >
+                            Continuar al Buscador
+                        </button>
+                        <button
+                            onClick={() => router.push('/')}
+                            className="flex-1 py-4 bg-white border-2 border-[#bae6fd] hover:border-[#0284c7] text-[#0284c7] font-bold rounded-2xl transition-all text-sm"
+                        >
+                            Volver al Inicio
+                        </button>
+                    </div>
+
+                </div>
+            </main>
+        );
+    }
+
+    // --- FLUJO TRADICIONAL (PASO 1 Y 2) ---
     return (
         <main className="flex min-h-screen items-center justify-center bg-[#f0f9ff] p-4 font-sans">
             <div className="w-full max-w-xl bg-white rounded-3xl shadow-xl p-10 border border-gray-100 text-center relative">
 
+                {/* Indicador de barra de progreso */}
                 <div className="flex justify-center items-center gap-3 mb-10">
                     <div className={`h-2 w-12 rounded-full ${step >= 1 ? 'bg-[#ff8a00]' : 'bg-gray-200'}`}></div>
                     <div className={`h-2 w-12 rounded-full ${step === 2 ? 'bg-[#ff8a00]' : 'bg-gray-200'}`}></div>
@@ -48,7 +107,7 @@ export default function VerifyPage() {
                     </span> de tu carnet.
                 </p>
 
-                {/* --- AQUÍ ESTÁ EL BLOQUE QUE PREGUNTABAS --- */}
+                {/* Zona de arrastre / Dropzone */}
                 <div
                     onClick={handleBoxClick}
                     className="group border-2 border-dashed border-[#bae6fd] bg-[#f8fafc] rounded-2xl p-16 mb-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#0284c7] hover:bg-white transition-all"
@@ -67,7 +126,6 @@ export default function VerifyPage() {
                         </button>
                     )}
 
-                    {/* ESTE INPUT ES INVISIBLE PERO HACE EL TRABAJO */}
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -77,10 +135,12 @@ export default function VerifyPage() {
                     />
                 </div>
 
+                {/* Acciones principales */}
                 <div className="flex flex-col gap-4">
                     <button
                         onClick={handleNext}
-                        className="w-full py-4 bg-[#ff8a00] hover:bg-[#ea580c] text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]"
+                        disabled={!selectedFile}
+                        className="w-full py-4 bg-[#ff8a00] hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]"
                     >
                         {step === 1 ? 'Siguiente paso →' : 'Finalizar Verificación'}
                     </button>
