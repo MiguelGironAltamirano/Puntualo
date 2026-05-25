@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel
 from pydantic import EmailStr
 from pydantic import field_validator
@@ -83,6 +85,11 @@ class UserResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def coerce_uuid_to_str(cls, v: object) -> str:
+        return str(v) if isinstance(v, uuid.UUID) else v
     
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
