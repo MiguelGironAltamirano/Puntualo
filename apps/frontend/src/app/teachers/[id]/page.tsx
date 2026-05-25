@@ -15,7 +15,10 @@ const TEACHERS_DATA: Record<string, TeacherData> = {
         faculty: 'Facultad de Ciencias Exactas y Naturales',
         department: 'Departamento de Matemáticas',
         avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-        aiSummary: 'Los estudiantes destacan a la Dra. Navarro por su excepcional claridad explicativa en temas complejos de cálculo. Aunque sus exámenes son considerados rigurosos, la mayoría coincide en que provee el material y la disposición necesaria para aprobar si se asiste regularmente. Se valora especialmente su accesibilidad durante las horas de consulta presenciales.',
+        aiSummary: {
+            pros: ['Excepcional claridad explicativa', 'Provee excelente material de estudio', 'Accesible en consulta'],
+            contras: ['Exámenes considerados rigurosos']
+        },
         education: 'Doctorado en Matemáticas',
         university: 'Universidad Nacional Autónoma',
         research: ['Cálculo Avanzado', 'Topología', 'Álgebra Computacional'],
@@ -32,15 +35,7 @@ const TEACHERS_DATA: Record<string, TeacherData> = {
                 verified: true,
                 text: 'Es de las mejores profesoras que he tenido en la facultad. Explica desde cero y tiene muchísima paciencia si vas a sus horas de consulta. Los exámenes son largos pero si haces las guías de ejercicios, no hay sorpresas. Totalmente recomendada si quieres aprender de verdad.',
                 tags: ['#ExplicaBien', '#DaRetroalimentación'],
-                likes: 24,
-                dislikes: 2,
-                reactions: [
-                    { icon: '❤️', count: 12 },
-                    { icon: '🔥', count: 8 },
-                    { icon: '💡', count: 3 },
-                    { icon: '💧', count: 15 },
-                    { icon: '📈', count: 5 }
-                ]
+                reactions: { heart: 12, fire: 8, lightbulb: 3, droplet: 15, chart: 5, likes: 24, dislikes: 2 }
             },
             {
                 id: 2,
@@ -51,15 +46,7 @@ const TEACHERS_DATA: Record<string, TeacherData> = {
                 verified: true,
                 text: 'En modalidad virtual se adaptó bastante bien, usaba una tableta gráfica que hacía las clases muy fluidas. La carga de trabajo es pesada y a veces califica duro, pero siempre es justa. No es una materia de "relleno" con ella.',
                 tags: ['#MuchaTarea', '#Justa'],
-                likes: 18,
-                dislikes: 4,
-                reactions: [
-                    { icon: '❤️', count: 6 },
-                    { icon: '🔥', count: 4 },
-                    { icon: '💡', count: 10 },
-                    { icon: '💧', count: 2 },
-                    { icon: '📈', count: 1 }
-                ]
+                reactions: { heart: 6, fire: 4, lightbulb: 10, droplet: 2, chart: 1, likes: 18, dislikes: 4 }
             },
             {
                 id: 3,
@@ -70,15 +57,7 @@ const TEACHERS_DATA: Record<string, TeacherData> = {
                 verified: false,
                 text: 'Excelente dominio del tema. Me ayudó mucho que subiera apuntes adicionales al campus virtual. El único detalle es que a veces va un poco rápido si nadie hace preguntas, así que no duden en detenerla si no entienden algo.',
                 tags: ['#MaterialDeApoyo'],
-                likes: 32,
-                dislikes: 1,
-                reactions: [
-                    { icon: '❤️', count: 20 },
-                    { icon: '🔥', count: 14 },
-                    { icon: '💡', count: 0 },
-                    { icon: '💧', count: 25 },
-                    { icon: '📈', count: 12 }
-                ]
+                reactions: { heart: 20, fire: 14, lightbulb: 0, droplet: 25, chart: 12, likes: 32, dislikes: 1 }
             }
         ]
     }
@@ -148,7 +127,10 @@ export default function TeacherProfilePage() {
                                 <h3 className="text-xs font-black text-sky-950 tracking-wider uppercase">Síntesis de IA</h3>
                                 <span className="bg-sky-500/10 text-sky-700 text-[8px] font-black px-1.5 py-0.5 rounded-md tracking-widest">Beta</span>
                             </div>
-                            <p className="text-xs text-slate-600 font-medium leading-relaxed">{teacher.aiSummary}</p>
+                            <div className="text-xs text-slate-600 font-medium leading-relaxed space-y-2">
+                                <p><span className="font-bold text-sky-800">Pros:</span> {teacher.aiSummary.pros.join(', ')}</p>
+                                <p><span className="font-bold text-sky-800">Contras:</span> {teacher.aiSummary.contras.join(', ')}</p>
+                            </div>
                         </div>
                     </div>
                 </div>

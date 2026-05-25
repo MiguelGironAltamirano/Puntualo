@@ -3,15 +3,16 @@
 import Link from "next/link"; // <-- 1. Importamos el Link de Next.js
 import { Plus } from "lucide-react";
 import { TeacherSummary } from "./types";
+import { SearchAIAnalysis } from "./SearchAIAnalysis";
 
 const TEACHERS_MOCK: TeacherSummary[] = [
     {
         id: 1,
         name: 'Dr. Roberto Sánchez',
         course: 'Ingeniería de Software',
-        rating: 9.8,
-        claridad: 85,
-        dificultad: 35,
+        rating: 4.9,
+        claridad: 4.2,
+        dificultad: 1.7,
         avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
         tags: ['BARCO', 'PROYECTOS']
     },
@@ -19,9 +20,9 @@ const TEACHERS_MOCK: TeacherSummary[] = [
         id: 2,
         name: 'Dra. Elena Medina',
         course: 'Bases de Datos',
-        rating: 8.5,
-        claridad: 68,
-        dificultad: 45,
+        rating: 4.2,
+        claridad: 3.4,
+        dificultad: 2.2,
         avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
         tags: ['INSPIRADORA']
     },
@@ -29,26 +30,26 @@ const TEACHERS_MOCK: TeacherSummary[] = [
         id: 3,
         name: 'Mtro. Carlos Vega',
         course: 'Estructuras de Datos',
-        rating: 9.1,
-        claridad: 78,
-        dificultad: 55,
+        rating: 4.5,
+        claridad: 3.9,
+        dificultad: 2.7,
         avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
         tags: ['EXIGENTE', 'JUSTO']
     }
 ];
 
-export default function TeacherCatalog() {
+export default function TeacherCatalog({ initialQuery }: { initialQuery?: string }) {
     return (
         <div className="flex-1 p-8 bg-[#f8fafc]/40 text-left overflow-y-auto h-[calc(100vh-69px)]">
             <div className="max-w-[1300px] mx-auto">
 
                 {/* Banner de Análisis de Resultados IA */}
-                <div className="bg-[#e0f2fe]/70 border border-sky-100 rounded-2xl p-4 flex items-center gap-4 mb-8 shadow-none">
-                    <div className="w-9 h-9 bg-[#0284c7]/10 rounded-xl flex items-center justify-center text-sky-600 text-lg shrink-0">🧠</div>
-                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                        <span className="font-bold text-sky-950">Análisis de resultados:</span> Hemos encontrado <span className="font-bold">12 docentes</span> que coinciden con tu perfil de &quot;Proyectos Prácticos&quot; y personalidad &quot;Barco&quot;. La mayoría pertenece al departamento de Ingeniería.
-                    </p>
-                </div>
+                {TEACHERS_MOCK.length > 0 && (
+                    <SearchAIAnalysis analysis={{ matchesText: initialQuery 
+                        ? `Hemos encontrado varios docentes relacionados con "${initialQuery}". La mayoría pertenece al departamento de Ingeniería y destacan por perfiles metodológicos afines a tu búsqueda.` 
+                        : `Hemos encontrado ${TEACHERS_MOCK.length} docentes que coinciden con tu perfil de "Proyectos Prácticos" y personalidad "Barco". La mayoría pertenece al departamento de Ingeniería.` 
+                    }} />
+                )}
 
                 {/* Cabecera del Catálogo */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -103,7 +104,7 @@ export default function TeacherCatalog() {
                                         <span>Claridad</span>
                                     </div>
                                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                        <div className="bg-[#ff8a00] h-full rounded-full transition-all duration-500" style={{ width: `${prof.claridad}%` }}></div>
+                                        <div className="bg-[#ff8a00] h-full rounded-full transition-all duration-500" style={{ width: `${(prof.claridad / 5) * 100}%` }}></div>
                                     </div>
                                 </div>
                                 <div>
@@ -111,7 +112,7 @@ export default function TeacherCatalog() {
                                         <span>Dificultad</span>
                                     </div>
                                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                        <div className="bg-slate-200 h-full rounded-full transition-all duration-500" style={{ width: `${prof.dificultad}%` }}></div>
+                                        <div className="bg-slate-300 h-full rounded-full transition-all duration-500" style={{ width: `${(prof.dificultad / 5) * 100}%` }}></div>
                                     </div>
                                 </div>
                             </div>

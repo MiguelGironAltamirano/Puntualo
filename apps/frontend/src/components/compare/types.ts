@@ -1,3 +1,5 @@
+import { AISummaryData } from "@/components/globalTypes";
+
 export interface Review {
     text: string;
     course: string;
@@ -16,4 +18,5 @@ export interface Teacher {
     avatar?: string;
     tags: string[];
     reviews?: Review[];
+    aiSummary?: AISummaryData;
 }

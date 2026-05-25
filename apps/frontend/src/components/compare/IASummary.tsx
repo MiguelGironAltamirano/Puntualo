@@ -39,10 +39,12 @@ export function IASummary({ slotA, slotB }: IASummaryProps) {
                                         Pros
                                     </h4>
                                     <ul className="space-y-2.5">
-                                        <li className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
-                                            <CheckCircle2 className="w-4 h-4 text-[#0284c7] shrink-0 mt-0.5" />
-                                            <span>Metodología clara y estructurada.</span>
-                                        </li>
+                                        {slotA.aiSummary?.pros.map((pro, idx) => (
+                                            <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
+                                                <CheckCircle2 className="w-4 h-4 text-[#0284c7] shrink-0 mt-0.5" />
+                                                <span>{pro}</span>
+                                            </li>
+                                        )) || <li className="text-xs text-slate-400">Sin datos</li>}
                                     </ul>
                                 </div>
                                 <div>
@@ -50,10 +52,12 @@ export function IASummary({ slotA, slotB }: IASummaryProps) {
                                         Contras
                                     </h4>
                                     <ul className="space-y-2.5">
-                                        <li className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
-                                            <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                                            <span>Exigencia alta en evaluaciones.</span>
-                                        </li>
+                                        {slotA.aiSummary?.contras.map((contra, idx) => (
+                                            <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
+                                                <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                                                <span>{contra}</span>
+                                            </li>
+                                        )) || <li className="text-xs text-slate-400">Sin datos</li>}
                                     </ul>
                                 </div>
                             </div>
@@ -76,10 +80,12 @@ export function IASummary({ slotA, slotB }: IASummaryProps) {
                                         Pros
                                     </h4>
                                     <ul className="space-y-2.5">
-                                        <li className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
-                                            <CheckCircle2 className="w-4 h-4 text-[#0284c7] shrink-0 mt-0.5" />
-                                            <span>Excelente dominio de los temas.</span>
-                                        </li>
+                                        {slotB.aiSummary?.pros.map((pro, idx) => (
+                                            <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
+                                                <CheckCircle2 className="w-4 h-4 text-[#0284c7] shrink-0 mt-0.5" />
+                                                <span>{pro}</span>
+                                            </li>
+                                        )) || <li className="text-xs text-slate-400">Sin datos</li>}
                                     </ul>
                                 </div>
                                 <div>
@@ -87,10 +93,12 @@ export function IASummary({ slotA, slotB }: IASummaryProps) {
                                         Contras
                                     </h4>
                                     <ul className="space-y-2.5">
-                                        <li className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
-                                            <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                                            <span>Mucha carga de trabajo adicional.</span>
-                                        </li>
+                                        {slotB.aiSummary?.contras.map((contra, idx) => (
+                                            <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
+                                                <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                                                <span>{contra}</span>
+                                            </li>
+                                        )) || <li className="text-xs text-slate-400">Sin datos</li>}
                                     </ul>
                                 </div>
                             </div>

@@ -1,7 +1,4 @@
-export interface TeacherReaction {
-    icon: string;
-    count: number;
-}
+import { CommentReactions, AISummaryData } from "@/components/globalTypes";
 
 export interface TeacherComment {
     id: number;
@@ -12,9 +9,7 @@ export interface TeacherComment {
     verified: boolean;
     text: string;
     tags: string[];
-    likes: number;
-    dislikes: number;
-    reactions: TeacherReaction[];
+    reactions: CommentReactions;
 }
 
 export interface TeacherMetrics {
@@ -30,7 +25,7 @@ export interface TeacherData {
     faculty: string;
     department: string;
     avatar: string;
-    aiSummary: string;
+    aiSummary: AISummaryData;
     education: string;
     university: string;
     research: string[];

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Navbar } from "@/components/layout/Navbar";
 import FilterSidebar from "@/components/teachers/FilterSidebar";
 import TeacherCatalog from "@/components/teachers/TeacherCatalog";
+import { SearchAIAnalysis } from "@/components/teachers/SearchAIAnalysis";
 
 function SearchContent() {
     const searchParams = useSearchParams();
@@ -26,7 +27,7 @@ function SearchContent() {
                 <FilterSidebar />
 
                 {/* Catálogo Central con las tarjetas de los docentes */}
-                <TeacherCatalog />
+                <TeacherCatalog initialQuery={initialQuery} />
             </div>
         </div>
     );

@@ -26,7 +26,11 @@ const MOCK_TEACHERS: Teacher[] = [
         reviews: [
             { text: "Su metodología es muy práctica, pero espera que leas antes de clase. Las diapositivas ayudan bastante.", course: "Interacción Hombre-Computadora", date: "Hace 1 mes" },
             { text: "Los exámenes son un poco largos, pero califica justo y el proyecto final aporta mucho al portafolio.", course: "Interacción Hombre-Computadora", date: "Hace 3 meses" }
-        ]
+        ],
+        aiSummary: {
+            pros: ['Metodología práctica', 'Material de apoyo útil', 'Calificación justa'],
+            contras: ['Exámenes largos', 'Requiere lectura previa']
+        }
     },
     {
         id: '2',
@@ -42,7 +46,11 @@ const MOCK_TEACHERS: Teacher[] = [
         reviews: [
             { text: "Explica a detalle cada tema, pero deja bastantes tareas por semana. Hay que ser organizado.", course: "Interacción Hombre-Computadora", date: "Hace 2 meses" },
             { text: "La teoría es densa y muy técnica. Hay que tomar apuntes rápido si quieres aprobar los parciales.", course: "Interacción Hombre-Computadora", date: "Hace 5 meses" }
-        ]
+        ],
+        aiSummary: {
+            pros: ['Explicaciones detalladas', 'Buen dominio del tema'],
+            contras: ['Mucha carga de tareas', 'Teoría densa', 'Requiere organización']
+        }
     },
 ];
 
