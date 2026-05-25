@@ -14,6 +14,11 @@ export default function RegisterPage() {
     const [career, setCareer] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showCodeModal, setShowCodeModal] = useState(false);
+    const [code, setCode] = useState('');
+    const [codeError, setCodeError] = useState('');
+    const [verifyLoading, setVerifyLoading] = useState(false);
+    const [pendingEmail, setPendingEmail] = useState('');
 
     // --- MANEJO DE ENVÍO (Submit) ---
     const handleSubmit = async (e: React.FormEvent) => {
@@ -48,16 +53,93 @@ export default function RegisterPage() {
                 return;
             }
 
-            alert('Registro exitoso. Ahora, por favor verifica tu identidad como alumno de la UNMSM.');
-            window.location.href = '/verify';
+            setLoading(false);
+            setPendingEmail(email);
+            setCode('');
+            setCodeError('');
+            setShowCodeModal(true);
         } catch {
             setError('Error de conexión con el servidor');
             setLoading(false);
         }
     };
 
+    const handleVerify = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setCodeError('');
+        setVerifyLoading(true);
+
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const res = await fetch(`${apiUrl}/auth/register/verify`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: pendingEmail, code })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                setCodeError(data.detail || 'Codigo invalido');
+                setVerifyLoading(false);
+                return;
+            }
+
+            setVerifyLoading(false);
+            window.location.href = '/verify';
+        } catch {
+            setCodeError('Error de conexión con el servidor');
+            setVerifyLoading(false);
+        }
+    };
+
     return (
         <main className="flex min-h-screen items-center justify-center bg-[#f0f9ff] p-4">
+            {showCodeModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-6 border border-gray-100">
+                        <h2 className="text-xl font-extrabold text-[#004a7c]">Verifica tu correo</h2>
+                        <p className="text-sm text-gray-500 mt-2">
+                            Enviamos un codigo de 6 digitos a <span className="font-semibold text-gray-700">{pendingEmail}</span>.
+                        </p>
+
+                        {codeError && (
+                            <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                                {codeError}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleVerify} className="mt-6 space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Codigo de verificacion</label>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="\d{6}"
+                                    maxLength={6}
+                                    required
+                                    placeholder="123456"
+                                    className="w-full mt-1 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                    value={code}
+                                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={verifyLoading || code.length !== 6}
+                                className={`w-full py-3 text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
+                                    verifyLoading || code.length !== 6 ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#ff8a00] hover:bg-[#e67e00]'
+                                }`}
+                            >
+                                {verifyLoading ? 'Verificando...' : 'Validar codigo'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 border border-gray-100">
                 {/* CABECERA: Branding de Puntualo */}
                 <div className="text-center mb-8">

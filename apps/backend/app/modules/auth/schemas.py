@@ -1,4 +1,5 @@
 import uuid
+from uuid import UUID
 
 from pydantic import BaseModel
 from pydantic import EmailStr
@@ -60,9 +61,44 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class RegisterStartResponse(BaseModel):
+
+    detail: str
+
+    expires_in_seconds: int
+
+
+class RegisterVerifyRequest(BaseModel):
+
+    email: EmailStr
+
+    code: str
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(
+        cls,
+        value: str
+    ) -> str:
+
+        return value.lower()
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(
+        cls,
+        value: str
+    ) -> str:
+
+        if len(value) != 6 or not value.isdigit():
+            raise ValueError("Codigo invalido")
+
+        return value
+
+
 class UserResponse(BaseModel):
 
-    id: str
+    id: UUID
 
     email: EmailStr
 

@@ -29,6 +29,7 @@ from app.models import (  # noqa: F401
     ChatSession,
     Comment,
     Course,
+    EmailVerification,
     Evaluation,
     EvaluationHashtag,
     Faculty,

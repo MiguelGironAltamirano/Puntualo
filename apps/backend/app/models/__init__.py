@@ -7,6 +7,7 @@ from app.models.chat_message import ChatMessage
 from app.models.chat_session import ChatSession
 from app.models.comment import Comment, CommentStatus
 from app.models.course import Course
+from app.models.email_verification import EmailVerification
 from app.models.evaluation import Evaluation
 from app.models.evaluation_hashtag import EvaluationHashtag
 from app.models.faculty import Faculty
@@ -36,6 +37,7 @@ __all__ = [
     "Comment",
     "CommentStatus",
     "Course",
+    "EmailVerification",
     "Evaluation",
     "EvaluationHashtag",
     "Faculty",
