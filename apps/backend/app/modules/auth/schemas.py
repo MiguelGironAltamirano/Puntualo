@@ -96,6 +96,92 @@ class RegisterVerifyRequest(BaseModel):
         return value
 
 
+class PasswordResetStartRequest(BaseModel):
+
+    email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(
+        cls,
+        value: str
+    ) -> str:
+
+        return value.lower()
+
+
+class PasswordResetStartResponse(BaseModel):
+
+    detail: str
+
+    expires_in_seconds: int
+
+
+class PasswordResetVerifyRequest(BaseModel):
+
+    email: EmailStr
+
+    code: str
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(
+        cls,
+        value: str
+    ) -> str:
+
+        return value.lower()
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(
+        cls,
+        value: str
+    ) -> str:
+
+        if len(value) != 6 or not value.isdigit():
+            raise ValueError("Codigo invalido")
+
+        return value
+
+
+class PasswordResetConfirmRequest(BaseModel):
+
+    email: EmailStr
+
+    code: str
+
+    new_password: str
+
+    confirm_password: str
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(
+        cls,
+        value: str
+    ) -> str:
+
+        return value.lower()
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(
+        cls,
+        value: str
+    ) -> str:
+
+        if len(value) != 6 or not value.isdigit():
+            raise ValueError("Codigo invalido")
+
+        return value
+
+
+class PasswordResetConfirmResponse(BaseModel):
+
+    detail: str
+
+
 class UserResponse(BaseModel):
 
     id: UUID

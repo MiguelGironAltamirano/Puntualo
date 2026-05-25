@@ -103,7 +103,12 @@ export default function AuthPage() {
 
                     {/* ACCIONES DE FORMULARIO */}
                     <div className="text-right">
-                        <button type="button" className="text-[11px] text-[#004a7c] opacity-80 hover:opacity-100 font-semibold transition-opacity">Olvidé mi contraseña</button>
+                        <Link
+                            href="/reset-password"
+                            className="text-[11px] text-[#004a7c] opacity-80 hover:opacity-100 font-semibold transition-opacity"
+                        >
+                            Olvidé mi contraseña
+                        </Link>
                     </div>
 
                     <button

@@ -13,6 +13,7 @@ from app.models.evaluation_hashtag import EvaluationHashtag
 from app.models.faculty import Faculty
 from app.models.hashtag import Hashtag
 from app.models.moderation_action import ModerationAction
+from app.models.password_reset import PasswordReset
 from app.models.professor import Professor
 from app.models.professor_ai_summary import ProfessorAiSummary
 from app.models.professor_course import ProfessorCourse
@@ -43,6 +44,7 @@ __all__ = [
     "Faculty",
     "Hashtag",
     "ModerationAction",
+    "PasswordReset",
     "Professor",
     "ProfessorAiSummary",
     "ProfessorCourse",
