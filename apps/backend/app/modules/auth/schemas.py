@@ -15,7 +15,7 @@ class RegisterRequest(BaseModel):
 
     dni: str | None = None
 
-    career: str | None = None
+    career_id: int | None = None
 
     @field_validator("email")
     @classmethod
@@ -70,7 +70,7 @@ class UserResponse(BaseModel):
 
     dni: str | None = None
 
-    career: str | None = None
+    career_id: int | None = None
 
     role: str
 

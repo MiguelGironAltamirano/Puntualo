@@ -6,6 +6,7 @@ from app.core.security import create_access_token
 from app.core.security import create_refresh_token
 from app.core.security import hash_password
 from app.core.security import verify_password
+from app.models.career import Career
 from app.models.user import User
 from app.modules.auth.schemas import LoginRequest
 from app.modules.auth.schemas import RegisterRequest
@@ -88,12 +89,20 @@ def register_user(
                 detail="El DNI ya está registrado"
             )
 
+    if payload.career_id is not None:
+        career = db.get(Career, payload.career_id)
+        if career is None:
+            raise HTTPException(
+                status_code=400,
+                detail="La carrera indicada no existe"
+            )
+
     user = User(
         email=payload.email,
         full_name=payload.full_name,
         username=payload.username,
         dni=payload.dni,
-        career=payload.career,
+        career_id=payload.career_id,
         hashed_password=hash_password(
             payload.password
         )

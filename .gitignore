@@ -166,3 +166,5 @@ docker-data/
 
 *.pem
 .sass-cache/
+
+.venv_wsl/
