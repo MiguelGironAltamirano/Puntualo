@@ -59,6 +59,13 @@ class Settings:
         os.getenv("EMAIL_VERIFICATION_MAX_ATTEMPTS", "5")
     )
 
+    PASSWORD_RESET_TTL_MINUTES: int = int(
+        os.getenv("PASSWORD_RESET_TTL_MINUTES", "10")
+    )
+    PASSWORD_RESET_MAX_ATTEMPTS: int = int(
+        os.getenv("PASSWORD_RESET_MAX_ATTEMPTS", "5")
+    )
+
     # UNMSM directory
     UNMSM_DIRECTORY_URLS: list = [
         "https://sistemas.unmsm.edu.pe/site/docentes/directorio/directorio-dacc",

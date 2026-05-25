@@ -7,12 +7,20 @@ from app.modules.auth.schemas import (
     LoginRequest,
     RegisterStartResponse,
     RegisterVerifyRequest,
+    PasswordResetStartRequest,
+    PasswordResetStartResponse,
+    PasswordResetVerifyRequest,
+    PasswordResetConfirmRequest,
+    PasswordResetConfirmResponse,
     TokenResponse,
     UserResponse,
 )
 from app.modules.auth.service import (
     start_registration,
     verify_registration,
+    start_password_reset,
+    verify_password_reset,
+    confirm_password_reset,
     authenticate_user,
 )
 from app.modules.auth.dependencies import get_current_user
@@ -45,6 +53,38 @@ def register_verify(
     db: Session = Depends(get_db),
 ):
     return verify_registration(db, payload)
+
+
+@router.post(
+    "/password-reset/start",
+    response_model=PasswordResetStartResponse,
+)
+def password_reset_start(
+    payload: PasswordResetStartRequest,
+    db: Session = Depends(get_db),
+):
+    return start_password_reset(db, payload)
+
+
+@router.post(
+    "/password-reset/verify",
+)
+def password_reset_verify(
+    payload: PasswordResetVerifyRequest,
+    db: Session = Depends(get_db),
+):
+    return verify_password_reset(db, payload)
+
+
+@router.post(
+    "/password-reset/confirm",
+    response_model=PasswordResetConfirmResponse,
+)
+def password_reset_confirm(
+    payload: PasswordResetConfirmRequest,
+    db: Session = Depends(get_db),
+):
+    return confirm_password_reset(db, payload)
 
 @router.post(
     "/login",

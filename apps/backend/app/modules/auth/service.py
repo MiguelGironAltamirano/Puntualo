@@ -15,10 +15,14 @@ from app.core.security import hash_password
 from app.core.security import verify_password
 from app.models.career import Career
 from app.models.email_verification import EmailVerification
+from app.models.password_reset import PasswordReset
 from app.models.user import User
 from app.modules.auth.schemas import LoginRequest
 from app.modules.auth.schemas import RegisterRequest
 from app.modules.auth.schemas import RegisterVerifyRequest
+from app.modules.auth.schemas import PasswordResetConfirmRequest
+from app.modules.auth.schemas import PasswordResetStartRequest
+from app.modules.auth.schemas import PasswordResetVerifyRequest
 from app.utils.email import send_email
 
 logger = logging.getLogger(__name__)
@@ -86,6 +90,15 @@ def _get_pending_by_email(
 ) -> EmailVerification | None:
 
     statement = select(EmailVerification).where(EmailVerification.email == email)
+    return db.execute(statement).scalar_one_or_none()
+
+
+def _get_password_reset_by_email(
+    db: Session,
+    email: str
+) -> PasswordReset | None:
+
+    statement = select(PasswordReset).where(PasswordReset.email == email)
     return db.execute(statement).scalar_one_or_none()
 
 
@@ -321,6 +334,163 @@ def verify_registration(
     db.refresh(user)
 
     return user
+
+
+def start_password_reset(
+    db: Session,
+    payload: PasswordResetStartRequest
+) -> dict:
+
+    user = get_user_by_email(db, payload.email)
+
+    if not user:
+        raise HTTPException(
+            status_code=400,
+            detail="El correo no está registrado",
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=403,
+            detail="Usuario inactivo",
+        )
+
+    code = _generate_verification_code()
+    code_hash = _hash_verification_code(code, payload.email)
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.PASSWORD_RESET_TTL_MINUTES
+    )
+
+    pending = _get_password_reset_by_email(db, payload.email)
+
+    if pending:
+        pending.code_hash = code_hash
+        pending.expires_at = expires_at
+        pending.attempts = 0
+    else:
+        pending = PasswordReset(
+            email=payload.email,
+            code_hash=code_hash,
+            expires_at=expires_at,
+        )
+        db.add(pending)
+
+    db.commit()
+    db.refresh(pending)
+
+    try:
+        send_email(
+            payload.email,
+            "Codigo para restablecer tu contrasena - Puntualo",
+            (
+                "Tu codigo de restablecimiento es: "
+                f"{code}\n\n"
+                "Este codigo vence en "
+                f"{settings.PASSWORD_RESET_TTL_MINUTES} minutos."
+            ),
+        )
+    except Exception as exc:
+        logger.exception("password reset email failed", exc_info=exc)
+        db.delete(pending)
+        db.commit()
+        raise HTTPException(
+            status_code=500,
+            detail="No se pudo enviar el codigo de restablecimiento",
+        ) from exc
+
+    return {
+        "detail": "Codigo enviado",
+        "expires_in_seconds": settings.PASSWORD_RESET_TTL_MINUTES * 60,
+    }
+
+
+def _validate_password_reset_code(
+    db: Session,
+    email: str,
+    code: str,
+) -> PasswordReset:
+
+    pending = _get_password_reset_by_email(db, email)
+
+    if not pending:
+        raise HTTPException(
+            status_code=400,
+            detail="No hay solicitud pendiente",
+        )
+
+    now = datetime.now(timezone.utc)
+
+    if pending.expires_at < now:
+        db.delete(pending)
+        db.commit()
+        raise HTTPException(
+            status_code=400,
+            detail="El codigo ha expirado",
+        )
+
+    if pending.attempts >= settings.PASSWORD_RESET_MAX_ATTEMPTS:
+        db.delete(pending)
+        db.commit()
+        raise HTTPException(
+            status_code=400,
+            detail="Se agotaron los intentos del codigo",
+        )
+
+    expected_hash = _hash_verification_code(code, email)
+    if not hmac.compare_digest(expected_hash, pending.code_hash):
+        pending.attempts += 1
+        db.commit()
+        raise HTTPException(
+            status_code=400,
+            detail="Codigo invalido",
+        )
+
+    return pending
+
+
+def verify_password_reset(
+    db: Session,
+    payload: PasswordResetVerifyRequest,
+) -> dict:
+
+    _validate_password_reset_code(db, payload.email, payload.code)
+
+    return {
+        "detail": "Codigo valido",
+    }
+
+
+def confirm_password_reset(
+    db: Session,
+    payload: PasswordResetConfirmRequest,
+) -> dict:
+
+    if payload.new_password != payload.confirm_password:
+        raise HTTPException(
+            status_code=400,
+            detail="Las contrasenas no coinciden",
+        )
+
+    pending = _validate_password_reset_code(db, payload.email, payload.code)
+
+    user = get_user_by_email(db, payload.email)
+
+    if not user:
+        db.delete(pending)
+        db.commit()
+        raise HTTPException(
+            status_code=400,
+            detail="El correo no está registrado",
+        )
+
+    user.hashed_password = hash_password(payload.new_password)
+
+    db.delete(pending)
+    db.commit()
+
+    return {
+        "detail": "Contrasena actualizada",
+    }
 
 
 def authenticate_user(
