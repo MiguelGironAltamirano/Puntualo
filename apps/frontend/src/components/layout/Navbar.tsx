@@ -24,8 +24,8 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
 
   // Detectamos dinámicamente qué pestaña debe estar activa según la URL
   const isHomeActive = pathname === "/";
-  const isBuscadorActive = pathname.startsWith("/profesores");
-  const isCompararActive = pathname.startsWith("/comparar");
+  const isBuscadorActive = pathname.startsWith("/teachers");
+  const iscompareActive = pathname.startsWith("/compare");
 
   return (
     <nav className="w-full flex items-center justify-between px-8 py-4 bg-white border-b border-slate-100 z-50 sticky top-0 h-[69px]">
@@ -67,7 +67,7 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
         {/* Pestaña Buscador */}
         <div className="relative group">
           <Link
-            href="/profesores"
+            href="/teachers"
             onClick={(event) => {
               if (!hasSession) {
                 event.preventDefault();
@@ -86,12 +86,12 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
         {/* Pestaña Comparativo */}
         <div className="relative group">
           <Link
-            href="/comparar"
-            className={`transition-colors no-underline ${isCompararActive ? 'text-[#0284c7]' : 'text-gray-400 hover:text-gray-900'}`}
+            href="/compare"
+            className={`transition-colors no-underline ${iscompareActive ? 'text-[#0284c7]' : 'text-gray-400 hover:text-gray-900'}`}
           >
             Comparativo
           </Link>
-          {isCompararActive && (
+          {iscompareActive && (
             <div className="absolute -bottom-[23px] left-0 right-0 h-0.5 bg-[#0284c7] rounded-full"></div>
           )}
         </div>
