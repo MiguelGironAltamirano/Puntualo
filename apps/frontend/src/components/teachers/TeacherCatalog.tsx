@@ -1,9 +1,11 @@
 'use client'
 
-import Link from "next/link"; // <-- 1. Importamos el Link de Next.js
+import { useState } from "react";
+import Link from "next/link";
 import { Plus } from "lucide-react";
 import { TeacherSummary } from "./types";
 import { SearchAIAnalysis } from "./SearchAIAnalysis";
+import { RegisterTeacherModal } from "./RegisterTeacherModal";
 
 const TEACHERS_MOCK: TeacherSummary[] = [
     {
@@ -39,6 +41,8 @@ const TEACHERS_MOCK: TeacherSummary[] = [
 ];
 
 export default function TeacherCatalog({ initialQuery }: { initialQuery?: string }) {
+    const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+
     return (
         <div className="flex-1 p-8 bg-[#f8fafc]/40 text-left overflow-y-auto h-[calc(100vh-69px)]">
             <div className="max-w-[1300px] mx-auto">
@@ -59,7 +63,7 @@ export default function TeacherCatalog({ initialQuery }: { initialQuery?: string
                     </div>
 
                     <div className="flex items-center gap-5 self-end sm:self-auto">
-                        <button type="button" className="px-4 py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm">
+                        <button type="button" onClick={() => setIsRegisterModalOpen(true)} className="px-4 py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer">
                             <Plus className="w-4 h-4" strokeWidth={3} /> Agregar nuevo profesor
                         </button>
 
@@ -134,6 +138,8 @@ export default function TeacherCatalog({ initialQuery }: { initialQuery?: string
                     ))}
                 </div>
 
+                {/* Modal de Registro */}
+                <RegisterTeacherModal isOpen={isRegisterModalOpen} onClose={() => setIsRegisterModalOpen(false)} />
             </div>
         </div>
     );
