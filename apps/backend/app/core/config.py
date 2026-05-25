@@ -44,6 +44,21 @@ class Settings:
         ""
     )
 
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM: str = os.getenv("SMTP_FROM", "")
+    SMTP_TLS: bool = os.getenv("SMTP_TLS", "true").lower() == "true"
+    SMTP_SSL: bool = os.getenv("SMTP_SSL", "false").lower() == "true"
+
+    EMAIL_VERIFICATION_TTL_MINUTES: int = int(
+        os.getenv("EMAIL_VERIFICATION_TTL_MINUTES", "10")
+    )
+    EMAIL_VERIFICATION_MAX_ATTEMPTS: int = int(
+        os.getenv("EMAIL_VERIFICATION_MAX_ATTEMPTS", "5")
+    )
+
     # UNMSM directory
     UNMSM_DIRECTORY_URLS: list = [
         "https://sistemas.unmsm.edu.pe/site/docentes/directorio/directorio-dacc",

@@ -5,11 +5,14 @@ from app.db.session import get_db
 from app.modules.auth.schemas import (
     RegisterRequest,
     LoginRequest,
+    RegisterStartResponse,
+    RegisterVerifyRequest,
     TokenResponse,
     UserResponse,
 )
 from app.modules.auth.service import (
-    register_user,
+    start_registration,
+    verify_registration,
     authenticate_user,
 )
 from app.modules.auth.dependencies import get_current_user
@@ -23,15 +26,25 @@ router = APIRouter()
 
 @router.post(
     "/register",
-    response_model=UserResponse,
-    status_code=status.HTTP_201_CREATED,
+    response_model=RegisterStartResponse,
 )
 def register(
     payload: RegisterRequest,
     db: Session = Depends(get_db),
 ):
-    user = register_user(db, payload)
-    return user
+    return start_registration(db, payload)
+
+
+@router.post(
+    "/register/verify",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def register_verify(
+    payload: RegisterVerifyRequest,
+    db: Session = Depends(get_db),
+):
+    return verify_registration(db, payload)
 
 @router.post(
     "/login",
