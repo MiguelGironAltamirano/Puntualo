@@ -15,6 +15,7 @@ const TEACHERS_MOCK: TeacherSummary[] = [
         rating: 4.9,
         claridad: 4.2,
         dificultad: 1.7,
+        puntualidad: 4.5,
         avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
         tags: ['BARCO', 'PROYECTOS']
     },
@@ -25,6 +26,7 @@ const TEACHERS_MOCK: TeacherSummary[] = [
         rating: 4.2,
         claridad: 3.4,
         dificultad: 2.2,
+        puntualidad: 4.1,
         avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
         tags: ['INSPIRADORA']
     },
@@ -35,6 +37,7 @@ const TEACHERS_MOCK: TeacherSummary[] = [
         rating: 4.5,
         claridad: 3.9,
         dificultad: 2.7,
+        puntualidad: 4.8,
         avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
         tags: ['EXIGENTE', 'JUSTO']
     }
