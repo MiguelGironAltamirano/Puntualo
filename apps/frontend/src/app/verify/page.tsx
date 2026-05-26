@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function VerifyPage() {
@@ -9,8 +9,23 @@ export default function VerifyPage() {
     const [uploading, setUploading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        if (!selectedFile) {
+            setPreviewUrl(null);
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(selectedFile);
+        setPreviewUrl(objectUrl);
+
+        return () => {
+            URL.revokeObjectURL(objectUrl);
+        };
+    }, [selectedFile]);
 
     // FUNCIÓN PARA ABRIR EL EXPLORADOR DE ARCHIVOS
     const handleBoxClick = () => {
@@ -174,11 +189,21 @@ export default function VerifyPage() {
                 {/* Zona de arrastre / Dropzone */}
                 <div
                     onClick={handleBoxClick}
-                    className="group border-2 border-dashed border-[#bae6fd] bg-[#f8fafc] rounded-2xl p-16 mb-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#0284c7] hover:bg-white transition-all"
+                    className="group border-2 border-dashed border-[#bae6fd] bg-[#f8fafc] rounded-2xl p-10 sm:p-16 mb-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#0284c7] hover:bg-white transition-all"
                 >
-                    <div className="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mb-6 text-2xl">
-                        {selectedFile ? '✅' : (step === 1 ? '🪪' : '🔄')}
-                    </div>
+                    {previewUrl ? (
+                        <div className="w-full max-w-sm bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100 mb-6">
+                            <img
+                                src={previewUrl}
+                                alt="Vista previa del carnet"
+                                className="w-full h-52 object-cover"
+                            />
+                        </div>
+                    ) : (
+                        <div className="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mb-6 text-2xl">
+                            {step === 1 ? '🪪' : '🔄'}
+                        </div>
+                    )}
 
                     <p className="text-base font-bold text-[#0f172a]">
                         {selectedFile ? selectedFile.name : "Arrastra tu imagen aquí"}
