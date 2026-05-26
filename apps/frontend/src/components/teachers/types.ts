@@ -16,6 +16,7 @@ export interface TeacherMetrics {
     claridad: number;
     facilidad: number;
     ayuda: number;
+    puntualidad: number;
     total: number;
 }
 
@@ -42,6 +43,7 @@ export interface TeacherSummary {
     rating: number;
     claridad: number;
     dificultad: number;
+    puntualidad: number;
     avatar: string;
     tags: string[];
 }

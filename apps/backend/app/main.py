@@ -7,6 +7,7 @@ from sqlalchemy import text
 import app.core.celery_app  # noqa: F401 — ensures shared_task binds to Redis broker
 from app.db.session import engine
 from app.modules.auth.router import router as auth_router
+from app.modules.catalogs.router import router as catalogs_router
 from app.modules.evaluations.errors import DomainError
 from app.modules.evaluations.router import router as evaluations_router
 from app.modules.professors.router import router as professors_router
@@ -80,4 +81,9 @@ app.include_router(
     verification_router,
     prefix="/verification",
     tags=["verification"],
+)
+
+app.include_router(
+    catalogs_router,
+    tags=["catalogs"],
 )
