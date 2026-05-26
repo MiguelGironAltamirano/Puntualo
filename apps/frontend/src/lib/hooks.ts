@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   coursesAPI,
   professorsAPI,
@@ -35,6 +35,28 @@ export interface UseQueryState<T> {
 
 export interface UseListState<T> extends UseQueryState<PaginatedResponse<T>> {
   data: PaginatedResponse<T> | null;
+}
+
+// ============================================================================
+// UTILITY HOOKS
+// ============================================================================
+
+/**
+ * Hook for debouncing values - delays state updates
+ * Useful for search inputs to reduce API calls while typing
+ */
+export function useDebounce<T>(value: T, delayMs: number = 300): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delayMs);
+
+    return () => clearTimeout(handler);
+  }, [value, delayMs]);
+
+  return debouncedValue;
 }
 
 // ============================================================================

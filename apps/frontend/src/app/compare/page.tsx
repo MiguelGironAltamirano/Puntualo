@@ -9,7 +9,7 @@ import { Teacher } from '@/components/compare/types';
 import { IASummary } from '@/components/compare/IASummary';
 import { CompareMetrics } from '@/components/compare/CompareMetrics';
 import { StudentReviews } from '@/components/compare/StudentReviews';
-import { useProfessors, useCompareProfessors } from '@/lib/hooks';
+import { useProfessors, useCompareProfessors, useDebounce } from '@/lib/hooks';
 import { ProfessorRead, ProfessorComparisonResponse } from '@/lib/api';
 
 /**
@@ -42,24 +42,28 @@ export default function ComparePage() {
     const [searchA, setSearchA] = useState('');
     const [searchB, setSearchB] = useState('');
 
+    // Debounce search inputs to reduce API calls while typing (300ms delay)
+    const debouncedSearchA = useDebounce(searchA, 300);
+    const debouncedSearchB = useDebounce(searchB, 300);
+
     // Memoize search params to prevent infinite fetch loops
     const paramsA = useMemo(() => ({
-        search: searchA,
+        search: debouncedSearchA,
         page: 1,
         page_size: 10,
-    }), [searchA]);
+    }), [debouncedSearchA]);
 
     const paramsB = useMemo(() => ({
-        search: searchB,
+        search: debouncedSearchB,
         page: 1,
         page_size: 10,
-    }), [searchB]);
+    }), [debouncedSearchB]);
 
-    // Fetch professors for search A
-    const { data: resultsA, loading: loadingA } = useProfessors(paramsA, !searchA);
+    // Fetch professors for search A (uses debounced search)
+    const { data: resultsA, loading: loadingA } = useProfessors(paramsA, !debouncedSearchA);
 
-    // Fetch professors for search B
-    const { data: resultsB, loading: loadingB } = useProfessors(paramsB, !searchB);
+    // Fetch professors for search B (uses debounced search)
+    const { data: resultsB, loading: loadingB } = useProfessors(paramsB, !debouncedSearchB);
 
     // Fetch comparison data when both professors are selected
     const selectedIds = [slotA?.id, slotB?.id].filter((id): id is string => !!id);
