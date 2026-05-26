@@ -38,13 +38,16 @@ export default function TeacherCatalog({
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 20;
 
-    // Fetch professors from API
-    const { data: professorsData, loading, error } = useProfessors({
+    // Memoize search params to prevent infinite fetch loops
+    const searchParams = useMemo(() => ({
         search: initialQuery,
         page: currentPage,
         page_size: pageSize,
         ...filters,
-    });
+    }), [initialQuery, currentPage, pageSize, filters]);
+
+    // Fetch professors from API
+    const { data: professorsData, loading, error } = useProfessors(searchParams);
 
     // Map API response to TeacherSummary type
     const teachers = useMemo(() => {

@@ -42,19 +42,24 @@ export default function ComparePage() {
     const [searchA, setSearchA] = useState('');
     const [searchB, setSearchB] = useState('');
 
-    // Fetch professors for search A
-    const { data: resultsA, loading: loadingA } = useProfessors({
+    // Memoize search params to prevent infinite fetch loops
+    const paramsA = useMemo(() => ({
         search: searchA,
         page: 1,
         page_size: 10,
-    }, !searchA);
+    }), [searchA]);
 
-    // Fetch professors for search B
-    const { data: resultsB, loading: loadingB } = useProfessors({
+    const paramsB = useMemo(() => ({
         search: searchB,
         page: 1,
         page_size: 10,
-    }, !searchB);
+    }), [searchB]);
+
+    // Fetch professors for search A
+    const { data: resultsA, loading: loadingA } = useProfessors(paramsA, !searchA);
+
+    // Fetch professors for search B
+    const { data: resultsB, loading: loadingB } = useProfessors(paramsB, !searchB);
 
     // Fetch comparison data when both professors are selected
     const selectedIds = [slotA?.id, slotB?.id].filter((id): id is string => !!id);
