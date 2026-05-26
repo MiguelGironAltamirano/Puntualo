@@ -1,13 +1,31 @@
 'use client'
 
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function VerifyPage() {
     const [step, setStep] = useState(1); // 1: Frontal, 2: Trasera, 3: Éxito (Documentos Recibidos)
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        if (!selectedFile) {
+            setPreviewUrl(null);
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(selectedFile);
+        setPreviewUrl(objectUrl);
+
+        return () => {
+            URL.revokeObjectURL(objectUrl);
+        };
+    }, [selectedFile]);
 
     // FUNCIÓN PARA ABRIR EL EXPLORADOR DE ARCHIVOS
     const handleBoxClick = () => {
@@ -19,13 +37,74 @@ export default function VerifyPage() {
         const file = e.target.files?.[0];
         if (file) {
             setSelectedFile(file);
+            setErrorMessage('');
+            setSuccessMessage('');
         }
     };
 
-    const handleNext = () => {
+    const uploadSide = async (side: 'front' | 'back') => {
+        if (!selectedFile) {
+            return false;
+        }
+
+        setUploading(true);
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            setUploading(false);
+            setErrorMessage('Debes iniciar sesion para verificar tu identidad');
+            return false;
+        }
+
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            const res = await fetch(`${apiUrl}/verification/carnet/${side}`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                setErrorMessage(data.detail?.message || data.detail || 'No se pudo subir la imagen');
+                setUploading(false);
+                return false;
+            }
+
+            setSuccessMessage(data.detail || 'Imagen subida correctamente');
+            setUploading(false);
+            return true;
+        } catch {
+            setErrorMessage('Error de conexion con el servidor');
+            setUploading(false);
+            return false;
+        }
+    };
+
+    const handleNext = async () => {
+        if (!selectedFile || uploading) {
+            return;
+        }
+
+        const side = step === 1 ? 'front' : 'back';
+        const ok = await uploadSide(side);
+
+        if (!ok) {
+            return;
+        }
+
         if (step === 1) {
             setStep(2);
             setSelectedFile(null); // Limpiamos para la cara trasera
+            setSuccessMessage('');
         } else if (step === 2) {
             setStep(3); // Pasamos a la pantalla de éxito que pide Figma
         }
@@ -110,11 +189,21 @@ export default function VerifyPage() {
                 {/* Zona de arrastre / Dropzone */}
                 <div
                     onClick={handleBoxClick}
-                    className="group border-2 border-dashed border-[#bae6fd] bg-[#f8fafc] rounded-2xl p-16 mb-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#0284c7] hover:bg-white transition-all"
+                    className="group border-2 border-dashed border-[#bae6fd] bg-[#f8fafc] rounded-2xl p-10 sm:p-16 mb-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#0284c7] hover:bg-white transition-all"
                 >
-                    <div className="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mb-6 text-2xl">
-                        {selectedFile ? '✅' : (step === 1 ? '🪪' : '🔄')}
-                    </div>
+                    {previewUrl ? (
+                        <div className="w-full max-w-sm bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100 mb-6">
+                            <img
+                                src={previewUrl}
+                                alt="Vista previa del carnet"
+                                className="w-full h-52 object-cover"
+                            />
+                        </div>
+                    ) : (
+                        <div className="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mb-6 text-2xl">
+                            {step === 1 ? '🪪' : '🔄'}
+                        </div>
+                    )}
 
                     <p className="text-base font-bold text-[#0f172a]">
                         {selectedFile ? selectedFile.name : "Arrastra tu imagen aquí"}
@@ -135,14 +224,28 @@ export default function VerifyPage() {
                     />
                 </div>
 
+                {errorMessage && (
+                    <div className="mb-6 rounded-xl bg-red-100 px-4 py-3 text-sm text-red-700">
+                        {errorMessage}
+                    </div>
+                )}
+
+                {successMessage && (
+                    <div className="mb-6 rounded-xl bg-green-100 px-4 py-3 text-sm text-green-700">
+                        {successMessage}
+                    </div>
+                )}
+
                 {/* Acciones principales */}
                 <div className="flex flex-col gap-4">
                     <button
                         onClick={handleNext}
-                        disabled={!selectedFile}
+                        disabled={!selectedFile || uploading}
                         className="w-full py-4 bg-[#ff8a00] hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]"
                     >
-                        {step === 1 ? 'Siguiente paso →' : 'Finalizar Verificación'}
+                        {uploading
+                            ? 'Subiendo imagen...'
+                            : (step === 1 ? 'Siguiente paso →' : 'Finalizar Verificación')}
                     </button>
 
                     <button

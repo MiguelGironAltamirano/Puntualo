@@ -86,6 +86,22 @@ export default function RegisterPage() {
                 return;
             }
 
+            const loginRes = await fetch(`${apiUrl}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: pendingEmail, password })
+            });
+
+            if (loginRes.ok) {
+                const loginData = await loginRes.json();
+                localStorage.setItem('access_token', loginData.access_token);
+                if (loginData.refresh_token) {
+                    localStorage.setItem('refresh_token', loginData.refresh_token);
+                }
+            }
+
             setVerifyLoading(false);
             window.location.href = '/verify';
         } catch {
