@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode, ReactElement } from 'react';
+import React, { ReactNode, ReactElement, JSX } from 'react';
 
 // ============================================================================
 // ERROR BOUNDARY COMPONENT
@@ -39,12 +39,12 @@ export class ErrorBoundary extends React.Component<
     this.setState({ hasError: false, error: null });
   };
 
-  render() {
+  render(): React.ReactNode {
     if (this.state.hasError && this.state.error) {
       return this.props.fallback ? (
         this.props.fallback(this.state.error, this.reset)
       ) : (
-        <DefaultErrorFallback error={this.state.error} onReset={this.reset} />
+        React.createElement(DefaultErrorFallback, { error: this.state.error, onReset: this.reset })
       );
     }
 
@@ -62,26 +62,22 @@ function DefaultErrorFallback({
 }: {
   error: Error;
   onReset: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-center min-h-screen px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-        <div className="text-6xl mb-4">⚠️</div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">
-          Oops! Something went wrong
-        </h1>
-        <p className="text-slate-600 mb-2">{error.message}</p>
-        <p className="text-xs text-slate-400 mb-6 font-mono bg-slate-50 p-2 rounded overflow-auto max-h-24">
-          {error.stack}
-        </p>
-        <button
-          onClick={onReset}
-          className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-        >
-          Try Again
-        </button>
-      </div>
-    </div>
+}): React.ReactNode {
+  return React.createElement(
+    'div',
+    { className: 'flex items-center justify-center min-h-screen px-4' },
+    React.createElement(
+      'div',
+      { className: 'max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center' },
+      React.createElement('div', { className: 'text-6xl mb-4' }, '⚠️'),
+      React.createElement('h1', { className: 'text-2xl font-bold text-slate-900 mb-2' }, 'Oops! Something went wrong'),
+      React.createElement('p', { className: 'text-slate-600 mb-2' }, error.message),
+      React.createElement('p', { className: 'text-xs text-slate-400 mb-6 font-mono bg-slate-50 p-2 rounded overflow-auto max-h-24' }, error.stack),
+      React.createElement('button', {
+        onClick: onReset,
+        className: 'w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors',
+      }, 'Try Again')
+    )
   );
 }
 

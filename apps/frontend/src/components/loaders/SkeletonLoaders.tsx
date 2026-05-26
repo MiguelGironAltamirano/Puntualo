@@ -174,17 +174,19 @@ export function LoadingPage() {
 // EMPTY STATE COMPONENTS
 // ============================================================================
 
-export function EmptyState({
-  icon = '🔍',
-  title = 'No results found',
-  subtitle = 'Try adjusting your filters',
-  action?: React.ReactNode,
-}: {
+interface EmptyStateProps {
   icon?: string;
   title?: string;
   subtitle?: string;
   action?: React.ReactNode;
-}) {
+}
+
+export function EmptyState({
+  icon = '🔍',
+  title = 'No results found',
+  subtitle = 'Try adjusting your filters',
+  action,
+}: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
       <div className="text-5xl mb-4">{icon}</div>

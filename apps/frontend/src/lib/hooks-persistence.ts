@@ -30,11 +30,11 @@ export function useURLFilters<T extends FilterState>(
     searchParams.forEach((value, key) => {
       try {
         // Try to parse as JSON first (for complex types)
-        urlFilters[key as keyof T] = JSON.parse(value) as any;
+        (urlFilters as any)[key] = JSON.parse(value);
       } catch {
         // Fall back to string or number conversion
         const numValue = Number(value);
-        urlFilters[key as keyof T] = isNaN(numValue) ? value : numValue;
+        (urlFilters as any)[key] = isNaN(numValue) ? value : numValue;
       }
     });
 
@@ -230,10 +230,10 @@ export function usePersistedFilters<T extends FilterState>(
       const urlFilters: Partial<T> = {};
       searchParams.forEach((value, key) => {
         try {
-          urlFilters[key as keyof T] = JSON.parse(value) as any;
+          (urlFilters as any)[key] = JSON.parse(value);
         } catch {
           const numValue = Number(value);
-          urlFilters[key as keyof T] = isNaN(numValue) ? value : numValue;
+          (urlFilters as any)[key] = isNaN(numValue) ? value : numValue;
         }
       });
       loadedFilters = { ...loadedFilters, ...urlFilters };

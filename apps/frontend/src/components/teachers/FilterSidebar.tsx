@@ -1,24 +1,40 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { ProfessorFilterState } from '@/lib/hooks-filters';
 
-export default function FilterSidebar() {
+interface FilterSidebarProps {
+    onFiltersChange?: (filters: Partial<ProfessorFilterState>) => void;
+}
+
+export default function FilterSidebar({ onFiltersChange }: FilterSidebarProps) {
     const [teacherName, setTeacherName] = useState('');
     const [difficulty, setDifficulty] = useState(50);
-
-    // Estado para manejar la multiselección de etiquetas
     const [selectedTags, setSelectedTags] = useState<string[]>(['Barco']);
+    const [minScore, setMinScore] = useState(0);
+    const [maxScore, setMaxScore] = useState(5);
 
-    // Función interactiva para prender/apagar las etiquetas
+    // Toggle tag selection
     const toggleTag = (tagName: string) => {
-        if (selectedTags.includes(tagName)) {
-            // Si ya está seleccionada, la quitamos
-            setSelectedTags(selectedTags.filter(t => t !== tagName));
-        } else {
-            // Si no está, la agregamos al array
-            setSelectedTags([...selectedTags, tagName]);
-        }
+        setSelectedTags(prev => 
+            prev.includes(tagName)
+                ? prev.filter(t => t !== tagName)
+                : [...prev, tagName]
+        );
     };
+
+    // Call parent callback when filters change
+    useEffect(() => {
+        if (onFiltersChange) {
+            const filters: Partial<ProfessorFilterState> = {
+                search: teacherName || undefined,
+                min_global_score: minScore > 0 ? minScore : undefined,
+                max_global_score: maxScore < 5 ? maxScore : undefined,
+                min_easiness: difficulty > 50 ? 5 - (difficulty / 100) * 5 : undefined,
+            };
+            onFiltersChange(filters);
+        }
+    }, [teacherName, difficulty, minScore, maxScore, selectedTags, onFiltersChange]);
 
     return (
         <aside className="w-64 bg-[#f8fafc] border-r border-slate-200 p-6 flex flex-col justify-between h-[calc(100vh-69px)] overflow-y-auto shrink-0 text-left">
@@ -26,7 +42,7 @@ export default function FilterSidebar() {
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">Búsqueda Inteligente</h2>
                 <p className="text-xs text-slate-400 mt-0.5 mb-6">Refina tus resultados</p>
 
-                {/* Sección Nombre del Profesor */}
+                {/* Professor Name Section */}
                 <div className="mb-5">
                     <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
                         👤 Nombre del Profesor
@@ -40,7 +56,7 @@ export default function FilterSidebar() {
                     />
                 </div>
 
-                {/* Sección Institución */}
+                {/* Institution Section */}
                 <div className="mb-5">
                     <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
                         🎓 Institución
@@ -73,7 +89,7 @@ export default function FilterSidebar() {
                     </div>
                 </div>
 
-                {/* Sección Facilidad */}
+                {/* Difficulty Section */}
                 <div className="mb-5">
                     <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
                         ⭐ Facilidad
@@ -92,7 +108,42 @@ export default function FilterSidebar() {
                     </div>
                 </div>
 
-                {/* Sección Evaluación */}
+                {/* Score Range Section */}
+                <div className="mb-5">
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
+                        🌟 Calificación Mínima
+                    </label>
+                    <div className="space-y-2">
+                        <div>
+                            <div className="flex justify-between text-[9px] font-bold text-slate-400 mb-1">
+                                <span>Min: {minScore.toFixed(1)}</span>
+                                <span>Max: {maxScore.toFixed(1)}</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="5"
+                                    step="0.5"
+                                    value={minScore}
+                                    onChange={(e) => setMinScore(Math.min(Number(e.target.value), maxScore))}
+                                    className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]"
+                                />
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="5"
+                                    step="0.5"
+                                    value={maxScore}
+                                    onChange={(e) => setMaxScore(Math.max(Number(e.target.value), minScore))}
+                                    className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Evaluation Section */}
                 <div className="mb-5">
                     <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
                         📝 Evaluación
@@ -116,7 +167,7 @@ export default function FilterSidebar() {
                     </div>
                 </div>
 
-                {/* Sección Etiquetas (Corregida con Multiselección Activa) */}
+                {/* Tags Section */}
                 <div className="mb-6">
                     <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
                         🏷️ Etiquetas
@@ -130,9 +181,9 @@ export default function FilterSidebar() {
                                     type="button"
                                     onClick={() => toggleTag(tagName)}
                                     className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all duration-150 border cursor-pointer select-none ${isSelected
-                                            ? 'bg-sky-100 text-sky-700 border-sky-300 shadow-sm'
-                                            : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300 hover:text-slate-600'
-                                        }`}
+                                        ? 'bg-sky-100 text-sky-700 border-sky-300 shadow-sm'
+                                        : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300 hover:text-slate-600'
+                                    }`}
                                 >
                                     {tagName}
                                 </button>
@@ -142,7 +193,7 @@ export default function FilterSidebar() {
                 </div>
             </div>
 
-            {/* Botón Aplicar abajo */}
+            {/* Apply Filters Button */}
             <div className="pt-4 border-t border-slate-200/60">
                 <button
                     type="button"

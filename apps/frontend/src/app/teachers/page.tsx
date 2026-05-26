@@ -1,33 +1,44 @@
 'use client'
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from "@/components/layout/Navbar";
-import FilterSidebar from "@/components/teachers/FilterSidebar";
 import TeacherCatalog from "@/components/teachers/TeacherCatalog";
-import { SearchAIAnalysis } from "@/components/teachers/SearchAIAnalysis";
+import FilterSidebar from "@/components/teachers/FilterSidebar";
+import { ProfessorFilterState } from "@/lib/hooks-filters";
 
 function SearchContent() {
     const searchParams = useSearchParams();
     const initialQuery = searchParams.get('query') ?? '';
     const [searchQuery, setSearchQuery] = useState(initialQuery);
+    
+    // Filter state
+    const [filters, setFilters] = useState<Partial<ProfessorFilterState>>({});
+
+    // Handle filter changes from FilterSidebar
+    const handleFiltersChange = useCallback((newFilters: Partial<ProfessorFilterState>) => {
+        setFilters(newFilters);
+    }, []);
 
     return (
         <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-sky-100 selection:text-sky-900 overflow-hidden">
-            {/* Navbar con el buscador superior activo y sincronizado */}
+            {/* Navbar with active search */}
             <Navbar
                 showSearch={true}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
             />
 
-            {/* Layout principal del Buscador */}
+            {/* Main layout */}
             <div className="flex-1 flex w-full overflow-hidden">
-                {/* Barra Lateral Izquierda de Filtros Quirúrgicos */}
-                <FilterSidebar />
+                {/* Left sidebar - Filters */}
+                <FilterSidebar onFiltersChange={handleFiltersChange} />
 
-                {/* Catálogo Central con las tarjetas de los docentes */}
-                <TeacherCatalog initialQuery={initialQuery} />
+                {/* Center - Catalog */}
+                <TeacherCatalog 
+                    initialQuery={initialQuery}
+                    filters={filters}
+                />
             </div>
         </div>
     );
@@ -35,7 +46,6 @@ function SearchContent() {
 
 export default function TeachersPage() {
     return (
-        // Usamos Suspense porque useSearchParams lo requiere en el nuevo router de Next.js
         <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center font-bold text-slate-400">Cargando Buscador Inteligente...</div>}>
             <SearchContent />
         </Suspense>
