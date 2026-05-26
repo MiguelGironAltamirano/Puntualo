@@ -402,12 +402,25 @@ class ProfessorService:
         self,
         professor_id: str | uuid.UUID,
         include_deleted: bool = False,
-    ) -> tuple[Professor, list[Course], list[DegreeRef], list[ProfessorEvidence], str | None] | None:
+    ) -> tuple[
+        Professor,
+        list[Course],
+        list[DegreeRef],
+        list[ProfessorEvidence],
+        str | None,
+        str | None,
+        str | None,
+    ] | None:
         professor = await self.get_by_id(
             professor_id, include_inactive=include_deleted
         )
         if not professor:
             return None
+
+        university = await self.db.get(University, professor.university_id)
+        faculty = await self.db.get(Faculty, professor.faculty_id)
+        university_name = university.name if university else None
+        faculty_name = faculty.name if faculty else None
 
         courses = await self.list_courses(professor_id)
 
@@ -447,7 +460,7 @@ class ProfessorService:
 
         summary = await self._build_summary(professor, courses, degrees)
 
-        return professor, courses, degrees, evidence, summary
+        return professor, courses, degrees, evidence, summary, university_name, faculty_name
 
     # ---------- helpers ----------
 

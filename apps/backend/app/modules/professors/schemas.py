@@ -95,6 +95,8 @@ class EvidenceRef(BaseModel):
 
 
 class ProfessorDetail(_ProfessorBase):
+    university_name: str | None = None
+    faculty_name: str | None = None
     courses: list[CourseRef] = Field(default_factory=list)
     degrees: list[DegreeRef] = Field(default_factory=list)
     evidence: list[EvidenceRef] = Field(default_factory=list)

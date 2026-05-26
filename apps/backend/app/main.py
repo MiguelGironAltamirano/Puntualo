@@ -11,6 +11,7 @@ from app.modules.catalogs.router import router as catalogs_router
 from app.modules.evaluations.errors import DomainError
 from app.modules.evaluations.router import router as evaluations_router
 from app.modules.professors.router import router as professors_router
+from app.modules.verification.router import router as verification_router
 from fastapi.middleware.cors import CORSMiddleware
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,12 @@ app.include_router(
 app.include_router(
     evaluations_router,
     tags=["evaluations"],
+)
+
+app.include_router(
+    verification_router,
+    prefix="/verification",
+    tags=["verification"],
 )
 
 app.include_router(

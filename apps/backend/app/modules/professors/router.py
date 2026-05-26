@@ -213,7 +213,7 @@ async def get_professor(
             detail={"code": "PROFESSOR_NOT_FOUND", "message": "Profesor no encontrado"},
         )
 
-    professor, courses, degrees, evidence, summary = detail
+    professor, courses, degrees, evidence, summary, university_name, faculty_name = detail
 
     # Ocultar profesores rejected a no-admin
     if not admin and professor.validation_status == "rejected":
@@ -227,6 +227,8 @@ async def get_professor(
         "full_name": professor.full_name,
         "university_id": professor.university_id,
         "faculty_id": professor.faculty_id,
+        "university_name": university_name,
+        "faculty_name": faculty_name,
         "validation_status": professor.validation_status,
         "global_score": float(professor.global_score) if professor.global_score is not None else None,
         "total_evaluations": professor.total_evaluations,

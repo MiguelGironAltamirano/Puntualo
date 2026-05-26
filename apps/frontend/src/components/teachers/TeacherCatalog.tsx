@@ -1,8 +1,7 @@
 'use client'
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { Plus, AlertCircle } from "lucide-react";
+import { Plus, AlertCircle, CheckCircle2, User } from "lucide-react";
 import { TeacherSummary } from "./types";
 import { SearchAIAnalysis } from "./SearchAIAnalysis";
 import { RegisterTeacherModal } from "./RegisterTeacherModal";
@@ -90,6 +89,30 @@ export default function TeacherCatalog({
                     </div>
                 )}
 
+               {/* Controles de Acción (Botón y Ordenamiento) */}
+                <div className="flex items-center gap-5 self-end sm:self-auto justify-end w-full mb-6">
+                    <button
+                        type="button"
+                        onClick={() => setIsRegisterModalOpen(true)}
+                        className="px-4 py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+                    >
+                        <Plus className="w-4 h-4" strokeWidth={3} /> Agregar nuevo profesor
+                    </button>
+
+                    <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                        <span className="text-slate-400 font-medium">Ordenar por:</span>
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as SortBy)}
+                            className="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer"
+                        >
+                            <option value="global_score">Mayor puntaje</option>
+                            <option value="total_evaluations">Más evaluado</option>
+                            <option value="created_at">Más reciente</option>
+                        </select>
+                    </div>
+                </div>
+
                 {/* Empty State - No query yet */}
                 {!initialQuery && !loading && teachers.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16">
@@ -137,6 +160,7 @@ export default function TeacherCatalog({
                                         <option>Mayor Puntaje</option>
                                     </select>
                                 </div>
+                                <div className="mt-6 h-2 bg-slate-100 rounded w-1/3" />
                             </div>
                         </div>
 
