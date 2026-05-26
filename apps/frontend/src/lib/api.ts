@@ -6,6 +6,43 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // ============================================================================
+// TOKEN MANAGEMENT
+// ============================================================================
+
+/**
+ * Get the stored auth token from localStorage
+ */
+function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('access_token');
+}
+
+/**
+ * Save auth token to localStorage
+ */
+function saveAuthToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('access_token', token);
+}
+
+/**
+ * Save refresh token to localStorage
+ */
+function saveRefreshToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('refresh_token', token);
+}
+
+/**
+ * Clear auth tokens from localStorage
+ */
+export function clearAuthTokens(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+}
+
+// ============================================================================
 // TYPES & INTERFACES
 // ============================================================================
 
@@ -245,6 +282,7 @@ function buildQueryString(params: Record<string, any>): string {
 
 /**
  * Make API request with error handling
+ * Automatically injects Authorization: Bearer token if available
  */
 async function fetchAPI<T>(
   endpoint: string,
@@ -252,13 +290,33 @@ async function fetchAPI<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
+  // Get auth token from localStorage
+  const token = getAuthToken();
+
+  // Build headers with Authorization if token exists
+  const baseHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // Merge with existing headers, handling different header types
+  let headers: Record<string, string> = baseHeaders;
+  if (options?.headers instanceof Headers) {
+    options.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+  } else if (typeof options?.headers === 'object' && options.headers !== null) {
+    Object.assign(headers, options.headers);
+  }
+
+  // Add authorization if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers,
     });
 
     if (!response.ok) {
