@@ -78,5 +78,6 @@ app.include_router(
 
 app.include_router(
     catalogs_router,
+    prefix="/catalogs",
     tags=["catalogs"],
 )
