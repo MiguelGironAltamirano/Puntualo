@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, String, Text, text
+from sqlalchemy import BigInteger, CheckConstraint, Float, ForeignKey, Integer, String, Text, text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -27,16 +27,26 @@ class UploadedDocument(Base, TimestampMixin):
 
     document_type: Mapped[str] = mapped_column(String(20), nullable=False)
 
+    side: Mapped[str | None] = mapped_column(String(10), nullable=True, default=None)
+
     file_path: Mapped[str] = mapped_column(Text, nullable=False)
 
     mime_type: Mapped[str] = mapped_column(String(50), nullable=False)
 
     file_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
+    width_px: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
+    height_px: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
+    quality_score: Mapped[float | None] = mapped_column(Float, nullable=True, default=None)
+
     __table_args__ = (
         CheckConstraint(
             "document_type IN ('carnet','matricula')",
             name="ck_uploaded_documents_type",
+        ),
+        CheckConstraint(
+            "side IS NULL OR side IN ('front','back')",
+            name="ck_uploaded_documents_side",
         ),
         CheckConstraint(
             "mime_type IN ('image/jpeg','image/png','application/pdf')",
