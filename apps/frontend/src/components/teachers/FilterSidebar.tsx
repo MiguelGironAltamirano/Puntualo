@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { ProfessorFilterState } from '@/lib/hooks-filters';
+import { useUniversities, useFaculties, useCourses } from '@/lib/hooks-catalogs';
 
 interface FilterSidebarProps {
     onFiltersChange?: (filters: Partial<ProfessorFilterState>) => void;
@@ -13,6 +14,16 @@ export default function FilterSidebar({ onFiltersChange }: FilterSidebarProps) {
     const [selectedTags, setSelectedTags] = useState<string[]>(['Barco']);
     const [minScore, setMinScore] = useState(0);
     const [maxScore, setMaxScore] = useState(5);
+    
+    // Dropdown state
+    const [selectedUniversity, setSelectedUniversity] = useState<number | null>(1);
+    const [selectedFaculty, setSelectedFaculty] = useState<number | null>(null);
+    const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
+
+    // Fetch dropdown data
+    const { data: universities } = useUniversities();
+    const { data: faculties } = useFaculties(selectedUniversity);
+    const { data: courses } = useCourses(selectedFaculty);
 
     // Toggle tag selection
     const toggleTag = (tagName: string) => {
@@ -64,26 +75,66 @@ export default function FilterSidebar({ onFiltersChange }: FilterSidebarProps) {
                     <div className="space-y-2">
                         <div>
                             <span className="text-[9px] font-bold text-slate-400 block mb-1">UNIVERSIDAD</span>
-                            <select className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer">
-                                <option>Universidad Nacional</option>
+                            <select 
+                                value={selectedUniversity || ''}
+                                onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    setSelectedUniversity(val || null);
+                                    setSelectedFaculty(null);
+                                    setSelectedCourse(null);
+                                }}
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer"
+                            >
+                                <option value="">Seleccionar universidad...</option>
+                                {universities?.map(u => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                ))}
                             </select>
                         </div>
                         <div>
                             <span className="text-[9px] font-bold text-slate-400 block mb-1">FACULTAD</span>
-                            <select className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer">
-                                <option>Ingeniería y Sistemas</option>
+                            <select 
+                                value={selectedFaculty || ''}
+                                onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    setSelectedFaculty(val || null);
+                                    setSelectedCourse(null);
+                                }}
+                                disabled={!selectedUniversity}
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
+                            >
+                                <option value="">
+                                    {!selectedUniversity ? 'Seleccionar universidad primero' : 'Seleccionar facultad...'}
+                                </option>
+                                {faculties?.map(f => (
+                                    <option key={f.id} value={f.id}>{f.name}</option>
+                                ))}
                             </select>
                         </div>
                         <div>
                             <span className="text-[9px] font-bold text-slate-400 block mb-1">CARRERA</span>
-                            <select className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer">
-                                <option>Ingeniería Civil</option>
+                            <select 
+                                value={selectedCourse || ''}
+                                onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    setSelectedCourse(val || null);
+                                }}
+                                disabled={!selectedFaculty}
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
+                            >
+                                <option value="">
+                                    {!selectedFaculty ? 'Seleccionar facultad primero' : 'Seleccionar curso...'}
+                                </option>
+                                {courses?.items?.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
                             </select>
                         </div>
+                        {/* CURSO placeholder (kept for future use) */}
                         <div>
                             <span className="text-[9px] font-bold text-slate-400 block mb-1">CURSO</span>
-                            <select className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer">
-                                <option>Algoritmos 1</option>
+                            <select className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer" disabled>
+                                <option>Seleccionar curso primero</option>
                             </select>
                         </div>
                     </div>

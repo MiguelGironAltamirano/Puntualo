@@ -66,7 +66,10 @@ export default function ComparePage() {
     const { data: resultsB, loading: loadingB } = useProfessors(paramsB, !debouncedSearchB);
 
     // Fetch comparison data when both professors are selected
-    const selectedIds = [slotA?.id, slotB?.id].filter((id): id is string => !!id);
+    const selectedIds = useMemo(
+        () => [slotA?.id, slotB?.id].filter((id): id is string => !!id),
+        [slotA?.id, slotB?.id]
+    );
     const { data: comparison, loading: loadingComparison, error: comparisonError } = useCompareProfessors(
         selectedIds.length === 2 ? selectedIds : null
     );

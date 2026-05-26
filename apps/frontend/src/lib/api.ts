@@ -531,3 +531,48 @@ export const compareProfessors = async (
   }
   return professorsAPI.compare(professorIds);
 };
+
+// ============================================================================
+// CATALOG ENDPOINTS (Universities, Faculties, Courses)
+// ============================================================================
+
+export interface UniversityRead {
+  id: number;
+  name: string;
+}
+
+export interface FacultyRead {
+  id: number;
+  name: string;
+  university_id: number;
+}
+
+export const catalogsAPI = {
+  /**
+   * List all universities
+   */
+  listUniversities: async (): Promise<UniversityRead[]> => {
+    return fetchAPI('/catalogs/universities');
+  },
+
+  /**
+   * List faculties for a specific university
+   */
+  listFaculties: async (universityId: number): Promise<FacultyRead[]> => {
+    return fetchAPI(`/catalogs/universities/${universityId}/faculties`);
+  },
+
+  /**
+   * List courses with optional filters
+   */
+  listCourses: async (params?: {
+    faculty_id?: number;
+    university_id?: number;
+    q?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<CourseRead>> => {
+    const query = buildQueryString(params || {});
+    return fetchAPI(`/evaluations/courses${query}`);
+  },
+};
