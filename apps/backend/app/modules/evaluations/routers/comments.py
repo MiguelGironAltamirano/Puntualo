@@ -35,6 +35,14 @@ async def list_professor_comments(
     course_id: int | None = Query(default=None, gt=0),
     hashtags: list[str] | None = Query(default=None),
     order_by: SortBy = Query("recent"),
+    search: str | None = Query(None, max_length=500, description="Full-text search on comment text"),
+    min_likes: int | None = Query(None, ge=0),
+    max_likes: int | None = Query(None, ge=0),
+    min_dislikes: int | None = Query(None, ge=0),
+    max_dislikes: int | None = Query(None, ge=0),
+    min_net_score: int | None = Query(None, description="Minimum net score (likes - dislikes)"),
+    date_from: str | None = Query(None, description="Date from (ISO format)"),
+    date_to: str | None = Query(None, description="Date to (ISO format)"),
     db: AsyncSession = Depends(get_async_db),
 ):
     svc = CommentService(db)
@@ -43,6 +51,14 @@ async def list_professor_comments(
         sort_by=order_by,
         course_id=course_id,
         hashtags=hashtags,
+        search=search,
+        min_likes=min_likes,
+        max_likes=max_likes,
+        min_dislikes=min_dislikes,
+        max_dislikes=max_dislikes,
+        min_net_score=min_net_score,
+        date_from=date_from,
+        date_to=date_to,
     )
     count_stmt = select(func.count()).select_from(base.subquery())
     total = (await db.execute(count_stmt)).scalar_one()

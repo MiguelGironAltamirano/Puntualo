@@ -18,11 +18,11 @@ class CourseCreate(BaseModel):
 class CourseRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: str
+    id: int
     name: str
     university_id: int
     faculty_id: int
-    is_active: bool
+    evaluation_count: int = 0
     created_at: datetime
 
 
