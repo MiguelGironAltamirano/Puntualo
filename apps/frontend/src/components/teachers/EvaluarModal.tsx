@@ -14,20 +14,19 @@ export function EvaluarModal({ isOpen, onClose, teacher }: EvaluarModalProps) {
     const [claridad, setClaridad] = useState(0);
     const [facilidad, setFacilidad] = useState(0);
     const [ayuda, setAyuda] = useState(0);
+    const [puntualidad, setPuntualidad] = useState(0);
     
     const [curso, setCurso] = useState('');
     const [semestre, setSemestre] = useState('');
     const [modalidad, setModalidad] = useState('');
     
-    const [tagsForm, setTagsForm] = useState<string[]>([]);
+
     const [comment, setComment] = useState('');
     const [hashtags, setHashtags] = useState('');
 
     if (!isOpen) return null;
 
-    const toggleTagForm = (tag: string) => {
-        setTagsForm(tagsForm.includes(tag) ? tagsForm.filter(t => t !== tag) : [...tagsForm, tag]);
-    };
+
 
     const StarRating = ({ value, onChange }: { value: number, onChange: (val: number) => void }) => (
         <div className="flex items-center justify-center gap-1 mt-2">
@@ -74,7 +73,7 @@ export function EvaluarModal({ isOpen, onClose, teacher }: EvaluarModalProps) {
                         <h3 className="text-xs font-black text-[#0284c7] uppercase tracking-wider mb-4 flex items-center gap-2">
                             <Star className="w-4 h-4" /> Calificaciones Generales
                         </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center shadow-sm">
                                 <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest block">Claridad de las clases</span>
                                 <StarRating value={claridad} onChange={setClaridad} />
@@ -86,6 +85,10 @@ export function EvaluarModal({ isOpen, onClose, teacher }: EvaluarModalProps) {
                             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center shadow-sm">
                                 <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest block">Disposición para ayudar</span>
                                 <StarRating value={ayuda} onChange={setAyuda} />
+                            </div>
+                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center shadow-sm">
+                                <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest block">Puntualidad</span>
+                                <StarRating value={puntualidad} onChange={setPuntualidad} />
                             </div>
                         </div>
                     </div>
@@ -135,29 +138,7 @@ export function EvaluarModal({ isOpen, onClose, teacher }: EvaluarModalProps) {
                         </div>
                     </div>
 
-                    {/* Estilo de Enseñanza */}
-                    <div>
-                        <h3 className="text-xs font-black text-[#0284c7] uppercase tracking-wider mb-2 flex items-center gap-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                            Estilo de Enseñanza
-                        </h3>
-                        <p className="text-[10px] font-semibold text-slate-500 mb-4">Selecciona las etiquetas que mejor describan su metodología.</p>
-                        <div className="flex flex-wrap gap-2">
-                            {['Teórico', 'Práctico', 'Uso intensivo de pizarra', 'Mucha tarea', 'Evaluación por proyectos'].map((tag) => {
-                                const active = tagsForm.includes(tag);
-                                return (
-                                    <button 
-                                        key={tag} 
-                                        type="button" 
-                                        onClick={() => toggleTagForm(tag)} 
-                                        className={`px-4 py-2 rounded-full text-[10px] font-bold border transition-all cursor-pointer ${active ? 'bg-sky-50 border-sky-300 text-sky-600 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'}`}
-                                    >
-                                        {tag}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
+
 
                     {/* Tu Reseña */}
                     <div>

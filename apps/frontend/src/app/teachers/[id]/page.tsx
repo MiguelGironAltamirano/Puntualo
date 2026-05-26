@@ -23,7 +23,7 @@ const TEACHERS_DATA: Record<string, TeacherData> = {
         university: 'Universidad Nacional Autónoma',
         research: ['Cálculo Avanzado', 'Topología', 'Álgebra Computacional'],
         experience: '15+ Años de trayectoria docente en nivel superior.',
-        metrics: { claridad: 4.9, facilidad: 3.2, ayuda: 4.7, total: 142 },
+        metrics: { claridad: 4.9, facilidad: 3.2, ayuda: 4.7, puntualidad: 4.8, total: 142 },
         style: ['Mucha tarea práctica', 'Uso intensivo de pizarra', 'Asistencia obligatoria'],
         comments: [
             {
@@ -186,6 +186,12 @@ export default function TeacherProfilePage() {
                                     <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1"><span>Ayuda</span> <span className="text-slate-700 font-black">{teacher.metrics.ayuda}</span></div>
                                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                         <div className="bg-[#ff8a00] h-full" style={{ width: `${(teacher.metrics.ayuda / 5) * 100}%` }}></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1"><span>Puntualidad</span> <span className="text-slate-700 font-black">{teacher.metrics.puntualidad}</span></div>
+                                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                        <div className="bg-[#ff8a00] h-full" style={{ width: `${(teacher.metrics.puntualidad / 5) * 100}%` }}></div>
                                     </div>
                                 </div>
                             </div>
