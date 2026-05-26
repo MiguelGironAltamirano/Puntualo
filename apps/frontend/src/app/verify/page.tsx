@@ -105,6 +105,9 @@ export default function VerifyPage() {
             setStep(2);
             setSelectedFile(null); // Limpiamos para la cara trasera
             setSuccessMessage('');
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         } else if (step === 2) {
             setStep(3); // Pasamos a la pantalla de éxito que pide Figma
         }

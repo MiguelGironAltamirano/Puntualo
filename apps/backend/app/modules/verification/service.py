@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 from io import BytesIO
@@ -114,12 +115,28 @@ def _store_document(
     file_ext = "png" if content_type == "image/png" else "jpg"
     object_key = f"verification/{user.id}/{side}/{uuid.uuid4().hex}.{file_ext}"
 
+    logger = logging.getLogger(__name__)
     supabase = _get_supabase_client()
-    response = supabase.storage.from_(settings.SUPABASE_BUCKET_NAME).upload(
+    logger.info(
+        "Uploading verification document user=%s side=%s key=%s size=%d",
+        user.id,
+        side,
         object_key,
-        file_bytes,
-        file_options={"content-type": content_type, "upsert": "true"},
+        len(file_bytes),
     )
+
+    try:
+        response = supabase.storage.from_(settings.SUPABASE_BUCKET_NAME).upload(
+            object_key,
+            file_bytes,
+            file_options={"content-type": content_type, "upsert": "true"},
+        )
+    except Exception as exc:
+        logger.exception("Supabase upload failed")
+        raise HTTPException(
+            status_code=500,
+            detail="No se pudo subir la imagen",
+        ) from exc
 
     error = None
     if isinstance(response, dict):
@@ -128,6 +145,7 @@ def _store_document(
         error = getattr(response, "error", None)
 
     if error:
+        logger.warning("Supabase returned error: %s", error)
         raise HTTPException(
             status_code=500,
             detail="No se pudo subir la imagen",
@@ -177,7 +195,7 @@ def upload_carnet_side(
             detail="Lado de carnet invalido",
         )
 
-    if user.is_verified:
+    if user.is_verified and _has_both_sides(db, user.id):
         return {
             "detail": "El usuario ya esta verificado",
             "side": side,
@@ -200,19 +218,11 @@ def upload_carnet_side(
 
     request_status = "pending"
 
+    # Notificamos que la solicitud esta lista para revision (ambos lados subidos)
+    # pero NO la aprobamos automaticamente, ya que requiere revision manual (1 dia habil).
     if _has_both_sides(db, user.id):
-        user.is_verified = True
-        request = db.execute(
-            select(VerificationRequest)
-            .where(VerificationRequest.user_id == user.id)
-            .order_by(VerificationRequest.created_at.desc())
-        ).scalars().first()
-
-        if request:
-            request.status = "approved"
-            request.reviewed_at = datetime.now(timezone.utc)
-        db.commit()
-        request_status = "approved"
+        # Opcional: aqui podriamos emitir un evento, enviar un email a admins, etc.
+        pass
 
     return {
         "detail": "Imagen subida correctamente",
