@@ -256,7 +256,22 @@ class ProfessorService:
         hide_rejected: bool = True,
         sort_by: SortField = "created_at",
         sort_order: SortOrder = "desc",
+        min_clarity: int | None = None,
+        max_clarity: int | None = None,
+        min_easiness: int | None = None,
+        max_easiness: int | None = None,
+        min_helpfulness: int | None = None,
+        max_helpfulness: int | None = None,
+        min_punctuality: int | None = None,
+        max_punctuality: int | None = None,
+        min_global_score: float | None = None,
+        max_global_score: float | None = None,
+        min_evaluations: int | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
     ):
+        from datetime import datetime
+        
         base = (
             select(Professor)
             .join(University, Professor.university_id == University.id)
@@ -291,6 +306,70 @@ class ProfessorService:
                 )
                 .exists()
             )
+
+        # Score range filters on evaluations
+        if any(
+            f is not None
+            for f in [
+                min_clarity,
+                max_clarity,
+                min_easiness,
+                max_easiness,
+                min_helpfulness,
+                max_helpfulness,
+                min_punctuality,
+                max_punctuality,
+            ]
+        ):
+            from app.models.evaluation import Evaluation
+            
+            eval_subquery = select(Evaluation.professor_id).where(
+                Evaluation.professor_id == Professor.id
+            )
+            
+            if min_clarity is not None:
+                eval_subquery = eval_subquery.where(Evaluation.clarity >= min_clarity)
+            if max_clarity is not None:
+                eval_subquery = eval_subquery.where(Evaluation.clarity <= max_clarity)
+            if min_easiness is not None:
+                eval_subquery = eval_subquery.where(Evaluation.easiness >= min_easiness)
+            if max_easiness is not None:
+                eval_subquery = eval_subquery.where(Evaluation.easiness <= max_easiness)
+            if min_helpfulness is not None:
+                eval_subquery = eval_subquery.where(Evaluation.helpfulness >= min_helpfulness)
+            if max_helpfulness is not None:
+                eval_subquery = eval_subquery.where(Evaluation.helpfulness <= max_helpfulness)
+            if min_punctuality is not None:
+                eval_subquery = eval_subquery.where(Evaluation.punctuality >= min_punctuality)
+            if max_punctuality is not None:
+                eval_subquery = eval_subquery.where(Evaluation.punctuality <= max_punctuality)
+            
+            base = base.where(eval_subquery.exists())
+
+        # Global score filters
+        if min_global_score is not None:
+            base = base.where(Professor.global_score >= min_global_score)
+        if max_global_score is not None:
+            base = base.where(Professor.global_score <= max_global_score)
+
+        # Minimum evaluations filter
+        if min_evaluations is not None:
+            base = base.where(Professor.total_evaluations >= min_evaluations)
+
+        # Date range filters
+        if date_from is not None:
+            try:
+                from_date = datetime.fromisoformat(date_from)
+                base = base.where(Professor.created_at >= from_date)
+            except (ValueError, TypeError):
+                pass  # Ignore invalid dates
+        
+        if date_to is not None:
+            try:
+                to_date = datetime.fromisoformat(date_to)
+                base = base.where(Professor.created_at <= to_date)
+            except (ValueError, TypeError):
+                pass  # Ignore invalid dates
 
         if validation_status is not None:
             base = base.where(Professor.validation_status == validation_status)

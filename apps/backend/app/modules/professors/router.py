@@ -12,6 +12,7 @@ from app.modules.professors.dependencies import (
     require_admin,
     require_verified_user,
 )
+from app.modules.professors.router_comparison import router as comparison_router
 from app.modules.professors.schemas import (
     VALIDATION_STATUSES,
     CourseRef,
@@ -91,12 +92,12 @@ async def create_professor(
 @router.get(
     "/",
     response_model=PaginatedResponse[ProfessorOut] | PaginatedResponse[ProfessorAdminOut],
-    summary="Listar profesores (paginado, filtros, sort)",
+    summary="Listar profesores (paginado, filtros, sort, búsqueda avanzada)",
 )
 async def list_professors(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=MAX_PAGE_SIZE),
-    search: str | None = Query(None, max_length=200),
+    search: str | None = Query(None, max_length=200, description="Búsqueda fuzzy en nombre, universidad, facultad"),
     university_id: int | None = Query(None, gt=0),
     faculty_id: int | None = Query(None, gt=0),
     course_id: int | None = Query(None, gt=0),
@@ -104,6 +105,19 @@ async def list_professors(
     include_deleted: bool = Query(False),
     sort_by: SortField = Query("created_at"),
     sort_order: SortOrder = Query("desc"),
+    min_clarity: int | None = Query(None, ge=1, le=5, description="Calificación mínima de claridad"),
+    max_clarity: int | None = Query(None, ge=1, le=5, description="Calificación máxima de claridad"),
+    min_easiness: int | None = Query(None, ge=1, le=5, description="Dificultad mínima"),
+    max_easiness: int | None = Query(None, ge=1, le=5, description="Dificultad máxima"),
+    min_helpfulness: int | None = Query(None, ge=1, le=5, description="Ayuda mínima"),
+    max_helpfulness: int | None = Query(None, ge=1, le=5, description="Ayuda máxima"),
+    min_punctuality: int | None = Query(None, ge=1, le=5, description="Puntualidad mínima"),
+    max_punctuality: int | None = Query(None, ge=1, le=5, description="Puntualidad máxima"),
+    min_global_score: float | None = Query(None, ge=1.0, le=5.0, description="Puntaje global mínimo"),
+    max_global_score: float | None = Query(None, ge=1.0, le=5.0, description="Puntaje global máximo"),
+    min_evaluations: int | None = Query(None, ge=1, description="Número mínimo de evaluaciones"),
+    date_from: str | None = Query(None, description="Fecha de creación desde (ISO format)"),
+    date_to: str | None = Query(None, description="Fecha de creación hasta (ISO format)"),
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -136,6 +150,19 @@ async def list_professors(
         hide_rejected=not admin,
         sort_by=sort_by,
         sort_order=sort_order,
+        min_clarity=min_clarity,
+        max_clarity=max_clarity,
+        min_easiness=min_easiness,
+        max_easiness=max_easiness,
+        min_helpfulness=min_helpfulness,
+        max_helpfulness=max_helpfulness,
+        min_punctuality=min_punctuality,
+        max_punctuality=max_punctuality,
+        min_global_score=min_global_score,
+        max_global_score=max_global_score,
+        min_evaluations=min_evaluations,
+        date_from=date_from,
+        date_to=date_to,
     )
 
     count_stmt = select(func.count()).select_from(query.subquery())
@@ -444,3 +471,7 @@ async def remove_professor_course(
             detail={"code": "PROFESSOR_COURSE_NOT_FOUND", "message": "Relación profesor-curso no encontrada"},
         )
     return None
+
+
+# Include comparison router
+router.include_router(comparison_router)
