@@ -28,8 +28,8 @@ async def list_courses(
     q: str | None = Query(None, max_length=200, description="Fuzzy search on course name"),
     university_id: int | None = Query(None, gt=0),
     faculty_id: int | None = Query(None, gt=0),
-    sort_by: str = Query("name", regex="^(name|evaluation_count)$"),
-    sort_order: str = Query("asc", regex="^(asc|desc)$"),
+    sort_by: str = Query("name", pattern="^(name|evaluation_count)$"),
+    sort_order: str = Query("asc", pattern="^(asc|desc)$"),
     db: AsyncSession = Depends(get_async_db),
 ):
     """

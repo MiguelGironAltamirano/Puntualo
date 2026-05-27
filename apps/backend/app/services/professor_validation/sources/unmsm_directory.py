@@ -3,11 +3,13 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import ssl
 import unicodedata
 from datetime import datetime, timezone
 from typing import Literal
 
 import httpx
+import truststore
 from bs4 import BeautifulSoup
 
 from app.core.config import settings
@@ -20,7 +22,14 @@ import app.utils.cache as _cache_mod
 
 logger = logging.getLogger(__name__)
 
-_ACADEMIC_PREFIXES = {"dr.", "mg.", "mtro.", "lic.", "ing.", "dr", "mg", "mtro", "lic", "ing"}
+_ACADEMIC_PREFIXES = {
+    "dr.", "dr", "dra.", "dra",
+    "mg.", "mg", "mgr.", "mgr",
+    "mtro.", "mtro", "mtra.", "mtra",
+    "lic.", "lic", "lica.", "lica",
+    "ing.", "ing",
+    "prof.", "prof", "profa.", "profa",
+}
 
 _URL_TO_DEPARTMENT = {
     "directorio-dacc": "DACC — Ciencias de la Computación",
@@ -114,9 +123,12 @@ class UnmsmDirectorySource:
             connect=settings.PIPELINE_TIMEOUT_CONNECT,
         )
         headers = {"User-Agent": settings.UNMSM_USER_AGENT}
+        # UNMSM serves an incomplete TLS chain (missing intermediate). Use the OS
+        # trust store, which performs AIA fetching to recover the missing cert.
+        ssl_ctx = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         all_professors: list[dict] = []
 
-        async with httpx.AsyncClient(timeout=timeout, headers=headers, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=timeout, headers=headers, follow_redirects=True, verify=ssl_ctx) as client:
             for i, url in enumerate(settings.UNMSM_DIRECTORY_URLS):
                 if i > 0:
                     await asyncio.sleep(settings.UNMSM_RATE_LIMIT_SECONDS)

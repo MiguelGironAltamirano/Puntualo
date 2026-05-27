@@ -8,6 +8,8 @@ import { RegisterTeacherModal } from "./RegisterTeacherModal";
 import { useProfessors } from "@/lib/hooks";
 import { ProfessorRead } from "@/lib/api";
 
+type SortBy = 'global_score' | 'total_evaluations' | 'created_at';
+
 /**
  * Maps API ProfessorRead to frontend TeacherSummary
  * Calculates metrics from evaluations data
@@ -22,7 +24,7 @@ function mapProfessorToTeacher(professor: ProfessorRead): TeacherSummary {
         dificultad: 2.5, // Default - should come from evaluations API
         puntualidad: 4.0, // Default - should come from evaluations API
         avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80', // Placeholder
-        tags: professor.validation_status === 'verified' ? ['VERIFICADO'] : [],
+        tags: professor.validation_status === 'validated' ? ['VERIFICADO'] : [],
     };
 }
 
@@ -35,6 +37,7 @@ export default function TeacherCatalog({
 }) {
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [sortBy, setSortBy] = useState<SortBy>('global_score');
     const pageSize = 20;
 
     // Memoize search params to prevent infinite fetch loops
@@ -42,8 +45,10 @@ export default function TeacherCatalog({
         search: initialQuery,
         page: currentPage,
         page_size: pageSize,
+        sort_by: sortBy,
+        sort_order: 'desc' as const,
         ...filters,
-    }), [initialQuery, currentPage, pageSize, filters]);
+    }), [initialQuery, currentPage, pageSize, sortBy, filters]);
 
     // Fetch professors from API
     const { data: professorsData, loading, error } = useProfessors(searchParams);
@@ -149,19 +154,6 @@ export default function TeacherCatalog({
                                 <p className="text-xs text-slate-400 mt-1 font-medium">{showingText}</p>
                             </div>
 
-                            <div className="flex items-center gap-5 self-end sm:self-auto">
-                                <button type="button" onClick={() => setIsRegisterModalOpen(true)} className="px-4 py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer">
-                                    <Plus className="w-4 h-4" strokeWidth={3} /> Agregar nuevo profesor
-                                </button>
-
-                                <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                                    <span className="text-slate-400 font-medium">Ordenar por:</span>
-                                    <select className="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer">
-                                        <option>Mayor Puntaje</option>
-                                    </select>
-                                </div>
-                                <div className="mt-6 h-2 bg-slate-100 rounded w-1/3" />
-                            </div>
                         </div>
 
                         {/* Teacher Cards Grid */}

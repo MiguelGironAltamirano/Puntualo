@@ -134,7 +134,7 @@ async def list_evaluations(
     professor_id: str | None = Query(None, description="Filtrar por profesor"),
     course_id: int | None = Query(None, gt=0, description="Filtrar por curso"),
     semester: str | None = Query(None, max_length=7, description="Filtrar por semestre (ej: 2024-1)"),
-    modality: str | None = Query(None, regex="^(virtual|presencial|ambas)$", description="Filtrar por modalidad"),
+    modality: str | None = Query(None, pattern="^(virtual|presencial|ambas)$", description="Filtrar por modalidad"),
     min_clarity: int | None = Query(None, ge=1, le=5),
     max_clarity: int | None = Query(None, ge=1, le=5),
     min_easiness: int | None = Query(None, ge=1, le=5),
@@ -145,8 +145,8 @@ async def list_evaluations(
     max_punctuality: int | None = Query(None, ge=1, le=5),
     date_from: str | None = Query(None, description="Fecha desde (ISO format)"),
     date_to: str | None = Query(None, description="Fecha hasta (ISO format)"),
-    sort_by: str = Query("created_at", regex="^(created_at|clarity|easiness|helpfulness|punctuality)$"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$"),
+    sort_by: str = Query("created_at", pattern="^(created_at|clarity|easiness|helpfulness|punctuality)$"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     db: AsyncSession = Depends(get_async_db),
 ):
     """

@@ -26,7 +26,7 @@ function mapProfessorToTeacher(professor: ProfessorRead): Teacher {
         clarity: 3.5, // Placeholder
         takeAgain: '75%', // Placeholder
         avatar: '', // Will use default emoji
-        tags: professor.validation_status === 'verified' ? ['Verificado'] : [],
+        tags: professor.validation_status === 'validated' ? ['Verificado'] : [],
         reviews: [],
         aiSummary: {
             pros: [],

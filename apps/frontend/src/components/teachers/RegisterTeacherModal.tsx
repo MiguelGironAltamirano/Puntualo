@@ -63,7 +63,7 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
 
         let cancelled = false;
         setLoadingCatalogs(true);
-        fetch(`${API_URL}/universities`)
+        fetch(`${API_URL}/catalogs/universities`)
             .then((res) => res.ok ? res.json() : Promise.reject(res))
             .then((data: University[]) => {
                 if (!cancelled) {
@@ -93,7 +93,7 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
         let cancelled = false;
         setLoadingFaculties(true);
         setFacultyId('');
-        fetch(`${API_URL}/universities/${universityId}/faculties`)
+        fetch(`${API_URL}/catalogs/universities/${universityId}/faculties`)
             .then((res) => res.ok ? res.json() : Promise.reject(res))
             .then((data: Faculty[]) => {
                 if (!cancelled) setFaculties(data);
