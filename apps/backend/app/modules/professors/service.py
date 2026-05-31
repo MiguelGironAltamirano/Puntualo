@@ -43,6 +43,12 @@ class CourseNotFoundError(Exception):
     pass
 
 
+class CoursesNotFoundError(Exception):
+    def __init__(self, ids: list[int]):
+        self.ids = ids
+        super().__init__(f"Cursos no encontrados o inactivos: {ids}")
+
+
 class InvalidCourseFacultyError(Exception):
     pass
 
@@ -77,14 +83,39 @@ class ProfessorService:
                 f"en la universidad id={data.university_id}"
             )
 
+        unique_course_ids = list(dict.fromkeys(data.course_ids))
+        courses = (
+            await self.db.execute(
+                select(Course).where(
+                    Course.id.in_(unique_course_ids),
+                    Course.is_active.is_(True),
+                )
+            )
+        ).scalars().all()
+
+        found_ids = {c.id for c in courses}
+        missing = [cid for cid in unique_course_ids if cid not in found_ids]
+        if missing:
+            raise CoursesNotFoundError(ids=missing)
+
+        wrong_faculty = [c.id for c in courses if c.faculty_id != data.faculty_id]
+        if wrong_faculty:
+            raise InvalidCourseFacultyError(
+                f"Los cursos {wrong_faculty} no pertenecen a la facultad id={data.faculty_id}"
+            )
+
         professor = Professor(
             full_name=data.full_name.strip(),
             university_id=data.university_id,
             faculty_id=data.faculty_id,
             registered_by_id=registered_by_id,
         )
-
         self.db.add(professor)
+        await self.db.flush()  # populate professor.id without committing
+
+        for cid in unique_course_ids:
+            self.db.add(ProfessorCourse(professor_id=professor.id, course_id=cid))
+
         await self.db.commit()
         await self.db.refresh(professor)
 

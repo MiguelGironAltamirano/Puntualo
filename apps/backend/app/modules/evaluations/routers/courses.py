@@ -99,7 +99,7 @@ async def list_courses(
             course = row[0]
             eval_count = row[1]
         else:
-            course = row
+            course = row[0]
             eval_count = 0
         courses_with_counts.append((course, eval_count))
     

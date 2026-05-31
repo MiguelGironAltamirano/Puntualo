@@ -6,7 +6,7 @@ import { TeacherSummary } from "./types";
 import { SearchAIAnalysis } from "./SearchAIAnalysis";
 import { RegisterTeacherModal } from "./RegisterTeacherModal";
 import { useProfessors } from "@/lib/hooks";
-import { ProfessorRead } from "@/lib/api";
+import { ProfessorRead, PaginatedResponse } from "@/lib/api";
 
 type SortBy = 'global_score' | 'total_evaluations' | 'created_at';
 
@@ -50,8 +50,16 @@ export default function TeacherCatalog({
         ...filters,
     }), [initialQuery, currentPage, pageSize, sortBy, filters]);
 
+    // Poll while any visible professor is still being validated (max ~2 min).
+    const pollOptions = useMemo(() => ({
+        pollIntervalMs: 5000,
+        maxPolls: 24,
+        pollWhile: (data: PaginatedResponse<ProfessorRead>) =>
+            data?.items?.some((p) => p.validation_status === 'pending_validation') ?? false,
+    }), []);
+
     // Fetch professors from API
-    const { data: professorsData, loading, error } = useProfessors(searchParams);
+    const { data: professorsData, loading, error } = useProfessors(searchParams, false, pollOptions);
 
     // Map API response to TeacherSummary type
     const teachers = useMemo(() => {

@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import { Sparkles, User, UserPlus } from "lucide-react";
+import { Sparkles, User, UserPlus, X } from "lucide-react";
+import { useDebounce } from "@/lib/hooks";
 
 interface RegisterTeacherModalProps {
     isOpen: boolean;
@@ -20,6 +21,12 @@ interface Faculty {
     id: number;
     university_id: number;
     name: string;
+}
+
+interface Course {
+    id: number;
+    name: string;
+    faculty_id: number;
 }
 
 const TITLES = [
@@ -53,6 +60,13 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
     const [faculties, setFaculties] = useState<Faculty[]>([]);
     const [loadingCatalogs, setLoadingCatalogs] = useState(false);
     const [loadingFaculties, setLoadingFaculties] = useState(false);
+
+    const [courseSearch, setCourseSearch] = useState('');
+    const debouncedCourseSearch = useDebounce(courseSearch, 300);
+    const [courseResults, setCourseResults] = useState<Course[]>([]);
+    const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
+    const [loadingCourses, setLoadingCourses] = useState(false);
+    const [showCourseDropdown, setShowCourseDropdown] = useState(false);
 
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -108,13 +122,61 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
         return () => { cancelled = true; };
     }, [universityId]);
 
+    // Reset course selection when faculty changes (different course universe).
+    useEffect(() => {
+        setSelectedCourses([]);
+        setCourseSearch('');
+        setCourseResults([]);
+    }, [facultyId]);
+
+    // Fetch courses for the chosen faculty, filtered by search query.
+    useEffect(() => {
+        if (!facultyId) {
+            setCourseResults([]);
+            return;
+        }
+
+        let cancelled = false;
+        setLoadingCourses(true);
+        const url = `${API_URL}/courses?faculty_id=${facultyId}&page_size=10`
+            + (debouncedCourseSearch ? `&q=${encodeURIComponent(debouncedCourseSearch)}` : '');
+        fetch(url)
+            .then((res) => res.ok ? res.json() : Promise.reject(res))
+            .then((data: { items: Course[] }) => {
+                if (!cancelled) setCourseResults(data.items ?? []);
+            })
+            .catch(() => {
+                if (!cancelled) setCourseResults([]);
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingCourses(false);
+            });
+
+        return () => { cancelled = true; };
+    }, [facultyId, debouncedCourseSearch]);
+
     const resetForm = () => {
         setTitle('');
         setFullName('');
         setUniversityId(universities.length === 1 ? String(universities[0].id) : '');
         setFacultyId('');
+        setSelectedCourses([]);
+        setCourseSearch('');
+        setCourseResults([]);
         setError('');
         setSuccess(false);
+    };
+
+    const addCourse = (course: Course) => {
+        if (selectedCourses.length >= 10) return;
+        if (selectedCourses.some((c) => c.id === course.id)) return;
+        setSelectedCourses((prev) => [...prev, course]);
+        setCourseSearch('');
+        setShowCourseDropdown(false);
+    };
+
+    const removeCourse = (courseId: number) => {
+        setSelectedCourses((prev) => prev.filter((c) => c.id !== courseId));
     };
 
     const handleClose = () => {
@@ -141,6 +203,10 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
             setError('Seleccioná universidad y facultad');
             return;
         }
+        if (selectedCourses.length === 0) {
+            setError('Seleccioná al menos un curso que dicte el profesor');
+            return;
+        }
 
         const composedName = title
             ? `${title} ${trimmedName}`.replace(/\s+/g, ' ')
@@ -159,12 +225,16 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
                     full_name: composedName,
                     university_id: Number(universityId),
                     faculty_id: Number(facultyId),
+                    course_ids: selectedCourses.map((c) => c.id),
                 }),
             });
 
             if (!res.ok) {
                 const data = await res.json().catch(() => null);
                 const detail = data?.detail;
+                const code = detail && typeof detail === 'object' && 'code' in detail
+                    ? (detail as { code?: string }).code
+                    : undefined;
 
                 if (res.status === 403) {
                     setError('Necesitás verificar tu correo institucional para registrar profesores.');
@@ -172,6 +242,10 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
                     setError('Tu sesión expiró. Iniciá sesión de nuevo.');
                 } else if (res.status === 409) {
                     setError('Este profesor ya está registrado en la universidad seleccionada.');
+                } else if (code === 'COURSES_NOT_FOUND') {
+                    setError('Algún curso ya no está disponible. Recargá la página e intentá de nuevo.');
+                } else if (code === 'COURSE_WRONG_FACULTY') {
+                    setError('Algún curso no pertenece a la facultad elegida.');
                 } else if (res.status === 404) {
                     setError(extractErrorMessage(detail));
                 } else {
@@ -200,7 +274,12 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
         !success &&
         fullName.trim().length >= 3 &&
         Boolean(universityId) &&
-        Boolean(facultyId);
+        Boolean(facultyId) &&
+        selectedCourses.length >= 1;
+
+    const visibleCourseResults = courseResults.filter(
+        (c) => !selectedCourses.some((s) => s.id === c.id),
+    );
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -312,6 +391,89 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
                                     <option key={f.id} value={f.id}>{f.name}</option>
                                 ))}
                             </select>
+                        </div>
+                    </div>
+
+                    {/* CURSOS */}
+                    <div>
+                        <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                            Cursos que dicta
+                            <span className="ml-1.5 text-slate-400 font-medium normal-case tracking-normal">
+                                ({selectedCourses.length}/10 — al menos 1)
+                            </span>
+                        </label>
+
+                        {/* Chips */}
+                        {selectedCourses.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-2">
+                                {selectedCourses.map((c) => (
+                                    <span
+                                        key={c.id}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-sky-50 border border-sky-200 text-sky-800 text-[11px] font-bold rounded-md"
+                                    >
+                                        {c.name}
+                                        <button
+                                            type="button"
+                                            onClick={() => removeCourse(c.id)}
+                                            className="text-sky-500 hover:text-sky-800 cursor-pointer"
+                                            aria-label={`Quitar ${c.name}`}
+                                        >
+                                            <X className="w-3 h-3" strokeWidth={3} />
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Search input + dropdown */}
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={courseSearch}
+                                onChange={(e) => {
+                                    setCourseSearch(e.target.value);
+                                    setShowCourseDropdown(true);
+                                }}
+                                onFocus={() => setShowCourseDropdown(true)}
+                                onBlur={() => setTimeout(() => setShowCourseDropdown(false), 150)}
+                                placeholder={
+                                    !facultyId
+                                        ? 'Elegí una facultad primero'
+                                        : selectedCourses.length >= 10
+                                            ? 'Máximo 10 cursos alcanzado'
+                                            : 'Buscar curso por nombre...'
+                                }
+                                disabled={!facultyId || selectedCourses.length >= 10}
+                                className="w-full bg-white border border-slate-200 text-sm font-medium text-slate-800 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-100 focus:border-sky-300 transition-all placeholder:text-slate-400 disabled:bg-slate-50 disabled:cursor-not-allowed"
+                            />
+
+                            {showCourseDropdown && facultyId && selectedCourses.length < 10 && (
+                                <div className="absolute z-10 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                                    {loadingCourses && (
+                                        <div className="px-3.5 py-2.5 text-xs text-slate-400 font-medium">
+                                            Buscando...
+                                        </div>
+                                    )}
+                                    {!loadingCourses && visibleCourseResults.length === 0 && (
+                                        <div className="px-3.5 py-2.5 text-xs text-slate-400 font-medium">
+                                            {debouncedCourseSearch
+                                                ? 'Sin resultados'
+                                                : 'Empezá a escribir para buscar'}
+                                        </div>
+                                    )}
+                                    {!loadingCourses && visibleCourseResults.map((c) => (
+                                        <button
+                                            key={c.id}
+                                            type="button"
+                                            onMouseDown={(e) => e.preventDefault()}
+                                            onClick={() => addCourse(c)}
+                                            className="block w-full text-left px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-800 transition-colors cursor-pointer"
+                                        >
+                                            {c.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 

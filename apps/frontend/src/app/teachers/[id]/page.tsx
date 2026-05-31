@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from "@/components/layout/Navbar";
 import { CommentList, CommentRead, ReactionType } from "@/components/teachers/CommentList";
@@ -136,6 +136,21 @@ export default function TeacherProfilePage() {
         run();
         return () => controller.abort();
     }, [id, refreshTick]);
+
+    // Poll while validation is pending (silent refetch, max ~2 min).
+    const validationPollsRef = useRef(0);
+    useEffect(() => {
+        if (professor?.validation_status !== 'pending_validation') {
+            validationPollsRef.current = 0;
+            return;
+        }
+        if (validationPollsRef.current >= 24) return;
+        const t = setTimeout(() => {
+            validationPollsRef.current += 1;
+            setRefreshTick((v) => v + 1);
+        }, 5000);
+        return () => clearTimeout(t);
+    }, [professor?.validation_status, refreshTick]);
 
     const handleReact = async (commentId: string, type: ReactionType) => {
         if (pendingReactions.has(commentId)) return;

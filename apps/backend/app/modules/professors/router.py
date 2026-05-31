@@ -31,6 +31,7 @@ from app.modules.professors.schemas import (
 )
 from app.modules.professors.service import (
     CourseNotFoundError,
+    CoursesNotFoundError,
     FacultyNotFoundError,
     InvalidCourseFacultyError,
     InvalidStateTransitionError,
@@ -56,8 +57,9 @@ MAX_PAGE_SIZE = 50
     summary="Registrar nuevo profesor (usuario verificado)",
     responses={
         403: {"model": ErrorResponse, "description": "Usuario no verificado"},
-        404: {"model": ErrorResponse, "description": "Universidad o facultad no encontrada"},
+        404: {"model": ErrorResponse, "description": "Universidad, facultad o curso no encontrado"},
         409: {"model": ErrorResponse, "description": "Profesor duplicado"},
+        422: {"model": ErrorResponse, "description": "Curso fuera de la facultad"},
     },
 )
 async def create_professor(
@@ -82,6 +84,16 @@ async def create_professor(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "FACULTY_NOT_FOUND", "message": str(exc)},
+        )
+    except CoursesNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "COURSES_NOT_FOUND", "message": str(exc), "ids": exc.ids},
+        )
+    except InvalidCourseFacultyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "COURSE_WRONG_FACULTY", "message": str(exc)},
         )
     return ProfessorOut.model_validate(professor)
 

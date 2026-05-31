@@ -17,6 +17,7 @@ class ProfessorCreate(BaseModel):
     full_name: str = Field(min_length=3, max_length=200)
     university_id: int = Field(gt=0)
     faculty_id: int = Field(gt=0)
+    course_ids: list[int] = Field(min_length=1, max_length=10)
 
 
 class ProfessorUpdate(BaseModel):

@@ -37,6 +37,17 @@ export interface UseListState<T> extends UseQueryState<PaginatedResponse<T>> {
   data: PaginatedResponse<T> | null;
 }
 
+/**
+ * Opt-in conditional polling. While `pollWhile(data)` is true, the hook
+ * silently refetches every `pollIntervalMs` (no loading spinner), up to
+ * `maxPolls` times. Omit to disable polling entirely.
+ */
+export interface PollOptions<T> {
+  pollIntervalMs?: number;
+  pollWhile?: (data: T) => boolean;
+  maxPolls?: number;
+}
+
 // ============================================================================
 // UTILITY HOOKS
 // ============================================================================
@@ -68,23 +79,47 @@ export function useDebounce<T>(value: T, delayMs: number = 300): T {
  */
 export function useProfessors(
   params?: ProfessorListParams,
-  skip = false
+  skip = false,
+  poll?: PollOptions<PaginatedResponse<ProfessorRead>>
 ): UseListState<ProfessorRead> {
   const [state, setState] = useState<UseListState<ProfessorRead>>({
     data: null,
     loading: false,
     error: null,
   });
+  const [tick, setTick] = useState(0);
+  const pollCountRef = useRef(0);
+
+  // Restart the poll budget whenever the query changes.
+  useEffect(() => {
+    pollCountRef.current = 0;
+  }, [params, skip]);
 
   useEffect(() => {
     if (skip) return;
 
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const isPoll = pollCountRef.current > 0;
+
     const fetchData = async () => {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
+      if (!isPoll) {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+      }
       try {
         const data = await professorsAPI.list(params);
+        if (cancelled) return;
         setState({ data, loading: false, error: null });
+
+        const maxPolls = poll?.maxPolls ?? Infinity;
+        if (poll?.pollIntervalMs && poll.pollWhile?.(data) && pollCountRef.current < maxPolls) {
+          timer = setTimeout(() => {
+            pollCountRef.current += 1;
+            setTick((t) => t + 1);
+          }, poll.pollIntervalMs);
+        }
       } catch (error) {
+        if (cancelled) return;
         setState({
           data: null,
           loading: false,
@@ -94,7 +129,12 @@ export function useProfessors(
     };
 
     fetchData();
-  }, [params, skip]);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [params, skip, tick, poll]);
 
   return state;
 }
