@@ -10,10 +10,17 @@ celery_app = Celery(
 celery_app.conf.include = [
     "app.tasks.professor_validation_tasks",
     "app.tasks.score_recalculation_tasks",
+    "app.tasks.nlp_tasks",
 ]
 
 celery_app.conf.update(
     task_acks_late=True,
     task_track_started=True,
     timezone="UTC",
+    beat_schedule={
+        "nlp-enqueue-pending-summaries": {
+            "task": "nlp.enqueue_pending_summaries",
+            "schedule": float(settings.NLP_SUMMARY_BEAT_SECONDS),
+        },
+    },
 )

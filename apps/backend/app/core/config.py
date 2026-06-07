@@ -214,6 +214,17 @@ class Settings:
         os.getenv("CACHE_TTL_COURSES_SEARCH_SECONDS", "60")
     )
 
+    # --- Tarea 4.4: Resumen Ejecutivo NLP (Gemini)
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    NLP_SUMMARY_MIN_REVIEWS: int = int(os.getenv("NLP_SUMMARY_MIN_REVIEWS", "5"))
+    NLP_SUMMARY_MAX_REVIEWS: int = int(os.getenv("NLP_SUMMARY_MAX_REVIEWS", "100"))
+    NLP_SUMMARY_SAMPLE_RECENT: int = int(os.getenv("NLP_SUMMARY_SAMPLE_RECENT", "50"))
+    NLP_SUMMARY_SAMPLE_RANDOM: int = int(os.getenv("NLP_SUMMARY_SAMPLE_RANDOM", "50"))
+    NLP_SUMMARY_MAX_INPUT_TOKENS: int = int(os.getenv("NLP_SUMMARY_MAX_INPUT_TOKENS", "50000"))
+    NLP_SUMMARY_BEAT_SECONDS: int = int(os.getenv("NLP_SUMMARY_BEAT_SECONDS", "900"))
+    NLP_LLM_MAX_RETRIES: int = int(os.getenv("NLP_LLM_MAX_RETRIES", "2"))
+
     # --- Tarea 2.6: override de semestre (solo tests)
     SEMESTER_OVERRIDE: str | None = os.getenv("SEMESTER_OVERRIDE") or None
 

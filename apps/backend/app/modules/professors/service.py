@@ -15,6 +15,7 @@ from app.models.professor_course import ProfessorCourse
 from app.models.professor_degree import ProfessorDegree
 from app.models.professor_evidence import ProfessorEvidence
 from app.models.university import University
+from app.services.nlp.summary_generator import published_comment_count
 from app.modules.professors.schemas import (
     VALIDATION_STATUSES,
     DegreeRef,
@@ -441,6 +442,8 @@ class ProfessorService:
         str | None,
         str | None,
         str | None,
+        ProfessorAiSummary | None,
+        str | None,
     ] | None:
         professor = await self.get_by_id(
             professor_id, include_inactive=include_deleted
@@ -491,7 +494,27 @@ class ProfessorService:
 
         summary = await self._build_summary(professor, courses, degrees)
 
-        return professor, courses, degrees, evidence, summary, university_name, faculty_name
+        ai_summary_row = (
+            await self.db.execute(
+                select(ProfessorAiSummary)
+                .where(ProfessorAiSummary.professor_id == professor.id)
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        # El motivo se basa en el MISMO criterio que el guard de generación
+        # (comentarios publicados), no en total_evaluations: un profesor puede
+        # tener evaluaciones cuyo comentario está oculto/eliminado y aun así no
+        # llegar al mínimo de texto para resumir.
+        ai_summary_reason = None
+        if ai_summary_row is None:
+            published = await published_comment_count(professor.id, self.db)
+            if published < settings.NLP_SUMMARY_MIN_REVIEWS:
+                ai_summary_reason = "insufficient_data"
+
+        return (
+            professor, courses, degrees, evidence, summary,
+            university_name, faculty_name, ai_summary_row, ai_summary_reason,
+        )
 
     # ---------- helpers ----------
 
@@ -501,10 +524,11 @@ class ProfessorService:
         courses: list[Course],
         degrees: list[DegreeRef],
     ) -> str | None:
-        """Placeholder hasta que la 4.4 entregue resúmenes NLP reales.
+        """Texto del resumen para `executive_summary`.
 
-        Lee professor_ai_summaries si existe; si no, genera un texto factual
-        a partir de los datos disponibles.
+        Si existe un resumen NLP (Tarea 4.4) en professor_ai_summaries, devuelve
+        su texto; si no, genera un texto factual a partir de los datos disponibles
+        (fallback para perfiles aún sin resumen generado).
         """
         try:
             summary_stmt = (

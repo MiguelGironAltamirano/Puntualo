@@ -95,6 +95,16 @@ class EvidenceRef(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class AiSummaryOut(BaseModel):
+    summary: str
+    pros: list[str] = Field(default_factory=list)
+    cons: list[str] = Field(default_factory=list)
+    model_version: str
+    generated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class ProfessorDetail(_ProfessorBase):
     university_name: str | None = None
     faculty_name: str | None = None
@@ -102,6 +112,8 @@ class ProfessorDetail(_ProfessorBase):
     degrees: list[DegreeRef] = Field(default_factory=list)
     evidence: list[EvidenceRef] = Field(default_factory=list)
     executive_summary: str | None = None
+    ai_summary: AiSummaryOut | None = None
+    ai_summary_reason: str | None = None
 
 
 class ProfessorDetailAdmin(ProfessorDetail):

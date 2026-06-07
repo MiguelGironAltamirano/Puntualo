@@ -15,6 +15,7 @@ from app.modules.professors.dependencies import (
 from app.modules.professors.router_comparison import router as comparison_router
 from app.modules.professors.schemas import (
     VALIDATION_STATUSES,
+    AiSummaryOut,
     CourseRef,
     EvidenceRef,
     ProfessorAdminOut,
@@ -41,6 +42,7 @@ from app.modules.professors.service import (
 )
 from app.schemas.error import ErrorResponse
 from app.schemas.pagination import PaginatedResponse
+from app.tasks.nlp_tasks import generate_professor_summary
 
 router = APIRouter()
 
@@ -225,7 +227,8 @@ async def get_professor(
             detail={"code": "PROFESSOR_NOT_FOUND", "message": "Profesor no encontrado"},
         )
 
-    professor, courses, degrees, evidence, summary, university_name, faculty_name = detail
+    (professor, courses, degrees, evidence, summary,
+     university_name, faculty_name, ai_summary_row, ai_summary_reason) = detail
 
     # Ocultar profesores rejected a no-admin
     if not admin and professor.validation_status == "rejected":
@@ -251,6 +254,8 @@ async def get_professor(
         "degrees": degrees,
         "evidence": [EvidenceRef.model_validate(e) for e in evidence],
         "executive_summary": summary,
+        "ai_summary": AiSummaryOut.model_validate(ai_summary_row) if ai_summary_row else None,
+        "ai_summary_reason": ai_summary_reason,
     }
 
     if admin:
@@ -396,6 +401,35 @@ async def reject_professor(
         professor_id=str(professor.id),
         validation_status=professor.validation_status,
     )
+
+
+@router.post(
+    "/{professor_id}/regenerate-summary",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Regenerar resumen IA del profesor (admin)",
+    responses={
+        403: {"model": ErrorResponse, "description": "Acceso denegado"},
+        404: {"model": ErrorResponse, "description": "Profesor no encontrado"},
+    },
+)
+async def regenerate_summary(
+    professor_id: str,
+    db: AsyncSession = Depends(get_async_db),
+    _admin: User = Depends(require_admin),
+):
+    service = ProfessorService(db)
+    professor = await service.get_by_id(professor_id, include_inactive=True)
+    if professor is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "PROFESSOR_NOT_FOUND", "message": "Profesor no encontrado"},
+        )
+    queued = True
+    try:
+        generate_professor_summary.delay(str(professor_id), True)
+    except Exception:  # broker caído: no rompemos la respuesta admin
+        queued = False
+    return {"queued": queued, "professor_id": str(professor_id)}
 
 
 # ---------- gestión de cursos ----------
