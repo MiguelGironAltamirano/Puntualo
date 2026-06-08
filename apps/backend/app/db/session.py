@@ -5,7 +5,8 @@ from app.core.config import settings
 
 
 engine = create_engine(
-    settings.DATABASE_URL
+    settings.SYNC_DATABASE_URL,
+    connect_args=settings.SYNC_SSL_ARGS,
 )
 
 SessionLocal = sessionmaker(

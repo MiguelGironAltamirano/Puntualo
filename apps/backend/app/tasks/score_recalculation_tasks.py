@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
+from app.db.async_session import _build_async_url
 from app.models.evaluation import Evaluation
 from app.models.professor import Professor
 from app.modules.evaluations.scoring import compute_global_score
@@ -31,12 +32,8 @@ def _make_db_session() -> async_sessionmaker[AsyncSession]:
     requerido en workers Celery prefork donde asyncio.run() crea y destruye
     un loop por tarea.
     """
-    url = settings.DATABASE_URL
-    if url.startswith("postgresql://"):
-        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    elif url.startswith("postgresql+psycopg2://"):
-        url = url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
-    engine = create_async_engine(url, poolclass=NullPool)
+    url, connect_args = _build_async_url(settings.DATABASE_URL)
+    engine = create_async_engine(url, poolclass=NullPool, connect_args=connect_args)
     return async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False, autoflush=False)
 
 

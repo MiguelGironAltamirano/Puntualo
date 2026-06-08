@@ -1,8 +1,32 @@
+import ssl
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
 from dotenv import load_dotenv
 import os
 
 
 load_dotenv()
+
+
+def _strip_ssl_params(url: str) -> tuple[str, bool]:
+    """Elimina ?sslmode= y ?ssl= de la URL y devuelve (url_limpia, necesita_ssl).
+
+    asyncpg y psycopg2 reciben SSL via connect_args, NO via query string de
+    SQLAlchemy.  Aiven siempre incluye ?sslmode=require en su connection string;
+    esta función lo elimina para evitar el TypeError de asyncpg.
+    """
+    parsed = urlparse(url)
+    params = parse_qs(parsed.query, keep_blank_values=True)
+
+    needs_ssl = False
+    for key in ("sslmode", "ssl"):
+        val = params.pop(key, None)
+        if val and val[0] in ("require", "verify-ca", "verify-full", "true", "1"):
+            needs_ssl = True
+
+    clean_query = urlencode({k: v[0] for k, v in params.items()})
+    clean_url = urlunparse(parsed._replace(query=clean_query))
+    return clean_url, needs_ssl
 
 
 class Settings:
@@ -11,6 +35,59 @@ class Settings:
         "DATABASE_URL",
         ""
     )
+
+    @property
+    def ASYNC_DATABASE_URL(self) -> str:
+        """URL limpia para asyncpg (postgresql+asyncpg://, sin sslmode/ssl)."""
+        raw = self.DATABASE_URL
+        # Normalizar esquema
+        if raw.startswith("postgresql://"):
+            raw = raw.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif raw.startswith("postgresql+psycopg2://"):
+            raw = raw.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+        clean_url, _ = _strip_ssl_params(raw)
+        return clean_url
+
+    @property
+    def ASYNC_SSL_CONTEXT(self) -> "ssl.SSLContext | None":
+        """Contexto SSL para asyncpg, o None si la URL no pide SSL.
+
+        Aiven utiliza una CA propia (autofirmada); deshabilitamos la
+        verificación de la cadena para evitar SSLCertVerificationError.
+        La conexión sigue siendo cifrada (TLS); solo se omite la validación de la CA.
+        """
+        _, needs_ssl = _strip_ssl_params(self.DATABASE_URL)
+        if needs_ssl:
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            return ctx
+        return None
+
+    @property
+    def SYNC_DATABASE_URL(self) -> str:
+        """URL limpia para psycopg2 (postgresql://, sin sslmode/ssl).
+
+        psycopg2 sí entiende sslmode, pero SQLAlchemy lo pasa como keyword
+        arg al driver cuando está en la URL; para evitar colisiones lo
+        eliminamos y lo ponemos en connect_args de forma explícita.
+        """
+        raw = self.DATABASE_URL
+        # Normalizar esquema a psycopg2
+        if raw.startswith("postgresql+asyncpg://"):
+            raw = raw.replace("postgresql+asyncpg://", "postgresql://", 1)
+        elif raw.startswith("postgresql+psycopg2://"):
+            raw = raw.replace("postgresql+psycopg2://", "postgresql://", 1)
+        clean_url, _ = _strip_ssl_params(raw)
+        return clean_url
+
+    @property
+    def SYNC_SSL_ARGS(self) -> dict:
+        """connect_args con sslmode=require para psycopg2, o {} si no aplica."""
+        _, needs_ssl = _strip_ssl_params(self.DATABASE_URL)
+        if needs_ssl:
+            return {"sslmode": "require"}
+        return {}
 
     SECRET_KEY: str = os.getenv(
         "SECRET_KEY",
