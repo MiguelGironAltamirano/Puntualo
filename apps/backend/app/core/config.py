@@ -89,6 +89,20 @@ class Settings:
             return {"sslmode": "require"}
         return {}
 
+    # --- Pools de conexiones a la BD.
+    # Aiven (plan actual) capa en max_connections=20 con 3 reservadas para
+    # superuser => 17 usables por el rol de la app, COMPARTIDAS entre el engine
+    # async, el sync y los workers de Celery. Por eso los pools van acotados:
+    # con QueuePool por defecto (5+10) cada engine consumiría hasta 15 conexiones
+    # por proceso y agotaría el tope. Subir estos valores SOLO si se amplía el
+    # plan de la BD.
+    DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "5"))
+    DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "2"))
+    DB_SYNC_POOL_SIZE: int = int(os.getenv("DB_SYNC_POOL_SIZE", "2"))
+    DB_SYNC_MAX_OVERFLOW: int = int(os.getenv("DB_SYNC_MAX_OVERFLOW", "1"))
+    DB_POOL_TIMEOUT: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))
+    DB_POOL_RECYCLE: int = int(os.getenv("DB_POOL_RECYCLE", "1800"))
+
     SECRET_KEY: str = os.getenv(
         "SECRET_KEY",
         ""

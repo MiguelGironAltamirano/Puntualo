@@ -6,6 +6,11 @@ from app.core.config import settings
 
 engine = create_engine(
     settings.SYNC_DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=settings.DB_SYNC_POOL_SIZE,
+    max_overflow=settings.DB_SYNC_MAX_OVERFLOW,
+    pool_timeout=settings.DB_POOL_TIMEOUT,
+    pool_recycle=settings.DB_POOL_RECYCLE,
     connect_args=settings.SYNC_SSL_ARGS,
 )
 
