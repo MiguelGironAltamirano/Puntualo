@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from "@/components/layout/Navbar";
 import { CommentList, CommentRead, ReactionType } from "@/components/teachers/CommentList";
 import { EvaluarModal, EvaluationCreated } from "@/components/teachers/EvaluarModal";
-import { ArrowLeft, Bookmark, ClipboardList, GraduationCap, MessageSquare, User } from "lucide-react";
+import { ArrowLeft, Bookmark, CheckCircle2, ClipboardList, GraduationCap, Info, MessageSquare, User } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -31,6 +31,14 @@ interface EvidenceRef {
     fetched_at: string;
 }
 
+interface AiSummary {
+    summary: string;
+    pros: string[];
+    cons: string[];
+    model_version: string;
+    generated_at: string;
+}
+
 interface ProfessorDetail {
     id: string;
     full_name: string;
@@ -49,6 +57,8 @@ interface ProfessorDetail {
     degrees: DegreeRef[];
     evidence: EvidenceRef[];
     executive_summary: string | null;
+    ai_summary: AiSummary | null;
+    ai_summary_reason: string | null;
 }
 
 interface PaginatedComments {
@@ -402,18 +412,61 @@ export default function TeacherProfilePage() {
                 </div>
 
                 {/* SÍNTESIS IA */}
-                {professor.executive_summary && (
+                {(professor.ai_summary || professor.executive_summary || professor.ai_summary_reason === 'insufficient_data') && (
                     <div className="bg-[#e0f2fe]/40 border border-sky-100 rounded-2xl p-6 shadow-sm">
                         <div className="flex gap-4 items-start">
                             <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-sky-600 shadow-sm border border-sky-100 shrink-0 text-base">🧠</div>
-                            <div className="space-y-1 flex-1">
+                            <div className="space-y-3 flex-1">
                                 <div className="flex items-center gap-2">
                                     <h3 className="text-xs font-black text-sky-950 tracking-wider uppercase">Síntesis del perfil</h3>
                                     <span className="bg-sky-500/10 text-sky-700 text-[8px] font-black px-1.5 py-0.5 rounded-md tracking-widest">IA</span>
                                 </div>
-                                <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                                    {professor.executive_summary}
-                                </p>
+
+                                {professor.ai_summary ? (
+                                    <>
+                                        <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                                            {professor.ai_summary.summary}
+                                        </p>
+                                        {(professor.ai_summary.pros.length > 0 || professor.ai_summary.cons.length > 0) && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 pt-1">
+                                                {professor.ai_summary.pros.length > 0 && (
+                                                    <div>
+                                                        <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Pros</h4>
+                                                        <ul className="space-y-2">
+                                                            {professor.ai_summary.pros.map((pro, idx) => (
+                                                                <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
+                                                                    <CheckCircle2 className="w-4 h-4 text-[#0284c7] shrink-0 mt-0.5" />
+                                                                    <span>{pro}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                                {professor.ai_summary.cons.length > 0 && (
+                                                    <div>
+                                                        <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Contras</h4>
+                                                        <ul className="space-y-2">
+                                                            {professor.ai_summary.cons.map((con, idx) => (
+                                                                <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
+                                                                    <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                                                                    <span>{con}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </>
+                                ) : professor.ai_summary_reason === 'insufficient_data' ? (
+                                    <p className="text-xs text-slate-500 font-medium leading-relaxed italic">
+                                        Aún no se tienen los comentarios suficientes para generar un resumen con IA. Sé el primero en evaluar a este profesor.
+                                    </p>
+                                ) : (
+                                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                                        {professor.executive_summary}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>

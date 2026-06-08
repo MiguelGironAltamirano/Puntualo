@@ -140,6 +140,12 @@ logs/
 *.log
 *.pid
 
+# Celery beat — estado de ejecución local, se regenera solo
+celerybeat-schedule
+celerybeat-schedule-shm
+celerybeat-schedule-wal
+celerybeat.pid
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
