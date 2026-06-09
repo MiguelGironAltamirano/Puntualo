@@ -1,6 +1,6 @@
 'use client'
 
-import { ThumbsDown, ThumbsUp } from "lucide-react";
+import { Award, ThumbsDown, ThumbsUp } from "lucide-react";
 
 export interface CommentRead {
     id: string;
@@ -24,6 +24,7 @@ interface CommentListProps {
     pendingReactions: Set<string>;
     onReact: (commentId: string, type: ReactionType) => void;
     canReact: boolean;
+    stickyCommentId?: string | null;
 }
 
 function formatModality(modality: string): string {
@@ -50,17 +51,22 @@ interface CommentCardProps {
     pending: boolean;
     onReact: (type: ReactionType) => void;
     canReact: boolean;
+    isSticky?: boolean;
 }
 
-function CommentCard({ comment, courseName, userReaction, pending, onReact, canReact }: CommentCardProps) {
+function CommentCard({ comment, courseName, userReaction, pending, onReact, canReact, isSticky }: CommentCardProps) {
     const likeActive = userReaction === 'like';
     const dislikeActive = userReaction === 'dislike';
     const disabled = pending || !canReact;
 
     return (
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm space-y-4 text-left">
+        <div className={`rounded-2xl p-5 shadow-sm space-y-4 text-left transition-all ${
+            isSticky
+                ? 'bg-amber-50/60 border border-amber-200'
+                : 'bg-white border border-slate-100'
+        }`}>
             <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="flex-1">
                     <h4 className="text-sm font-black text-slate-900 tracking-tight mb-1">
                         {courseName}
                     </h4>
@@ -73,6 +79,12 @@ function CommentCard({ comment, courseName, userReaction, pending, onReact, canR
                         )}
                     </p>
                 </div>
+                {isSticky && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-[9px] font-black tracking-wide shrink-0">
+                        <Award className="w-3 h-3" />
+                        Más apoyado
+                    </span>
+                )}
             </div>
 
             {comment.text && (
@@ -131,6 +143,7 @@ export function CommentList({
     pendingReactions,
     onReact,
     canReact,
+    stickyCommentId,
 }: CommentListProps) {
     return (
         <div className="md:col-span-2 space-y-4">
@@ -172,6 +185,7 @@ export function CommentList({
                     pending={pendingReactions.has(comment.id)}
                     onReact={(type) => onReact(comment.id, type)}
                     canReact={canReact}
+                    isSticky={!!stickyCommentId && comment.id === stickyCommentId}
                 />
             ))}
         </div>

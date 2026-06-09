@@ -87,6 +87,8 @@ export default function TeacherProfilePage() {
     const [userReactions, setUserReactions] = useState<Record<string, ReactionType | null>>({});
     const [pendingReactions, setPendingReactions] = useState<Set<string>>(new Set());
     const [hasToken, setHasToken] = useState(false);
+    const [stickyCommentId, setStickyCommentId] = useState<string | null>(null);
+    const [isFiltered, setIsFiltered] = useState(false);
 
     useEffect(() => {
         // Lectura hidratación-segura: leemos localStorage tras el mount para que
@@ -134,7 +136,23 @@ export default function TeacherProfilePage() {
                 { signal: controller.signal },
             )
                 .then((res) => res.ok ? res.json() : Promise.reject(res))
-                .then((data: PaginatedComments) => setComments(data.items))
+                .then((data: PaginatedComments) => {
+                    const items = data.items;
+                    // Calcular el comentario con más likes (sticky), solo en carga sin filtros.
+                    const best = items.reduce<CommentRead | null>(
+                        (acc, c) => (c.like_count > 0 && (!acc || c.like_count > acc.like_count) ? c : acc),
+                        null,
+                    );
+                    if (best) {
+                        setStickyCommentId(best.id);
+                        // Colocar el sticky al frente, sin duplicarlo.
+                        setComments([best, ...items.filter((c) => c.id !== best.id)]);
+                    } else {
+                        setStickyCommentId(null);
+                        setComments(items);
+                    }
+                    setIsFiltered(false);
+                })
                 .catch(() => {
                     // Silencioso: si falla, solo se muestra "sin comentarios"
                 })
@@ -266,6 +284,7 @@ export default function TeacherProfilePage() {
                 created_at: evaluation.comment.created_at,
                 hashtags: evaluation.hashtags,
             };
+            // El nuevo comentario se agrega al inicio pero NO toma el lugar del sticky.
             setComments((prev) => [newComment, ...prev]);
         }
 
@@ -538,6 +557,7 @@ export default function TeacherProfilePage() {
                         pendingReactions={pendingReactions}
                         onReact={handleReact}
                         canReact={hasToken}
+                        stickyCommentId={isFiltered ? null : stickyCommentId}
                     />
 
                 </div>
