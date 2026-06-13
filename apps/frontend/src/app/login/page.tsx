@@ -40,7 +40,12 @@ export default function AuthPage() {
                 localStorage.setItem('refresh_token', data.refresh_token);
             }
 
-            window.location.href = '/teachers';
+            // Redirigir según el rol del usuario (reconocimiento automático)
+            if (data.role === 'admin') {
+                window.location.href = '/admin';
+            } else {
+                window.location.href = '/teachers';
+            }
         } catch {
             setError('Error de conexión con el servidor');
             setLoading(false);
