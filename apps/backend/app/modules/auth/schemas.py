@@ -60,6 +60,8 @@ class TokenResponse(BaseModel):
 
     token_type: str = "bearer"
 
+    role: str
+
 
 class RegisterStartResponse(BaseModel):
 
