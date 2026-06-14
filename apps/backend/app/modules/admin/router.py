@@ -7,13 +7,17 @@ from app.db.session import get_db
 from app.models.user import User
 from app.modules.admin.schemas import (
     AdminStatsResponse,
+    PendingProfessorsResponse,
     PendingVerificationsResponse,
     RejectVerificationRequest,
 )
 from app.modules.admin.service import (
+    approve_professor,
     approve_verification,
     get_admin_stats,
+    get_pending_professors,
     get_pending_verifications,
+    reject_professor,
     reject_verification,
 )
 from app.modules.auth.dependencies import get_current_user
@@ -84,3 +88,44 @@ def reject_verification_endpoint(
 ) -> dict:
     """Rechaza la solicitud con un motivo preestablecido."""
     return reject_verification(db, request_id, body.reason)
+
+
+# ── Professor validation endpoints ───────────────────────────────────────────
+
+@router.get(
+    "/teachers/validations/pending",
+    response_model=PendingProfessorsResponse,
+    summary="Lista de profesores pendientes de validación manual",
+)
+def list_pending_professors(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> PendingProfessorsResponse:
+    """Devuelve los profesores con validation_status='not_found'."""
+    return get_pending_professors(db)
+
+
+@router.post(
+    "/teachers/validations/{professor_id}/approve",
+    summary="Aprobar manualmente un profesor",
+)
+def approve_professor_endpoint(
+    professor_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> dict:
+    """Marca al profesor como 'validated' (validación manual del administrador)."""
+    return approve_professor(db, professor_id)
+
+
+@router.post(
+    "/teachers/validations/{professor_id}/reject",
+    summary="Rechazar manualmente un profesor",
+)
+def reject_professor_endpoint(
+    professor_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> dict:
+    """Marca al profesor como 'rejected'."""
+    return reject_professor(db, professor_id)

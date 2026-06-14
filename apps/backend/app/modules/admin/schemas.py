@@ -46,3 +46,34 @@ class RejectVerificationRequest(BaseModel):
     """Body del endpoint de rechazo."""
 
     reason: str   # uno de los motivos preestablecidos
+
+
+# ── Professor validation admin schemas ────────────────────────────────────────
+
+class EvidenceInfo(BaseModel):
+    """Resumen de una fuente de evidencia para el modal de detalle."""
+
+    source: str                          # "unmsm_directory" | "openalex" | "orcid" | "tavily"
+    role: str                            # "primary" | "enrichment"
+    found: bool
+    affiliation_confirmed: bool
+    confidence: Optional[float]
+
+
+class PendingProfessorItem(BaseModel):
+    """Tarjeta de un profesor pendiente de validación manual."""
+
+    professor_id: uuid.UUID
+    full_name: str
+    university_name: str
+    faculty_name: str
+    validation_status: str
+    global_score: Optional[float]
+    total_evaluations: int
+    registered_at: datetime              # created_at del Professor
+    evidence: list[EvidenceInfo]         # resultados de fuentes de IA
+
+
+class PendingProfessorsResponse(BaseModel):
+    total: int
+    items: list[PendingProfessorItem]
