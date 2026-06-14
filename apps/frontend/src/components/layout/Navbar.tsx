@@ -1,6 +1,7 @@
 'use client'
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Bell, CircleHelp, Search, User } from "lucide-react";
@@ -31,8 +32,15 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
     <nav className="w-full flex items-center justify-between px-8 py-4 bg-white border-b border-slate-100 z-50 sticky top-0 h-[69px]">
       {/* Left: Logo y Buscador */}
       <div className="flex items-center gap-6 flex-1 max-w-xl">
-        <Link href="/" className="text-xl font-extrabold text-[#0284c7] tracking-tight shrink-0 no-underline">
-          Puntualo
+        <Link href="/" className="flex items-center shrink-0 no-underline">
+          <Image
+            src="/puntualo_logo.png"
+            alt="Puntualo"
+            width={150}
+            height={40}
+            priority
+            className="h-auto"
+          />
         </Link>
 
         {showSearch && (
