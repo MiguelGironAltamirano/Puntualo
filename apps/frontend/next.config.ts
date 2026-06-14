@@ -28,8 +28,9 @@ function buildCsp(): string {
     // Fuentes tipográficas: solo de nuestro host y de los servidores de Google Fonts.
     `font-src 'self' ${GOOGLE_FONTS_STATIC}`,
 
-    // Imágenes: nuestro host + blobs/data URIs (avatares generados) + Supabase Storage.
-    `img-src 'self' blob: data: ${SUPABASE_WILDCARD}`,
+    // Imágenes: nuestro host + blobs/data URIs (avatares generados) + Supabase Storage
+    // + Unsplash (fotos de perfil placeholder de profesores).
+    `img-src 'self' blob: data: ${SUPABASE_WILDCARD} https://images.unsplash.com`,
 
     // Peticiones de red (fetch/XHR/WebSocket):
     // - nuestro propio host (Next.js API routes)
@@ -46,9 +47,10 @@ function buildCsp(): string {
     // Evita que nuestro sitio sea embebido en un <iframe> de cualquier origen
     // (Clickjacking). Equivalente moderno de X-Frame-Options.
     "frame-ancestors 'none'",
-
-    // En producción, fuerza HTTPS para recursos que se soliciten por HTTP.
-    "upgrade-insecure-requests",
+    // Nota: 'upgrade-insecure-requests' fue eliminado intencionalmente.
+    // Forzaba HTTP->HTTPS en el navegador, rompiendo peticiones al backend local
+    // (http://localhost:8000). En producción, la redirección HTTPS se gestiona
+    // a nivel de infraestructura (proxy inverso / CDN).
   ];
 
   return directives.join("; ");
@@ -81,6 +83,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   async headers() {
+    if (process.env.NODE_ENV === "development") {
+      return [];
+    }
+
     return [
       {
         // Aplica las cabeceras de seguridad a todas las rutas de la aplicación.

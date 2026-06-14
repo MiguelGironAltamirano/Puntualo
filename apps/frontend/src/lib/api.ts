@@ -573,6 +573,6 @@ export const catalogsAPI = {
     page_size?: number;
   }): Promise<PaginatedResponse<CourseRead>> => {
     const query = buildQueryString(params || {});
-    return fetchAPI(`/evaluations/courses${query}`);
+    return fetchAPI(`/courses${query}`);
   },
 };
