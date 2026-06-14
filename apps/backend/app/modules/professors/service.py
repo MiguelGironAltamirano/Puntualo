@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.utils.db import escape_like
+
 from app.core.config import settings
 from app.models.academic_degree import AcademicDegree
 from app.models.course import Course
@@ -314,12 +316,12 @@ class ProfessorService:
             base = base.where(Professor.is_active.is_(True))
 
         if search:
-            term = f"%{search.strip().lower()}%"
+            term = f"%{escape_like(search.strip().lower())}%"
             base = base.where(
                 or_(
-                    func.lower(Professor.full_name).like(term),
-                    func.lower(University.name).like(term),
-                    func.lower(Faculty.name).like(term),
+                    func.lower(Professor.full_name).like(term, escape="\\"),
+                    func.lower(University.name).like(term, escape="\\"),
+                    func.lower(Faculty.name).like(term, escape="\\"),
                 )
             )
 

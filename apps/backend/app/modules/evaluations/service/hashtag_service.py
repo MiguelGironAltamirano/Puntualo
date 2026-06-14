@@ -16,6 +16,8 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.utils.db import escape_like
+
 from app.models.hashtag import Hashtag
 from app.modules.evaluations.errors import (
     HashtagBannedTermsError,
@@ -98,10 +100,10 @@ class HashtagService:
         prefix = (prefix or "").strip().lower()
         if not prefix:
             return []
-        like = f"{prefix}%"
+        like = f"{escape_like(prefix)}%"
         stmt = (
             select(Hashtag.label, Hashtag.usage_count)
-            .where(Hashtag.label.ilike(like))
+            .where(Hashtag.label.ilike(like, escape="\\"))
             .order_by(Hashtag.usage_count.desc(), Hashtag.label.asc())
             .limit(limit)
         )
