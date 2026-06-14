@@ -18,6 +18,7 @@ from app.models.professor import Professor
 from app.models.professor_ai_summary import ProfessorAiSummary
 from app.models.professor_course import ProfessorCourse
 from app.models.professor_degree import ProfessorDegree
+from app.models.professor_embedding import ProfessorEmbedding
 from app.models.professor_evidence import ProfessorEvidence
 from app.models.reaction import Reaction, ReactionType
 from app.models.report import Report, ReportReason, ReportStatus
@@ -49,6 +50,7 @@ __all__ = [
     "ProfessorAiSummary",
     "ProfessorCourse",
     "ProfessorDegree",
+    "ProfessorEmbedding",
     "ProfessorEvidence",
     "Reaction",
     "ReactionType",
