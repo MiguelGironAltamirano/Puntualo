@@ -33,9 +33,9 @@ function buildCsp(): string {
 
     // Peticiones de red (fetch/XHR/WebSocket):
     // - nuestro propio host (Next.js API routes)
-    // - el backend FastAPI
+    // - el backend FastAPI (soportando http, https, ws y wss para localhost)
     // - la REST API y Auth de Supabase
-    `connect-src 'self' ${BACKEND_ORIGIN} ${SUPABASE_WILDCARD}`,
+    `connect-src 'self' ${BACKEND_ORIGIN} http://localhost:8000 https://localhost:8000 ws://localhost:8000 wss://localhost:8000 ${SUPABASE_WILDCARD}`,
 
     // Medios (audio/video): solo nuestro propio host.
     "media-src 'self'",
