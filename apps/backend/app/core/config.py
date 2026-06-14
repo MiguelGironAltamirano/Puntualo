@@ -12,8 +12,8 @@ def _strip_ssl_params(url: str) -> tuple[str, bool]:
     """Elimina ?sslmode= y ?ssl= de la URL y devuelve (url_limpia, necesita_ssl).
 
     asyncpg y psycopg2 reciben SSL via connect_args, NO via query string de
-    SQLAlchemy.  Aiven siempre incluye ?sslmode=require en su connection string;
-    esta función lo elimina para evitar el TypeError de asyncpg.
+    SQLAlchemy.  Supabase (y antes Aiven) incluyen ?sslmode=require en su
+    connection string; esta función lo elimina para evitar el TypeError de asyncpg.
     """
     parsed = urlparse(url)
     params = parse_qs(parsed.query, keep_blank_values=True)
@@ -52,9 +52,10 @@ class Settings:
     def ASYNC_SSL_CONTEXT(self) -> "ssl.SSLContext | None":
         """Contexto SSL para asyncpg, o None si la URL no pide SSL.
 
-        Aiven utiliza una CA propia (autofirmada); deshabilitamos la
-        verificación de la cadena para evitar SSLCertVerificationError.
-        La conexión sigue siendo cifrada (TLS); solo se omite la validación de la CA.
+        Deshabilitamos la verificación de la cadena (CERT_NONE) para evitar
+        SSLCertVerificationError tanto con el session pooler de Supabase como con
+        la CA autofirmada que usaba Aiven. La conexión sigue cifrada (TLS); solo
+        se omite la validación de la CA.
         """
         _, needs_ssl = _strip_ssl_params(self.DATABASE_URL)
         if needs_ssl:
@@ -90,12 +91,12 @@ class Settings:
         return {}
 
     # --- Pools de conexiones a la BD.
-    # Aiven (plan actual) capa en max_connections=20 con 3 reservadas para
-    # superuser => 17 usables por el rol de la app, COMPARTIDAS entre el engine
-    # async, el sync y los workers de Celery. Por eso los pools van acotados:
-    # con QueuePool por defecto (5+10) cada engine consumiría hasta 15 conexiones
-    # por proceso y agotaría el tope. Subir estos valores SOLO si se amplía el
-    # plan de la BD.
+    # La BD se comparte entre el engine async, el sync y los workers de Celery.
+    # Históricamente Aiven capaba en max_connections=20 (17 usables) y por eso los
+    # pools van acotados; con Supabase se accede vía el "Session pooler" (Supavisor),
+    # que también tiene un tope de conexiones según el plan. Mantener estos valores
+    # bajos salvo que se amplíe el plan: con QueuePool por defecto (5+10) cada engine
+    # consumiría hasta 15 conexiones por proceso.
     DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "5"))
     DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "2"))
     DB_SYNC_POOL_SIZE: int = int(os.getenv("DB_SYNC_POOL_SIZE", "2"))

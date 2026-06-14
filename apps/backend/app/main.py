@@ -13,6 +13,7 @@ from app.modules.evaluations.errors import DomainError
 from app.modules.evaluations.router import router as evaluations_router
 from app.modules.professors.router import router as professors_router
 from app.modules.verification.router import router as verification_router
+from app.modules.admin.router import router as admin_router
 from fastapi.middleware.cors import CORSMiddleware
 
 logger = logging.getLogger(__name__)
@@ -92,5 +93,6 @@ app.include_router(
 
 app.include_router(
     admin_router,
+    prefix="/admin",
     tags=["admin"],
 )

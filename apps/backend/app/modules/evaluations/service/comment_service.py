@@ -16,6 +16,8 @@ from typing import Iterable, Literal
 from sqlalchemy import Select, and_, exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.utils.db import escape_like
+
 from app.models.comment import Comment, CommentStatus
 from app.models.evaluation_hashtag import EvaluationHashtag
 from app.models.hashtag import Hashtag
@@ -75,10 +77,10 @@ class CommentService:
 
         # Text search (only if comment text is not null/removed)
         if search:
-            term = f"%{search.strip().lower()}%"
+            term = f"%{escape_like(search.strip().lower())}%"
             base = base.where(
                 Comment.text.isnot(None),
-                func.lower(Comment.text).like(term)
+                func.lower(Comment.text).like(term, escape="\\")
             )
 
         # Like/Dislike filters

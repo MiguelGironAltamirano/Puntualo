@@ -114,6 +114,10 @@ def _store_document(
 
     file_ext = "png" if content_type == "image/png" else "jpg"
     object_key = f"verification/{user.id}/{side}/{uuid.uuid4().hex}.{file_ext}"
+    public_url = (
+        f"{settings.SUPABASE_URL}/storage/v1/object/public/"
+        f"{settings.SUPABASE_BUCKET_NAME}/{object_key}"
+    )
 
     logger = logging.getLogger(__name__)
     supabase = _get_supabase_client()
@@ -155,7 +159,7 @@ def _store_document(
         user_id=user.id,
         document_type="carnet",
         side=side,
-        file_path=object_key,
+        file_path=public_url,
         mime_type=content_type,
         file_size_bytes=len(file_bytes),
         width_px=width,
