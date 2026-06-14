@@ -11,6 +11,8 @@ Matching de duplicados: `lower(name)` + `university_id` y solo cursos
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.utils.db import escape_like
+
 from app.models.course import Course
 
 
@@ -49,8 +51,8 @@ class CourseService:
         """Query base de cursos activos. Se pasa al helper `paginate` desde el router."""
         base = select(Course).where(Course.is_active.is_(True))
         if q:
-            term = f"%{q.strip().lower()}%"
-            base = base.where(func.lower(Course.name).like(term))
+            term = f"%{escape_like(q.strip().lower())}%"
+            base = base.where(func.lower(Course.name).like(term, escape="\\"))
         if university_id is not None:
             base = base.where(Course.university_id == university_id)
         return base.order_by(Course.created_at.desc())

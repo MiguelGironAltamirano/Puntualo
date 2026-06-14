@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.utils.db import escape_like
+
 from app.core.config import settings
 from app.models.academic_degree import AcademicDegree
 from app.models.course import Course
@@ -288,14 +290,14 @@ class ProfessorService:
         hide_rejected: bool = True,
         sort_by: SortField = "created_at",
         sort_order: SortOrder = "desc",
-        min_clarity: int | None = None,
-        max_clarity: int | None = None,
-        min_easiness: int | None = None,
-        max_easiness: int | None = None,
-        min_helpfulness: int | None = None,
-        max_helpfulness: int | None = None,
-        min_punctuality: int | None = None,
-        max_punctuality: int | None = None,
+        min_clarity: float | None = None,
+        max_clarity: float | None = None,
+        min_easiness: float | None = None,
+        max_easiness: float | None = None,
+        min_helpfulness: float | None = None,
+        max_helpfulness: float | None = None,
+        min_punctuality: float | None = None,
+        max_punctuality: float | None = None,
         min_global_score: float | None = None,
         max_global_score: float | None = None,
         min_evaluations: int | None = None,
@@ -314,12 +316,12 @@ class ProfessorService:
             base = base.where(Professor.is_active.is_(True))
 
         if search:
-            term = f"%{search.strip().lower()}%"
+            term = f"%{escape_like(search.strip().lower())}%"
             base = base.where(
                 or_(
-                    func.lower(Professor.full_name).like(term),
-                    func.lower(University.name).like(term),
-                    func.lower(Faculty.name).like(term),
+                    func.lower(Professor.full_name).like(term, escape="\\"),
+                    func.lower(University.name).like(term, escape="\\"),
+                    func.lower(Faculty.name).like(term, escape="\\"),
                 )
             )
 
