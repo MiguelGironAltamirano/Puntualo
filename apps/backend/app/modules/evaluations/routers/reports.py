@@ -9,7 +9,10 @@ from app.models.user import User
 from app.modules.auth.dependencies import get_current_user
 from app.modules.evaluations.errors import (
     CommentNotFoundError,
+    CommentAlreadyRemovedError,
     ReportDuplicateError,
+    ReportRateLimitError,
+    ReportAbuseDetectedError,
 )
 from app.modules.evaluations.schemas import ReportCreate, ReportResult
 from app.modules.evaluations.service.report_service import ReportService
@@ -27,6 +30,8 @@ router = APIRouter()
         401: {"model": ErrorResponse, "description": "No autenticado"},
         404: {"model": ErrorResponse, "description": "Comentario no encontrado"},
         409: {"model": ErrorResponse, "description": "Denuncia duplicada"},
+        429: {"model": ErrorResponse, "description": "Límite de reportes excedido"},
+        403: {"model": ErrorResponse, "description": "Abuso del sistema de reportes detectado"},
     },
 )
 async def create_report(
@@ -43,9 +48,24 @@ async def create_report(
             reason=payload.reason,
             description=payload.description,
         )
+    except ReportRateLimitError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"code": exc.code, "message": str(exc)},
+        )
+    except ReportAbuseDetectedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": exc.code, "message": str(exc)},
+        )
     except CommentNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": exc.code, "message": str(exc)},
+        )
+    except CommentAlreadyRemovedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": exc.code, "message": str(exc)},
         )
     except ReportDuplicateError as exc:
@@ -53,7 +73,9 @@ async def create_report(
             status_code=status.HTTP_409_CONFLICT,
             detail={"code": exc.code, "message": str(exc)},
         )
+    
     return ReportResult(
         comment_id=result.comment_id,
         reports_count=result.reports_count,
+        was_escalated=result.was_escalated,
     )

@@ -1,6 +1,8 @@
 'use client'
 
-import { Award, ThumbsDown, ThumbsUp } from "lucide-react";
+import { useState } from "react";
+import { Award, ThumbsDown, ThumbsUp, Flag } from "lucide-react";
+import { ReportModal } from "./ReportModal";
 
 export interface CommentRead {
     id: string;
@@ -55,6 +57,7 @@ interface CommentCardProps {
 }
 
 function CommentCard({ comment, courseName, userReaction, pending, onReact, canReact, isSticky }: CommentCardProps) {
+    const [reportModalOpen, setReportModalOpen] = useState(false);
     const likeActive = userReaction === 'like';
     const dislikeActive = userReaction === 'dislike';
     const disabled = pending || !canReact;
@@ -65,6 +68,13 @@ function CommentCard({ comment, courseName, userReaction, pending, onReact, canR
                 ? 'bg-amber-50/60 border border-amber-200'
                 : 'bg-white border border-slate-100'
         }`}>
+            <ReportModal 
+                isOpen={reportModalOpen}
+                onClose={() => setReportModalOpen(false)}
+                commentId={comment.id}
+                onReportSubmitted={() => setReportModalOpen(false)}
+            />
+
             <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                     <h4 className="text-sm font-black text-slate-900 tracking-tight mb-1">
@@ -79,12 +89,22 @@ function CommentCard({ comment, courseName, userReaction, pending, onReact, canR
                         )}
                     </p>
                 </div>
-                {isSticky && (
-                    <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-[9px] font-black tracking-wide shrink-0">
-                        <Award className="w-3 h-3" />
-                        Más apoyado
-                    </span>
-                )}
+                <div className="flex items-center gap-2">
+                    {isSticky && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-[9px] font-black tracking-wide shrink-0">
+                            <Award className="w-3 h-3" />
+                            Más apoyado
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => setReportModalOpen(true)}
+                        title="Reportar comentario"
+                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                    >
+                        <Flag className="w-4 h-4" />
+                    </button>
+                </div>
             </div>
 
             {comment.text && (

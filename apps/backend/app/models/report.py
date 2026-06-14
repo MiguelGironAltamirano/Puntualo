@@ -1,7 +1,7 @@
 import enum
 import uuid
 
-from sqlalchemy import CheckConstraint, ForeignKey, String, Text, UniqueConstraint, text
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,6 +14,9 @@ class ReportReason(str, enum.Enum):
     HATE_SPEECH = "hate_speech"
     HARASSMENT = "harassment"
     OFF_TOPIC = "off_topic"
+    FALSE_INFORMATION = "false_information"
+    IMPERSONATION = "impersonation"
+    PRIVACY_VIOLATION = "privacy_violation"
     OTHER = "other"
 
 
@@ -63,10 +66,12 @@ class Report(Base, TimestampMixin):
         default=ReportStatus.PENDING.value,
     )
 
+    escalated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
     __table_args__ = (
         UniqueConstraint("comment_id", "user_id", name="uq_reports_user_comment"),
         CheckConstraint(
-            "reason IN ('spam','hate_speech','harassment','off_topic','other')",
+            "reason IN ('spam','hate_speech','harassment','off_topic','false_information','impersonation','privacy_violation','other')",
             name="ck_reports_reason",
         ),
         CheckConstraint(

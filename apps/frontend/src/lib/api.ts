@@ -576,3 +576,107 @@ export const catalogsAPI = {
     return fetchAPI(`/evaluations/courses${query}`);
   },
 };
+
+// ============================================================================
+// REPORTS ENDPOINTS
+// ============================================================================
+
+export interface ReportResult {
+  id: number;
+  user_id: string;
+  comment_id: string;
+  reason: string;
+  details?: string;
+  created_at: string;
+  was_escalated: boolean;
+}
+
+export const reportsAPI = {
+  /**
+   * Submit a report for a comment
+   */
+  submitReport: async (
+    commentId: string,
+    data: {
+      reason: string;
+      details?: string;
+    }
+  ): Promise<ReportResult> => {
+    return fetchAPI(`/evaluations/${commentId}/report`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// ============================================================================
+// ADMIN ENDPOINTS
+// ============================================================================
+
+export interface PendingModerationItem {
+  comment_id: string;
+  text: string;
+  professor_id: string;
+  user_id: string;
+  created_at: string;
+  heuristic_flags: string[];
+  report_count: number;
+  weighted_score: number;
+}
+
+export interface ModerationDecision {
+  comment_id: string;
+  decision: 'allow' | 'remove';
+  reason?: string;
+}
+
+export const adminAPI = {
+  /**
+   * Get pending moderation queue
+   */
+  getPendingModerations: async (params?: {
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<PendingModerationItem>> => {
+    const query = buildQueryString(params || {});
+    return fetchAPI(`/api/admin/moderation/pending${query}`);
+  },
+
+  /**
+   * Get moderation decision for a comment
+   */
+  getModeration: async (commentId: string): Promise<any> => {
+    return fetchAPI(`/api/admin/moderation/${commentId}`);
+  },
+
+  /**
+   * Submit a moderation decision
+   */
+  submitDecision: async (
+    commentId: string,
+    decision: ModerationDecision
+  ): Promise<any> => {
+    return fetchAPI(`/api/admin/moderation/${commentId}/decide`, {
+      method: 'POST',
+      body: JSON.stringify(decision),
+    });
+  },
+
+  /**
+   * Get moderation statistics
+   */
+  getStats: async (): Promise<any> => {
+    return fetchAPI('/api/admin/moderation/stats');
+  },
+
+  /**
+   * Get reported user details
+   */
+  getUserReports: async (userId: string, params?: {
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<any>> => {
+    const query = buildQueryString(params || {});
+    return fetchAPI(`/api/admin/users/${userId}/reports${query}`);
+  },
+};
