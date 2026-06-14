@@ -6,12 +6,18 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.career import Career
+from app.models.faculty import Faculty
 from app.models.professor import Professor
+from app.models.professor_evidence import ProfessorEvidence
+from app.models.university import University
 from app.models.uploaded_document import UploadedDocument
 from app.models.user import User
 from app.models.verification_request import VerificationRequest
 from app.modules.admin.schemas import (
     DocumentInfo,
+    EvidenceInfo,
+    PendingProfessorItem,
+    PendingProfessorsResponse,
     PendingVerificationItem,
     PendingVerificationsResponse,
 )
@@ -157,3 +163,103 @@ def reject_verification(
 
     db.commit()
     return {"detail": "Verificación rechazada"}
+
+
+# ── Professor validation admin services ────────────────────────────────────────
+
+def get_pending_professors(db: Session) -> PendingProfessorsResponse:
+    """Lista profesores con validation_status='not_found' para revisión manual."""
+
+    rows = db.execute(
+        select(Professor)
+        .where(
+            Professor.validation_status == "not_found",
+            Professor.is_active == True,  # noqa: E712
+        )
+        .order_by(Professor.created_at.asc())
+    ).scalars().all()
+
+    items: list[PendingProfessorItem] = []
+
+    for prof in rows:
+        # Universidad
+        university: University | None = db.get(University, prof.university_id)
+        university_name = university.name if university else "—"
+
+        # Facultad
+        faculty: Faculty | None = db.get(Faculty, prof.faculty_id)
+        faculty_name = faculty.name if faculty else "—"
+
+        # Evidencias de IA
+        evidence_rows = db.execute(
+            select(ProfessorEvidence)
+            .where(ProfessorEvidence.professor_id == prof.id)
+            .order_by(ProfessorEvidence.fetched_at.desc())
+        ).scalars().all()
+
+        evidence = [
+            EvidenceInfo(
+                source=e.source,
+                role=e.role,
+                found=e.found,
+                affiliation_confirmed=e.affiliation_confirmed,
+                confidence=float(e.confidence) if e.confidence is not None else None,
+            )
+            for e in evidence_rows
+        ]
+
+        items.append(
+            PendingProfessorItem(
+                professor_id=prof.id,
+                full_name=prof.full_name,
+                university_name=university_name,
+                faculty_name=faculty_name,
+                validation_status=prof.validation_status,
+                global_score=float(prof.global_score) if prof.global_score is not None else None,
+                total_evaluations=prof.total_evaluations,
+                registered_at=prof.created_at,
+                evidence=evidence,
+            )
+        )
+
+    return PendingProfessorsResponse(total=len(items), items=items)
+
+
+def approve_professor(db: Session, professor_id: uuid.UUID) -> dict:
+    """Valida manualmente un profesor: status → 'validated'."""
+
+    prof: Professor | None = db.get(Professor, professor_id)
+    if not prof:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profesor no encontrado",
+        )
+    if prof.validation_status not in ("not_found", "pending_validation"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El profesor ya fue procesado",
+        )
+
+    prof.validation_status = "validated"
+    db.commit()
+    return {"detail": "Profesor validado correctamente"}
+
+
+def reject_professor(db: Session, professor_id: uuid.UUID) -> dict:
+    """Rechaza manualmente un profesor: status → 'rejected'."""
+
+    prof: Professor | None = db.get(Professor, professor_id)
+    if not prof:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profesor no encontrado",
+        )
+    if prof.validation_status not in ("not_found", "pending_validation"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El profesor ya fue procesado",
+        )
+
+    prof.validation_status = "rejected"
+    db.commit()
+    return {"detail": "Profesor rechazado"}
