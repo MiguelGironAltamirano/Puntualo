@@ -3,12 +3,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import { ProfessorFilterState } from '@/lib/hooks-filters';
 import { useUniversities, useFaculties, useCourses } from '@/lib/hooks-catalogs';
+import { X } from 'lucide-react';
 
 interface FilterSidebarProps {
     onFiltersChange?: (filters: Partial<ProfessorFilterState>) => void;
+    isOpen?: boolean;
+    onClose?: () => void;
 }
 
-export default function FilterSidebar({ onFiltersChange }: FilterSidebarProps) {
+export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: FilterSidebarProps) {
     const [teacherName, setTeacherName] = useState('');
     const [difficulty, setDifficulty] = useState(50);
     const [selectedTags, setSelectedTags] = useState<string[]>(['Barco']);
@@ -48,10 +51,38 @@ export default function FilterSidebar({ onFiltersChange }: FilterSidebarProps) {
     }, [teacherName, difficulty, minScore, maxScore, selectedTags, onFiltersChange]);
 
     return (
-        <aside className="w-64 bg-[#f8fafc] border-r border-slate-200 p-6 flex flex-col justify-between h-[calc(100vh-69px)] overflow-y-auto shrink-0 text-left">
-            <div>
-                <h2 className="text-base font-bold text-slate-900 tracking-tight">Búsqueda Inteligente</h2>
-                <p className="text-xs text-slate-400 mt-0.5 mb-6">Refina tus resultados</p>
+        <>
+            {/* Mobile Drawer Overlay */}
+            <div 
+                onClick={onClose}
+                className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-45 transition-opacity duration-300 md:hidden ${
+                    isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                }`}
+            />
+
+            <aside className={`
+                bg-[#f8fafc] border-r border-slate-200 p-6 flex flex-col justify-between text-left
+                /* Mobile Drawer positioning */
+                fixed inset-y-0 left-0 z-50 w-[80%] max-w-[320px] h-full shadow-2xl transition-transform duration-300 transform overflow-y-auto
+                ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+                /* Desktop positioning overrides */
+                md:relative md:inset-auto md:z-0 md:flex md:w-64 md:h-[calc(100vh-69px)] md:shadow-none md:translate-x-0 md:transition-none md:overflow-y-auto md:shrink-0
+            `}>
+                <div>
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-base font-bold text-slate-900 tracking-tight">Búsqueda Inteligente</h2>
+                            <p className="text-xs text-slate-400 mt-0.5">Refina tus resultados</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors md:hidden cursor-pointer"
+                            aria-label="Cerrar filtros"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
 
                 {/* Professor Name Section */}
                 <div className="mb-5">
@@ -248,11 +279,13 @@ export default function FilterSidebar({ onFiltersChange }: FilterSidebarProps) {
             <div className="pt-4 border-t border-slate-200/60">
                 <button
                     type="button"
+                    onClick={onClose}
                     className="w-full py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white font-bold text-xs rounded-lg transition-colors shadow-sm text-center cursor-pointer"
                 >
                     Aplicar Filtros
                 </button>
             </div>
         </aside>
+        </>
     );
 }
