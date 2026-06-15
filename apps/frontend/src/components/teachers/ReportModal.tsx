@@ -23,7 +23,7 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
 
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
-            <div className="bg-white rounded-3xl border border-slate-100 w-full max-w-sm p-6 relative shadow-2xl my-auto text-left">
+            <div className="bg-white rounded-3xl border border-slate-100 w-full max-w-sm p-4 sm:p-6 relative shadow-2xl my-auto text-left">
                 <button onClick={onClose} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all p-1.5 cursor-pointer focus:outline-none">
                     <X className="w-5 h-5" />
                 </button>
@@ -38,7 +38,7 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
                         <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider block mb-3">¿Por qué reportas este comentario?</label>
                         <div className="space-y-2.5">
                             {reasons.map((r) => (
-                                <label key={r} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${reason === r ? 'border-[#0284c7] bg-sky-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                                <label key={r} className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${reason === r ? 'border-[#0284c7] bg-sky-50' : 'border-slate-200 hover:border-slate-300'}`}>
                                     <input 
                                         type="radio" 
                                         name="reportReason" 
@@ -66,10 +66,10 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
 
                     {/* Footer Actions */}
                     <div className="flex items-center justify-end gap-3 pt-2">
-                        <button type="button" onClick={onClose} className="px-5 py-2.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-colors">
+                        <button type="button" onClick={onClose} className="px-5 py-3 text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer">
                             Cancelar
                         </button>
-                        <button type="submit" disabled={!reason} className="px-5 py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+                        <button type="submit" disabled={!reason} className="px-5 py-3 bg-[#ff8a00] hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
                             <Flag className="w-3.5 h-3.5" /> Enviar Reporte
                         </button>
                     </div>

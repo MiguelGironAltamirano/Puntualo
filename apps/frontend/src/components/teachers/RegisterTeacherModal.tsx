@@ -282,39 +282,44 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
     );
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-lg p-8 shadow-xl relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+            <div className="bg-white rounded-3xl w-full max-w-lg relative shadow-2xl my-auto text-left flex flex-col h-full sm:h-auto max-h-[95vh] sm:max-h-[90vh]">
                 {/* Header */}
-                <div className="text-center mb-6">
-                    <h2 className="text-xl font-bold text-slate-900 mb-1.5">Registrar nuevo profesor</h2>
-                    <p className="text-xs text-slate-500 font-medium">
-                        Agregá los datos académicos para sumarlo al catálogo.
-                    </p>
+                <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between shrink-0 relative">
+                    <div className="text-left">
+                        <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">Registrar nuevo profesor</h2>
+                        <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 font-medium leading-relaxed">
+                            Agregá los datos académicos para sumarlo al catálogo.
+                        </p>
+                    </div>
+                    <button onClick={handleClose} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors p-1.5 cursor-pointer focus:outline-none hover:bg-slate-50 rounded-xl">
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
 
-                {/* Avatar placeholder estático */}
-                <div className="flex flex-col items-center mb-8">
-                    <div className="w-20 h-20 rounded-full border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-slate-400">
-                        <User className="w-7 h-7" />
-                    </div>
-                    <span className="text-[10px] font-medium text-slate-400 mt-2">
-                        Foto de perfil (próximamente)
-                    </span>
-                </div>
+                {/* Form scrollable */}
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col justify-between">
+                    <div className="p-4 sm:p-6 space-y-6 custom-scrollbar">
+                        {/* Avatar placeholder estático */}
+                        <div className="flex flex-col items-center mb-6">
+                            <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-slate-400">
+                                <User className="w-6 h-6" />
+                            </div>
+                            <span className="text-[10px] font-medium text-slate-400 mt-2">
+                                Foto de perfil (próximamente)
+                            </span>
+                        </div>
 
-                {error && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-medium">
-                        {error}
-                    </div>
-                )}
-                {success && (
-                    <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-xs font-medium">
-                        Profesor registrado correctamente. Está pendiente de validación.
-                    </div>
-                )}
-
-                {/* Form */}
-                <form className="space-y-5 mb-6" onSubmit={handleSubmit}>
+                        {error && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-medium">
+                                {error}
+                            </div>
+                        )}
+                        {success && (
+                            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-xs font-medium">
+                                Profesor registrado correctamente. Está pendiente de validación.
+                            </div>
+                        )}
                     {/* NOMBRE */}
                     <div>
                         <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
@@ -487,26 +492,27 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
                         </p>
                     </div>
 
+                    </div>
                     {/* Acciones */}
-                    <div className="flex items-center justify-end gap-5 pt-4 border-t border-slate-100">
+                    <div className="p-4 sm:p-6 border-t border-slate-100 flex items-center justify-end gap-4 sm:gap-6 shrink-0 bg-white rounded-b-3xl sticky bottom-0">
                         <button
                             type="button"
                             onClick={handleClose}
                             disabled={submitting}
-                            className="text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-2.5 sm:px-5 sm:py-3 text-[11px] font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-all focus:outline-none cursor-pointer uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={!canSubmit}
-                            className={`px-6 py-2.5 rounded-lg text-[11px] font-black flex items-center gap-2 transition-colors uppercase tracking-wider shadow-sm ${
+                            className={`px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl text-[11px] font-black flex items-center gap-2 transition-colors uppercase tracking-wider shadow-sm ${
                                 canSubmit
                                     ? 'bg-[#ff8a00] hover:bg-[#ea580c] text-white cursor-pointer'
                                     : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                             }`}
                         >
-                            {submitting ? 'Registrando...' : 'Registrar profesor'}
+                            {submitting ? 'Registrando...' : 'Registrar'}
                             {!submitting && <UserPlus className="w-3.5 h-3.5" strokeWidth={3} />}
                         </button>
                     </div>
