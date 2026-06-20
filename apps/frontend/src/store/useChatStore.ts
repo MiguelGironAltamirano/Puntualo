@@ -26,7 +26,7 @@ interface ChatState {
   error: string | null;
   open: () => Promise<void>;
   close: () => void;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, isRetry?: boolean) => Promise<void>;
   retry: () => void;
 }
 
@@ -50,6 +50,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   open: async () => {
     set({ isOpen: true });
+    if (get().status === 'loading-history') return;
     const { sessionId, messages } = get();
     const stored =
       sessionId ??
@@ -71,7 +72,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   close: () => set({ isOpen: false }),
 
-  sendMessage: async (raw) => {
+  sendMessage: async (raw, isRetry = false) => {
     const content = raw.trim();
     if (!content || content.length > 2000) return;
     const { status } = get();
@@ -127,18 +128,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
         updateAssistant(full);
         set({ status: 'ready' });
       },
-      onError: async (err) => {
+      onError: (err) => {
         // sesión inválida → recrear una vez y reintentar
-        if (err.code === 'SESSION_NOT_FOUND' || err.code === 'FORBIDDEN') {
+        if (
+          (err.code === 'SESSION_NOT_FOUND' || err.code === 'FORBIDDEN') &&
+          !isRetry
+        ) {
           if (typeof window !== 'undefined')
             localStorage.removeItem(SESSION_KEY);
           set((s) => ({
             sessionId: null,
+            status: 'idle',
             messages: s.messages.filter(
               (m) => m.id !== assistantId && m.id !== userMsg.id
             ),
           }));
-          await get().sendMessage(content);
+          void get().sendMessage(content, true);
           return;
         }
         if (err.status === 401) {
