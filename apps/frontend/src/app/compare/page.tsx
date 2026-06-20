@@ -110,18 +110,20 @@ export default function ComparePage() {
         <div className="min-h-screen bg-white font-sans text-slate-900">
             <Navbar />
 
-            <div className="mx-auto max-w-[1400px] px-8 py-8">
+            <div className="mx-auto max-w-[1400px] px-4 md:px-8 py-8">
 
                 {/* Header */}
-                <div className="mb-10 relative">
-                    <h1 className="text-4xl font-black text-[#0284c7] tracking-tight">Versus</h1>
-                    <p className="text-sm text-slate-500 mt-1 font-medium">
-                        Comparando docentes en paralelo. Contrasta sus métricas y opiniones.
-                    </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-6 border-b border-slate-100">
+                    <div>
+                        <h1 className="text-3xl md:text-4xl font-black text-[#0284c7] tracking-tight">Versus</h1>
+                        <p className="text-sm text-slate-500 mt-1 font-medium">
+                            Comparando docentes en paralelo. Contrasta sus métricas y opiniones.
+                        </p>
+                    </div>
                     {(displaySlotA || displaySlotB) && (
                         <button
                             onClick={() => { setSlotA(null); setSlotB(null); }}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors shadow-sm"
+                            className="flex items-center gap-2 px-4 py-2 justify-center border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors shadow-sm cursor-pointer w-full sm:w-auto shrink-0"
                         >
                             <RotateCcw className="w-4 h-4 text-slate-400" />
                             Limpiar Comparación

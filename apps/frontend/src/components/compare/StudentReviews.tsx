@@ -15,6 +15,11 @@ export function StudentReviews({ slotA, slotB }: StudentReviewsProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* DOCENTE A */}
                 <div>
+                    {slotA && (
+                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">
+                            Reseñas de {slotA.name}
+                        </h3>
+                    )}
                     {slotA ? (
                         slotA.reviews && slotA.reviews.length > 0 ? (
                             <div className="space-y-4">
@@ -47,6 +52,11 @@ export function StudentReviews({ slotA, slotB }: StudentReviewsProps) {
 
                 {/* DOCENTE B */}
                 <div>
+                    {slotB && (
+                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">
+                            Reseñas de {slotB.name}
+                        </h3>
+                    )}
                     {slotB ? (
                         slotB.reviews && slotB.reviews.length > 0 ? (
                             <div className="space-y-4">

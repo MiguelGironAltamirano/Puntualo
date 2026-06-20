@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import TeacherCatalog from "@/components/teachers/TeacherCatalog";
 import FilterSidebar from "@/components/teachers/FilterSidebar";
 import { ProfessorFilterState } from "@/lib/hooks-filters";
+import { SlidersHorizontal } from "lucide-react";
 
 function SearchContent() {
     const searchParams = useSearchParams();
@@ -14,6 +15,7 @@ function SearchContent() {
     
     // Filter state
     const [filters, setFilters] = useState<Partial<ProfessorFilterState>>({});
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     // Handle filter changes from FilterSidebar
     const handleFiltersChange = useCallback((newFilters: Partial<ProfessorFilterState>) => {
@@ -21,7 +23,7 @@ function SearchContent() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-sky-100 selection:text-sky-900 overflow-hidden">
+        <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-sky-100 selection:text-sky-900 overflow-hidden relative">
             {/* Navbar with active search */}
             <Navbar
                 showSearch={true}
@@ -30,15 +32,31 @@ function SearchContent() {
             />
 
             {/* Main layout */}
-            <div className="flex-1 flex w-full overflow-hidden">
+            <div className="flex-1 flex flex-col md:flex-row w-full overflow-hidden relative">
                 {/* Left sidebar - Filters */}
-                <FilterSidebar onFiltersChange={handleFiltersChange} />
+                <FilterSidebar 
+                    onFiltersChange={handleFiltersChange} 
+                    isOpen={isFilterOpen}
+                    onClose={() => setIsFilterOpen(false)}
+                />
 
                 {/* Center - Catalog */}
                 <TeacherCatalog 
                     initialQuery={initialQuery}
                     filters={filters}
                 />
+            </div>
+
+            {/* Floating button on mobile to toggle filters */}
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 md:hidden">
+                <button
+                    type="button"
+                    onClick={() => setIsFilterOpen(true)}
+                    className="flex items-center gap-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0270a5] text-white font-bold text-sm rounded-full shadow-lg shadow-sky-500/20 active:scale-95 transition-all cursor-pointer"
+                >
+                    <SlidersHorizontal className="w-4 h-4" />
+                    Filtrar Búsqueda
+                </button>
             </div>
         </div>
     );
