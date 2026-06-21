@@ -25,7 +25,7 @@ function SearchContent() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-sky-100 selection:text-sky-900 overflow-hidden relative">
+        <div className="h-screen bg-white flex flex-col font-sans selection:bg-sky-100 selection:text-sky-900 overflow-hidden relative">
             {/* Navbar with active search */}
             <Navbar
                 showSearch={true}
