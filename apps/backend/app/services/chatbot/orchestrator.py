@@ -24,7 +24,8 @@ async def _execute_tool(name: str, args: dict, db: AsyncSession) -> dict:
     if executor is None:
         return {"error": f"unknown tool {name}"}
     try:
-        return await executor(db=db, **args)
+        result = await executor(db=db, **args)
+        return result if isinstance(result, dict) else {"result": result}
     except Exception as exc:  # reinyecta el error al LLM en el mismo turn
         logger.warning("chat.tool.failed | name=%s", name, exc_info=True)
         return {"error": str(exc)}
@@ -37,7 +38,7 @@ def _function_response_parts(results: list[tuple[str, dict]]):
 
 def _function_call_parts(calls: list[tuple[str, dict]]):
     from google.genai import types
-    return [types.Part(function_call=types.FunctionCall(name=n, args=a)) for n, a in calls]
+    return [types.Part(function_call=types.FunctionCall(name=n, args=a if isinstance(a, dict) else {})) for n, a in calls]
 
 
 async def run_tool_loop(*, client, system_instruction: str, contents: list,
@@ -50,13 +51,10 @@ async def run_tool_loop(*, client, system_instruction: str, contents: list,
         if not calls:
             return contents
         results = [(name, await _execute_tool(name, args, db)) for name, args in calls]
-        try:
-            contents = contents + [
-                {"role": "model", "parts": _function_call_parts(calls)},
-                {"role": "user", "parts": _function_response_parts(results)},
-            ]
-        except Exception:  # en tests sin SDK, basta con registrar el avance
-            contents = contents + [{"_tool_round": results}]
+        contents = contents + [
+            {"role": "model", "parts": _function_call_parts(calls)},
+            {"role": "user", "parts": _function_response_parts(results)},
+        ]
     return contents
 
 

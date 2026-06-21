@@ -7,6 +7,8 @@ import TeacherCatalog from "@/components/teachers/TeacherCatalog";
 import FilterSidebar from "@/components/teachers/FilterSidebar";
 import { ProfessorFilterState } from "@/lib/hooks-filters";
 import { SlidersHorizontal } from "lucide-react";
+import { ChatPanel } from "@/components/chat/ChatPanel";
+import { ChatToggleButton } from "@/components/chat/ChatToggleButton";
 
 function SearchContent() {
     const searchParams = useSearchParams();
@@ -23,7 +25,7 @@ function SearchContent() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-sky-100 selection:text-sky-900 overflow-hidden relative">
+        <div className="h-screen bg-white flex flex-col font-sans selection:bg-sky-100 selection:text-sky-900 overflow-hidden relative">
             {/* Navbar with active search */}
             <Navbar
                 showSearch={true}
@@ -41,10 +43,13 @@ function SearchContent() {
                 />
 
                 {/* Center - Catalog */}
-                <TeacherCatalog 
+                <TeacherCatalog
                     initialQuery={initialQuery}
                     filters={filters}
                 />
+
+                {/* Right - Chat assistant (empuja en desktop, overlay en mobile) */}
+                <ChatPanel />
             </div>
 
             {/* Floating button on mobile to toggle filters */}
@@ -58,6 +63,9 @@ function SearchContent() {
                     Filtrar Búsqueda
                 </button>
             </div>
+
+            {/* Floating button to toggle chat assistant */}
+            <ChatToggleButton />
         </div>
     );
 }
