@@ -184,6 +184,14 @@ async def _load_terms(db: AsyncSession) -> list[tuple[str, str]]:
     return normalized
 
 
+def get_banned_terms_by_severity() -> dict[str, list[str]]:
+    """Retorna los términos del cache agrupados por severidad: {severity: [terms]}."""
+    result: dict[str, list[str]] = {}
+    for term, severity in _cache["all"]:
+        result.setdefault(severity, []).append(term)
+    return result
+
+
 async def banned_terms_filter(
     db: AsyncSession,
     text: str,

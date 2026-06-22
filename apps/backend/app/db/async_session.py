@@ -44,12 +44,23 @@ def _build_async_url(url: str) -> tuple[str, dict]:
     connect_args: dict = {}
     if needs_ssl:
         ssl_ctx = ssl.create_default_context()
-        # Aiven utiliza una CA propia (autofirmada); deshabilitamos la
-        # verificación de la cadena para evitar SSLCertVerificationError.
-        # La conexión sigue siendo cifrada; solo se omite la validación de la CA.
         ssl_ctx.check_hostname = False
         ssl_ctx.verify_mode = ssl.CERT_NONE
         connect_args["ssl"] = ssl_ctx
+
+    # El transaction pooler de Supabase (puerto 6543) asigna distintas conexiones
+    # backend entre transacciones. Los prepared statements nombrados persisten
+    # en la conexión backend aunque el cliente se desconecte, lo que causa
+    # DuplicatePreparedStatementError en la siguiente sesión.
+    # - statement_cache_size=0: deshabilita el cache interno de asyncpg
+    # - prepared_statement_cache_size=0: deshabilita el cache de SQLAlchemy
+    # - prepared_statement_name_func=lambda:None: fuerza unnamed statements
+    #   (se destruyen solos al terminar el ciclo Parse/Execute, sin DEALLOCATE)
+    parsed_final = urlparse(clean_url)
+    if parsed_final.port == 6543:
+        connect_args["statement_cache_size"] = 0
+        connect_args["prepared_statement_cache_size"] = 0
+        connect_args["prepared_statement_name_func"] = lambda: None
 
     return clean_url, connect_args
 

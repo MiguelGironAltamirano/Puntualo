@@ -92,11 +92,9 @@ class Settings:
 
     # --- Pools de conexiones a la BD.
     # La BD se comparte entre el engine async, el sync y los workers de Celery.
-    # Históricamente Aiven capaba en max_connections=20 (17 usables) y por eso los
-    # pools van acotados; con Supabase se accede vía el "Session pooler" (Supavisor),
-    # que también tiene un tope de conexiones según el plan. Mantener estos valores
-    # bajos salvo que se amplíe el plan: con QueuePool por defecto (5+10) cada engine
-    # consumiría hasta 15 conexiones por proceso.
+    # Se usa el transaction pooler de Supabase (puerto 6543): las conexiones backend
+    # se liberan al terminar cada transacción, por lo que los pools de SQLAlchemy no
+    # saturan el límite del pooler. Celery tasks usan NullPool (1 conexión por task).
     DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "5"))
     DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "2"))
     DB_SYNC_POOL_SIZE: int = int(os.getenv("DB_SYNC_POOL_SIZE", "2"))

@@ -13,7 +13,7 @@ from app.models.report import Report, ReportStatus
 from app.models.user import User
 from app.modules.evaluations.errors import CommentNotFoundError
 from app.services.moderation.moderation_pipeline import ModerationPipeline
-from app.utils.moderation import BANNED_TERMS_CACHE
+from app.utils.moderation import get_banned_terms_by_severity
 
 
 class AdminService:
@@ -202,7 +202,7 @@ class AdminService:
         """Get list of all banned terms and their severity."""
         terms_dict = {}
         
-        for severity_level, terms_list in BANNED_TERMS_CACHE.items():
+        for severity_level, terms_list in get_banned_terms_by_severity().items():
             for term in terms_list:
                 terms_dict[term] = severity_level
 

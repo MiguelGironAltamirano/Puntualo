@@ -18,6 +18,7 @@ celery_app.conf.update(
     task_acks_late=True,
     task_track_started=True,
     timezone="UTC",
+    worker_concurrency=3,  # Supabase transaction pooler: acotamos workers para no saturar conexiones
     beat_schedule={
         "nlp-enqueue-pending-summaries": {
             "task": "nlp.enqueue_pending_summaries",
