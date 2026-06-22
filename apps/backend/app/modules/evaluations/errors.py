@@ -111,3 +111,21 @@ class HashtagBannedTermsError(DomainError):
         )
         self.label = label
         self.term = term
+
+
+class ReportRateLimitError(DomainError):
+    code = "REPORT_RATE_LIMIT"
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    default_message = "Has alcanzado el límite de reportes. Intenta de nuevo más tarde."
+
+
+class CommentAlreadyRemovedError(DomainError):
+    code = "COMMENT_ALREADY_REMOVED"
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_message = "El comentario ya fue eliminado."
+
+
+class ReportAbuseDetectedError(DomainError):
+    code = "REPORT_ABUSE_DETECTED"
+    status_code = status.HTTP_403_FORBIDDEN
+    default_message = "Se ha detectado abuso del sistema de reportes."

@@ -42,8 +42,9 @@ from app.modules.evaluations.schemas import EvaluationCreate
 from app.modules.evaluations.semester import current_semester
 from app.modules.evaluations.service.hashtag_service import HashtagService
 from app.modules.evaluations.summary_hook import SummaryTrigger
+from app.services.moderation.moderation_pipeline import ModerationCheckpoint
 from app.utils.cache import invalidate_professor
-from app.utils.moderation import banned_terms_filter
+from app.utils.moderation import heuristic_filter
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +74,8 @@ class EvaluationService:
         payload: EvaluationCreate,
     ) -> EvaluationCreateResult:
         """Crea evaluacion + comentario opcional + hashtags + delega recalc score."""
-        # 1) Pre-tx: validar longitud + banned_terms del comment.
-        normalized_comment = await self._validate_comment(payload.comment_text)
+        # 1) Pre-tx: validar longitud + heuristic filter del comment.
+        normalized_comment, comment_status = await self._validate_comment(payload.comment_text)
 
         semester = current_semester()
 
@@ -125,7 +126,7 @@ class EvaluationService:
                 course_id=payload.course_id,
                 text=normalized_comment,
                 modality=payload.modality,
-                status=CommentStatus.PUBLISHED.value,
+                status=comment_status.value,  # Use status from heuristic filter
             )
             self.db.add(comment)
             await self.db.flush()
@@ -178,25 +179,41 @@ class EvaluationService:
     # Helpers privados
     # -----------------------------------------------------------------------
 
-    async def _validate_comment(self, comment_text: str | None) -> str | None:
-        """Devuelve el texto stripped si es valido, None si no hay comentario.
-
-        Reemplaza el viejo profanity.check (archivo de texto) por
-        moderation.banned_terms_filter (BD), con threshold 'medium'.
+    async def _validate_comment(self, comment_text: str | None) -> tuple[str | None, CommentStatus]:
+        """Validates comment text using heuristic filter and returns status.
+        
+        Returns:
+            (normalized_text: str | None, status: CommentStatus)
+            
+        If heuristic blocks -> raises OffensiveContentError
+        If heuristic flags -> returns (text, HIDDEN_PENDING_REVIEW)
+        If heuristic allows -> returns (text, PUBLISHED)
         """
         if comment_text is None:
-            return None
+            return None, CommentStatus.PUBLISHED
+
         stripped = comment_text.strip()
         if len(stripped) < settings.COMMENT_MIN_LENGTH:
             raise CommentTooShortError(
                 f"El comentario debe tener al menos {settings.COMMENT_MIN_LENGTH} caracteres."
             )
-        banned = await banned_terms_filter(self.db, stripped, severity_threshold="medium")
-        if banned:
+
+        # Use enhanced heuristic filter
+        heuristic_result = await heuristic_filter(stripped)
+        
+        if heuristic_result.action == "block":
             raise OffensiveContentError(
-                f"El comentario contiene un termino prohibido: '{banned}'."
+                f"El comentario contiene contenido prohibido: {', '.join(heuristic_result.reasons)}."
             )
-        return stripped
+        
+        # If flagged, return pending review status; otherwise published
+        status = (
+            CommentStatus.HIDDEN_PENDING_REVIEW
+            if heuristic_result.action == "flag"
+            else CommentStatus.PUBLISHED
+        )
+        
+        return stripped, status
 
     async def _get_validated_professor(self, professor_id: str) -> Professor:
         """Obtiene el profesor validando existencia, estado activo y validation_status."""

@@ -139,6 +139,7 @@ class ReportCreate(BaseModel):
 class ReportResult(BaseModel):
     comment_id: str
     reports_count: int
+    was_escalated: bool = False
 
 
 # ---------------------------------------------------------------------------

@@ -331,6 +331,31 @@ class Settings:
     # --- Tarea 2.6: override de semestre (solo tests)
     SEMESTER_OVERRIDE: str | None = os.getenv("SEMESTER_OVERRIDE") or None
 
+    # --- Heuristic filter thresholds (spam detection)
+    HEURISTIC_SPAM_BLOCK_THRESHOLD: float = float(
+        os.getenv("HEURISTIC_SPAM_BLOCK_THRESHOLD", "0.7")
+    )
+    HEURISTIC_SPAM_FLAG_THRESHOLD: float = float(
+        os.getenv("HEURISTIC_SPAM_FLAG_THRESHOLD", "0.4")
+    )
+    HEURISTIC_MAX_UPPERCASE_RATIO: float = float(
+        os.getenv("HEURISTIC_MAX_UPPERCASE_RATIO", "0.7")
+    )
+    HEURISTIC_OBFUSCATION_CHECK: bool = (
+        os.getenv("HEURISTIC_OBFUSCATION_CHECK", "true").lower() == "true"
+    )
+
+    # --- Report/complaint rate limiting and thresholds
+    REPORT_RATE_LIMIT_PER_HOUR: int = int(
+        os.getenv("REPORT_RATE_LIMIT_PER_HOUR", "10")
+    )
+    REPORT_ABUSE_THRESHOLD: int = int(
+        os.getenv("REPORT_ABUSE_THRESHOLD", "5")
+    )
+    REPORT_MODERATION_TRIGGER_THRESHOLD: float = float(
+        os.getenv("REPORT_MODERATION_TRIGGER_THRESHOLD", "5.0")
+    )
+
 
 settings = Settings()
 
