@@ -6,14 +6,14 @@ from sqlalchemy import text
 
 import app.core.celery_app  # noqa: F401 — ensures shared_task binds to Redis broker
 from app.db.session import engine
-from app.modules.admin.router.admin_router import router as admin_router
+from app.modules.admin.router import router as admin_router
 from app.modules.auth.router import router as auth_router
 from app.modules.catalogs.router import router as catalogs_router
+from app.modules.chat.router import router as chat_router
 from app.modules.evaluations.errors import DomainError
 from app.modules.evaluations.router import router as evaluations_router
 from app.modules.professors.router import router as professors_router
 from app.modules.verification.router import router as verification_router
-from app.modules.admin.router import router as admin_router
 from fastapi.middleware.cors import CORSMiddleware
 
 logger = logging.getLogger(__name__)
@@ -95,4 +95,10 @@ app.include_router(
     admin_router,
     prefix="/admin",
     tags=["admin"],
+)
+
+app.include_router(
+    chat_router,
+    prefix="/chat",
+    tags=["chat"],
 )

@@ -61,16 +61,16 @@ function extractErrorMessage(detail: unknown, fallback: string): string {
 
 function StarRating({ value, onChange, disabled }: { value: number, onChange: (val: number) => void, disabled?: boolean }) {
     return (
-        <div className="flex items-center justify-center gap-1 mt-2">
+        <div className="flex items-center justify-center gap-2 mt-2">
             {[1, 2, 3, 4, 5].map((star) => (
                 <button
                     key={star}
                     type="button"
                     onClick={() => !disabled && onChange(star)}
                     disabled={disabled}
-                    className="p-0.5 transition-all focus:outline-none hover:scale-110 disabled:hover:scale-100 disabled:cursor-not-allowed"
+                    className="p-2 transition-all focus:outline-none hover:scale-110 disabled:hover:scale-100 disabled:cursor-not-allowed cursor-pointer"
                 >
-                    <Star className={`w-5 h-5 ${star <= value ? 'fill-[#ff8a00] text-[#ff8a00]' : 'text-slate-200'}`} />
+                    <Star className={`w-8 h-8 ${star <= value ? 'fill-[#ff8a00] text-[#ff8a00]' : 'text-slate-200'}`} />
                 </button>
             ))}
         </div>
@@ -242,35 +242,35 @@ export function EvaluarModal({
 
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
-            <div className="bg-white rounded-3xl w-full max-w-2xl relative shadow-2xl my-auto text-left flex flex-col max-h-[90vh]">
+            <div className="bg-white rounded-3xl w-full max-w-2xl relative shadow-2xl my-auto text-left flex flex-col h-full sm:h-auto max-h-[95vh] sm:max-h-[90vh]">
 
                 {/* Header */}
-                <div className="p-6 border-b border-slate-100 flex items-center gap-4 shrink-0 relative">
-                    <button onClick={resetAndClose} className="absolute right-6 top-6 text-slate-400 hover:text-slate-600 transition-colors p-1.5 cursor-pointer focus:outline-none hover:bg-slate-50 rounded-xl">
+                <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center gap-4 shrink-0 relative">
+                    <button onClick={resetAndClose} className="absolute right-4 top-4 sm:right-6 sm:top-6 text-slate-400 hover:text-slate-600 transition-colors p-1.5 cursor-pointer focus:outline-none hover:bg-slate-50 rounded-xl">
                         <X className="w-5 h-5" />
                     </button>
 
-                    <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-slate-400">
-                        <User className="w-6 h-6" />
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-slate-400">
+                        <User className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-black text-slate-900 leading-tight">{professorName}</h2>
+                        <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">{professorName}</h2>
                         {facultyName && (
-                            <p className="text-xs font-semibold text-slate-500 mt-0.5">{facultyName}</p>
+                            <p className="text-[10px] sm:text-xs font-semibold text-slate-500 mt-0.5">{facultyName}</p>
                         )}
                     </div>
                 </div>
 
                 {/* Banners */}
                 {!isValidated && (
-                    <div className="px-8 pt-6">
+                    <div className="px-4 sm:px-8 pt-4 sm:pt-6">
                         <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-medium">
                             Este profesor todavía está en validación. Podrás evaluarlo cuando quede aprobado por el pipeline.
                         </div>
                     </div>
                 )}
                 {isValidated && courses.length === 0 && (
-                    <div className="px-8 pt-6">
+                    <div className="px-4 sm:px-8 pt-4 sm:pt-6">
                         <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-medium">
                             Este profesor todavía no tiene cursos asignados. No es posible evaluarlo.
                         </div>
@@ -279,7 +279,7 @@ export function EvaluarModal({
 
                 {/* Scrollable content */}
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
-                    <div className="p-8 space-y-10 custom-scrollbar">
+                    <div className="p-4 sm:p-8 space-y-8 sm:space-y-10 custom-scrollbar">
 
                         {error && (
                             <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-medium">
@@ -425,26 +425,26 @@ export function EvaluarModal({
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-6 shrink-0 bg-white rounded-b-3xl sticky bottom-0">
+                    <div className="p-4 sm:p-6 border-t border-slate-100 flex items-center justify-end gap-4 sm:gap-6 shrink-0 bg-white rounded-b-3xl sticky bottom-0">
                         <button
                             type="button"
                             onClick={resetAndClose}
                             disabled={submitting}
-                            className="text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-2.5 sm:px-5 sm:py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-all focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={!canSubmit}
-                            className={`px-6 py-3 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 focus:outline-none ${
+                            className={`px-5 py-2.5 sm:px-6 sm:py-3 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 focus:outline-none ${
                                 canSubmit
                                     ? 'bg-[#ff8a00] hover:bg-[#ea580c] text-white cursor-pointer'
                                     : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                             }`}
                         >
                             <Play className="w-3.5 h-3.5 fill-current" />
-                            {submitting ? 'Publicando...' : 'Publicar evaluación'}
+                            {submitting ? 'Publicando...' : 'Publicar'}
                         </button>
                     </div>
                 </form>

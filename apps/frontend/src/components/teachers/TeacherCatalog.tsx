@@ -75,7 +75,7 @@ export default function TeacherCatalog({
         : 'Sin resultados';
 
     return (
-        <div className="flex-1 p-8 bg-[#f8fafc]/40 text-left overflow-y-auto h-[calc(100vh-69px)]">
+        <div className="flex-1 p-4 md:p-8 bg-[#f8fafc]/40 text-left overflow-y-auto h-[calc(100vh-69px)]">
             <div className="max-w-[1300px] mx-auto">
 
                 {/* AI Analysis Banner - Show only if we have results and a query */}
@@ -103,16 +103,16 @@ export default function TeacherCatalog({
                 )}
 
                {/* Controles de Acción (Botón y Ordenamiento) */}
-                <div className="flex items-center gap-5 self-end sm:self-auto justify-end w-full mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full mb-6">
                     <button
                         type="button"
                         onClick={() => setIsRegisterModalOpen(true)}
-                        className="px-4 py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+                        className="w-full sm:w-auto justify-center px-4 py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
                     >
                         <Plus className="w-4 h-4" strokeWidth={3} /> Agregar nuevo profesor
                     </button>
 
-                    <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                    <div className="text-xs font-semibold text-slate-500 flex items-center justify-between sm:justify-start gap-1.5 border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0">
                         <span className="text-slate-400 font-medium">Ordenar por:</span>
                         <select
                             value={sortBy}
@@ -165,7 +165,7 @@ export default function TeacherCatalog({
                         </div>
 
                         {/* Teacher Cards Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {teachers.map((prof) => (
                                 <Link
                                     key={prof.id}

@@ -25,8 +25,11 @@ export function CompareMetrics({ slotA, slotB }: CompareMetricsProps) {
                 {/* 1. Nivel de Aprendizaje */}
                 <div>
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Nivel de Aprendizaje</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                         <div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                {slotA ? slotA.name : 'Docente A'}
+                            </div>
                             <div className="flex justify-between text-xs font-bold text-slate-700">
                                 <span>{slotA ? slotA.rating : '—'}</span>
                                 <span className="text-slate-400 font-medium">Alto</span>
@@ -34,6 +37,9 @@ export function CompareMetrics({ slotA, slotB }: CompareMetricsProps) {
                             <ProgressBar value={slotA ? slotA.rating : 0} colorClass="bg-orange-500" />
                         </div>
                         <div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                {slotB ? slotB.name : 'Docente B'}
+                            </div>
                             <div className="flex justify-between text-xs font-bold text-slate-700">
                                 <span>{slotB ? slotB.rating : '—'}</span>
                                 <span className="text-slate-400 font-medium">Excelente</span>
@@ -46,8 +52,11 @@ export function CompareMetrics({ slotA, slotB }: CompareMetricsProps) {
                 {/* 2. Nivel de Dificultad */}
                 <div>
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Nivel de Dificultad</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                         <div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                {slotA ? slotA.name : 'Docente A'}
+                            </div>
                             <div className="flex justify-between text-xs font-bold text-slate-700">
                                 <span>{slotA ? slotA.difficulty : '—'}</span>
                                 <span className="text-slate-400 font-medium">Moderado</span>
@@ -55,6 +64,9 @@ export function CompareMetrics({ slotA, slotB }: CompareMetricsProps) {
                             <ProgressBar value={slotA ? slotA.difficulty : 0} colorClass="bg-[#0e4e6c]" />
                         </div>
                         <div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                {slotB ? slotB.name : 'Docente B'}
+                            </div>
                             <div className="flex justify-between text-xs font-bold text-slate-700">
                                 <span>{slotB ? slotB.difficulty : '—'}</span>
                                 <span className="text-slate-400 font-medium">Alto</span>
@@ -67,8 +79,11 @@ export function CompareMetrics({ slotA, slotB }: CompareMetricsProps) {
                 {/* 3. Claridad al Explicar */}
                 <div>
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Claridad al Explicar</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                         <div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                {slotA ? slotA.name : 'Docente A'}
+                            </div>
                             <div className="flex justify-between text-xs font-bold text-slate-700">
                                 <span>{slotA ? slotA.clarity : '—'}</span>
                                 <span className="text-slate-400 font-medium">Muy Claro</span>
@@ -76,6 +91,9 @@ export function CompareMetrics({ slotA, slotB }: CompareMetricsProps) {
                             <ProgressBar value={slotA ? slotA.clarity : 0} colorClass="bg-orange-500" />
                         </div>
                         <div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                {slotB ? slotB.name : 'Docente B'}
+                            </div>
                             <div className="flex justify-between text-xs font-bold text-slate-700">
                                 <span>{slotB ? slotB.clarity : '—'}</span>
                                 <span className="text-slate-400 font-medium">Perfecto</span>

@@ -11,6 +11,7 @@ celery_app.conf.include = [
     "app.tasks.professor_validation_tasks",
     "app.tasks.score_recalculation_tasks",
     "app.tasks.nlp_tasks",
+    "app.tasks.embeddings_tasks",
 ]
 
 celery_app.conf.update(
@@ -21,6 +22,10 @@ celery_app.conf.update(
         "nlp-enqueue-pending-summaries": {
             "task": "nlp.enqueue_pending_summaries",
             "schedule": float(settings.NLP_SUMMARY_BEAT_SECONDS),
+        },
+        "chat-enqueue-stale-embeddings": {
+            "task": "chat.enqueue_stale_embeddings",
+            "schedule": float(settings.EMBEDDINGS_BEAT_SECONDS),
         },
     },
 )

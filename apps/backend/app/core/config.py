@@ -317,6 +317,17 @@ class Settings:
     NLP_SUMMARY_BEAT_SECONDS: int = int(os.getenv("NLP_SUMMARY_BEAT_SECONDS", "900"))
     NLP_LLM_MAX_RETRIES: int = int(os.getenv("NLP_LLM_MAX_RETRIES", "2"))
 
+    # --- Tarea 4.5: Chatbot RAG (Cohere embeddings + Gemini chat)
+    COHERE_API_KEY: str = os.getenv("COHERE_API_KEY", "")
+    COHERE_EMBED_MODEL: str = os.getenv("COHERE_EMBED_MODEL", "embed-v4.0")
+    COHERE_EMBED_DIM: int = int(os.getenv("COHERE_EMBED_DIM", "1536"))
+    CHATBOT_TOP_K: int = int(os.getenv("CHATBOT_TOP_K", "5"))
+    CHATBOT_HISTORY_TURNS: int = int(os.getenv("CHATBOT_HISTORY_TURNS", "10"))
+    CHATBOT_MAX_TOOL_ROUNDS: int = int(os.getenv("CHATBOT_MAX_TOOL_ROUNDS", "4"))
+    CHATBOT_RATE_LIMIT_PER_HOUR: int = int(os.getenv("CHATBOT_RATE_LIMIT_PER_HOUR", "30"))
+    CHATBOT_SYSTEM_PROMPT_VERSION: str = os.getenv("CHATBOT_SYSTEM_PROMPT_VERSION", "system_v1")
+    EMBEDDINGS_BEAT_SECONDS: int = int(os.getenv("EMBEDDINGS_BEAT_SECONDS", "3600"))
+
     # --- Tarea 2.6: override de semestre (solo tests)
     SEMESTER_OVERRIDE: str | None = os.getenv("SEMESTER_OVERRIDE") or None
 
