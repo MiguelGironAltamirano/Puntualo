@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.comment import Comment, CommentStatus
 from app.models.report import Report
+from app.models.user import User
 from app.modules.evaluations.errors import (
     CommentNotFoundError,
     CommentAlreadyRemovedError,
@@ -30,8 +31,10 @@ class TestReportService:
             with patch.object(service.rate_limiter, 'record') as mock_record:
                 with patch.object(service.abuse_detector, 'check') as mock_abuse:
                     with patch.object(service, '_calculate_weighted_score') as mock_score:
-                        mock_check.return_value = AsyncMock(allowed=True, remaining=9)()
-                        mock_check.return_value.allowed = True
+                        mock_status = AsyncMock()
+                        mock_status.allowed = True
+                        mock_status.remaining = 9
+                        mock_check.return_value = mock_status
                         mock_abuse.return_value = False
                         mock_score.return_value = 0.5
                         
@@ -143,9 +146,22 @@ class TestReportService:
             user_id=test_user.id,
             reason="hate_speech",
         )
+        
+        other_user = User(
+            id=uuid.uuid4(),
+            email="otheruser@unmsm.edu.pe",
+            username="otheruser",
+            full_name="Other User",
+            hashed_password="hashed_password_placeholder",
+            is_active=True,
+            role="student",
+        )
+        test_db.add(other_user)
+        await test_db.flush()
+        
         spam_report = Report(
             comment_id=test_comment.id,
-            user_id=uuid.uuid4(),
+            user_id=other_user.id,
             reason="spam",
         )
         test_db.add(hate_report)

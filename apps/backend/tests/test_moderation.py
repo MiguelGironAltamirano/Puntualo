@@ -1,6 +1,8 @@
 """tests/test_moderation.py - Tests for heuristic filter and moderation."""
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.banned_term import BannedTerm
 from app.utils.moderation import heuristic_filter
 
 
@@ -102,3 +104,68 @@ class TestHeuristicFilter:
         result = await heuristic_filter("Great professor! Very engaging lectures. Highly recommend.")
         assert result.action == "allow"
         assert result.spam_score < 0.3
+
+    @pytest.mark.asyncio
+    async def test_banned_term_detection_with_db(self, test_db: AsyncSession):
+        """Test that banned terms are detected when DB is provided."""
+        # Clean cache
+        from app.utils.moderation import _reset_cache_for_tests
+        _reset_cache_for_tests()
+
+        # Add a banned term
+        banned = BannedTerm(id=1, term="forbiddenword", severity="high")
+        test_db.add(banned)
+        await test_db.flush()
+
+        result = await heuristic_filter("This is a forbiddenword in text", db=test_db)
+        assert result.banned_term == "forbiddenword"
+        assert "forbiddenword" in " ".join(result.reasons)
+        assert result.spam_score >= 0.5
+
+    @pytest.mark.asyncio
+    async def test_banned_term_severity_filtering(self, test_db: AsyncSession):
+        """Test that severity threshold is respected."""
+        from app.utils.moderation import _reset_cache_for_tests
+        _reset_cache_for_tests()
+
+        # Add low severity term
+        low_term = BannedTerm(id=2, term="mildword", severity="low")
+        test_db.add(low_term)
+        await test_db.flush()
+
+        # With medium threshold, mildword (low) should be ignored
+        result = await heuristic_filter("This is mildword", db=test_db, severity_threshold="medium")
+        assert result.banned_term is None
+
+        # With low threshold, mildword should be detected
+        result = await heuristic_filter("This is mildword", db=test_db, severity_threshold="low")
+        assert result.banned_term == "mildword"
+
+    @pytest.mark.asyncio
+    async def test_banned_term_cache_ttl(self, test_db: AsyncSession):
+        """Test that banned terms cache works and respects TTL/reset."""
+        from app.utils.moderation import _reset_cache_for_tests
+        _reset_cache_for_tests()
+
+        # Seed the database with one term first so the cache is not empty
+        seed = BannedTerm(id=3, term="seedterm", severity="high")
+        test_db.add(seed)
+        await test_db.flush()
+
+        # Fill the cache with the seeded term
+        result = await heuristic_filter("Check seedterm", db=test_db)
+        assert result.banned_term == "seedterm"
+
+        # Add new term
+        term = BannedTerm(id=4, term="spammy", severity="high")
+        test_db.add(term)
+        await test_db.flush()
+
+        # Still None because of cache (TTL not expired yet, cache has only seedterm)
+        result = await heuristic_filter("Check spammy", db=test_db)
+        assert result.banned_term is None
+
+        # Reset cache to simulate TTL expiration / forced refresh
+        _reset_cache_for_tests()
+        result = await heuristic_filter("Check spammy", db=test_db)
+        assert result.banned_term == "spammy"

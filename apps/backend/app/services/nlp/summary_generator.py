@@ -164,27 +164,51 @@ async def generate_and_store(
 
     version = model_version()
     now = datetime.now(timezone.utc)
-    stmt = (
-        pg_insert(ProfessorAiSummary)
-        .values(
-            professor_id=prof_uuid,
-            summary=result.summary,
-            pros=result.pros,
-            cons=result.cons,
-            model_version=version,
-            generated_at=now,
-        )
-        .on_conflict_do_update(
-            constraint="uq_professor_ai_summaries_professor",
-            set_=dict(
+    if db.bind.dialect.name == "sqlite":
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+        stmt = (
+            sqlite_insert(ProfessorAiSummary)
+            .values(
+                professor_id=prof_uuid,
                 summary=result.summary,
                 pros=result.pros,
                 cons=result.cons,
                 model_version=version,
                 generated_at=now,
-            ),
+            )
+            .on_conflict_do_update(
+                index_elements=["professor_id"],
+                set_=dict(
+                    summary=result.summary,
+                    pros=result.pros,
+                    cons=result.cons,
+                    model_version=version,
+                    generated_at=now,
+                ),
+            )
         )
-    )
+    else:
+        stmt = (
+            pg_insert(ProfessorAiSummary)
+            .values(
+                professor_id=prof_uuid,
+                summary=result.summary,
+                pros=result.pros,
+                cons=result.cons,
+                model_version=version,
+                generated_at=now,
+            )
+            .on_conflict_do_update(
+                constraint="uq_professor_ai_summaries_professor",
+                set_=dict(
+                    summary=result.summary,
+                    pros=result.pros,
+                    cons=result.cons,
+                    model_version=version,
+                    generated_at=now,
+                ),
+            )
+        )
     await db.execute(stmt)
     await db.flush()
 

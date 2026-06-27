@@ -81,7 +81,13 @@ async def generate_and_store(
     vector = (await embedder.embed_documents([source]))[0]
 
     now = datetime.now(timezone.utc)
-    stmt = pg_insert(ProfessorEmbedding).values(
+    if db.bind.dialect.name == "sqlite":
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+        insert_fn = sqlite_insert
+    else:
+        insert_fn = pg_insert
+
+    stmt = insert_fn(ProfessorEmbedding).values(
         professor_id=prof.id,
         embedding=vector,
         embedding_model=settings.COHERE_EMBED_MODEL,
