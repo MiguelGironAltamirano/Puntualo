@@ -75,31 +75,12 @@ export default function TeacherCatalog({
         : 'Sin resultados';
 
     return (
-        <div className="flex-1 p-4 md:p-8 bg-[#f8fafc]/40 text-left overflow-y-auto h-[calc(100vh-69px)]">
+        <div className="flex-1 p-4 md:p-8 bg-[#f8fafc]/40 text-left overflow-y-auto h-[calc(100vh-72px)]">
             <div className="max-w-[1300px] mx-auto">
 
                 {/* AI Analysis Banner - Show only if we have results and a query */}
                 {teachers.length > 0 && initialQuery && (
                     <SearchAIAnalysis analysis={{ matchesText: `Hemos encontrado ${teachers.length} docentes relacionados con "${initialQuery}".` }} />
-                )}
-
-                {/* Loading State */}
-                {loading && (
-                    <div className="flex flex-col items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ff8a00] mb-4"></div>
-                        <p className="text-slate-500 font-medium">Cargando profesores...</p>
-                    </div>
-                )}
-
-                {/* Error State */}
-                {error && !loading && (
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                            <h3 className="text-sm font-bold text-red-900">Error al cargar profesores</h3>
-                            <p className="text-xs text-red-600 mt-1">{error.message}</p>
-                        </div>
-                    </div>
                 )}
 
                {/* Controles de Acción (Botón y Ordenamiento) */}
@@ -125,6 +106,25 @@ export default function TeacherCatalog({
                         </select>
                     </div>
                 </div>
+
+                {/* Loading State */}
+                {loading && (
+                    <div className="flex flex-col items-center justify-center py-24">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ff8a00] mb-4"></div>
+                        <p className="text-slate-500 font-medium">Cargando profesores...</p>
+                    </div>
+                )}
+
+                {/* Error State */}
+                {error && !loading && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                            <h3 className="text-sm font-bold text-red-900">Error al cargar profesores</h3>
+                            <p className="text-xs text-red-600 mt-1">{error.message}</p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Empty State - No query yet */}
                 {!initialQuery && !loading && teachers.length === 0 && (
