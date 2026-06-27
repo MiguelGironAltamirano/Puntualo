@@ -1,0 +1,22 @@
+# =============================================================================
+# Caddyfile — reverse proxy + HTTPS automático para el backend de Puntualo.
+#
+# Caddy obtiene y renueva el certificado TLS de Let's Encrypt automáticamente,
+# siempre que:
+#   1. El dominio (puntualo.duckdns.org) resuelva a la IP PÚBLICA DE LA VM.
+#   2. Los puertos 80 y 443 estén abiertos (Security List de OCI + firewalld).
+#
+# El frontend en Vercel debe usar:  NEXT_PUBLIC_API_URL=https://puntualo.duckdns.org
+# =============================================================================
+
+{
+	# (Opcional) Correo para avisos de expiración de Let's Encrypt. Descomenta y pon el tuyo.
+	# email tucorreo@ejemplo.com
+}
+
+puntualo.duckdns.org {
+	encode gzip
+
+	# Redirige todo el tráfico al contenedor `api` por la red interna de Docker.
+	reverse_proxy api:8000
+}

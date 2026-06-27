@@ -79,6 +79,39 @@ def _validate_image_quality(file_bytes: bytes, content_type: str) -> dict:
     }
 
 
+def prescreen_carnet(
+    side: str,
+    content_type: str,
+    file_bytes: bytes,
+    quality_metrics: dict,
+) -> dict:
+    """
+    Primera capa de verificacion del carnet.
+
+    ESTADO ACTUAL: no-op. Siempre deriva la decision al administrador
+    (revision manual). La verificacion automatica con IA nunca se implemento;
+    esta funcion es el punto de extension donde mas adelante se enchufara un
+    modelo de IA (vision/OCR) capaz de pre-aprobar, pre-rechazar o marcar para
+    revision un carnet ANTES de que llegue al admin.
+
+    Para activar la capa de IA en el futuro: implementar aqui la llamada al
+    modelo usando `file_bytes` (y opcionalmente `quality_metrics`) y devolver
+    una `decision` distinta de "manual_review". El resto del flujo ya respeta
+    este contrato, asi que no haria falta tocar `upload_carnet_side`.
+
+    Contrato de retorno (estable):
+      - decision: "manual_review" | "approved" | "rejected"
+                  (hoy SIEMPRE "manual_review")
+      - confidence: float | None  -> certeza del modelo [0..1]
+      - reason: str | None        -> motivo legible si decision == "rejected"
+    """
+    return {
+        "decision": "manual_review",
+        "confidence": None,
+        "reason": None,
+    }
+
+
 def _get_or_create_request(db: Session, user_id: uuid.UUID) -> VerificationRequest:
     existing = db.execute(
         select(VerificationRequest)
@@ -208,6 +241,11 @@ def upload_carnet_side(
         }
 
     metrics = _validate_image_quality(file_bytes, content_type)
+
+    # Primera capa (futura IA). Hoy es no-op: siempre "manual_review", por lo que
+    # la solicitud queda pendiente para que la apruebe/rechace el administrador.
+    prescreen = prescreen_carnet(side, content_type, file_bytes, metrics)
+
     _get_or_create_request(db, user.id)
     _store_document(
         db,
@@ -224,6 +262,8 @@ def upload_carnet_side(
 
     # Notificamos que la solicitud esta lista para revision (ambos lados subidos)
     # pero NO la aprobamos automaticamente, ya que requiere revision manual (1 dia habil).
+    # Cuando la capa de IA este activa, `prescreen["decision"]` podra resolver aqui
+    # la solicitud sin intervencion del admin (ver prescreen_carnet()).
     if _has_both_sides(db, user.id):
         # Opcional: aqui podriamos emitir un evento, enviar un email a admins, etc.
         pass

@@ -1,0 +1,100 @@
+# =============================================================================
+# docker-compose.prod.yml — Puntualo (producción en la VM de Oracle Cloud)
+#
+# Diferencias con docker-compose.yml (desarrollo):
+#   - SIN Postgres local: la BD vive en Supabase.
+#   - CON servicio `api` (uvicorn) y `beat` (celery beat), que faltaban.
+#   - Redis interno con password y SIN puerto expuesto a internet.
+#   - Caddy como reverse proxy con HTTPS automático (Let's Encrypt).
+#
+# Levantar (IMPORTANTE el --env-file para que ${REDIS_PASSWORD} se interpole):
+#   docker compose --env-file apps/backend/.env -f docker-compose.prod.yml up -d --build
+#
+# Construir en la propia VM ARM (no en un PC x86) para que la arquitectura coincida.
+# =============================================================================
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: puntualo_redis
+    restart: always
+    # appendonly: persiste la cola de Celery entre reinicios.
+    # requirepass: protege Redis aunque esté en red interna (defensa en profundidad).
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # NOTA: deliberadamente SIN `ports`. Redis solo es accesible por la red
+    # interna de Docker (los otros servicios lo alcanzan como `redis:6379`).
+
+  api:
+    build:
+      context: ./apps/backend
+    container_name: puntualo_api
+    restart: always
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    env_file:
+      - ./apps/backend/.env
+    expose:
+      - "8000"            # visible solo para Caddy en la red interna; NO publicado
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # Pega al endpoint raíz (no toca la BD), evitando consultas a Supabase en cada chequeo.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  worker:
+    build:
+      context: ./apps/backend
+    container_name: puntualo_worker
+    restart: always
+    command: celery -A app.core.celery_app worker -l info --concurrency=3
+    env_file:
+      - ./apps/backend/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  beat:
+    build:
+      context: ./apps/backend
+    container_name: puntualo_beat
+    restart: always
+    # IMPORTANTE: ejecutar beat en UNA sola instancia (no escalar) o duplicaría
+    # las tareas programadas. El schedule se guarda en /tmp (efímero, se regenera).
+    command: celery -A app.core.celery_app beat -l info --schedule /tmp/celerybeat-schedule
+    env_file:
+      - ./apps/backend/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: puntualo_caddy
+    restart: always
+    ports:
+      - "80:80"           # necesario para el challenge HTTP-01 de Let's Encrypt
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data        # persiste los certificados (no re-emitir en cada deploy)
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  redis_data:
+  caddy_data:
+  caddy_config:
