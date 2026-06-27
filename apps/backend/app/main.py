@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 import app.core.celery_app  # noqa: F401 — ensures shared_task binds to Redis broker
+from app.core.config import settings
 from app.db.session import engine
 from app.modules.admin.router import router as admin_router
 from app.modules.auth.router import router as auth_router
@@ -36,13 +37,9 @@ async def domain_error_handler(request: Request, exc: DomainError) -> JSONRespon
         content={"detail": {"code": exc.code, "message": exc.message}},
     )
 
-origins = [
-    "http://localhost:3000",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,       # en dev, la URL del frontend
+    allow_origins=settings.FRONTEND_ORIGINS,  # configurable por env (FRONTEND_ORIGINS)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

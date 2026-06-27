@@ -102,6 +102,16 @@ class Settings:
     DB_POOL_TIMEOUT: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))
     DB_POOL_RECYCLE: int = int(os.getenv("DB_POOL_RECYCLE", "1800"))
 
+    # --- CORS
+    # Orígenes del frontend autorizados para llamar a la API (separados por coma).
+    # En dev: http://localhost:3000. En prod: la(s) URL(s) de Vercel / dominio propio.
+    # Como allow_credentials=True, NO se admite "*"; hay que listar orígenes exactos.
+    FRONTEND_ORIGINS: list[str] = [
+        origin.strip()
+        for origin in os.getenv("FRONTEND_ORIGINS", "http://localhost:3000").split(",")
+        if origin.strip()
+    ]
+
     SECRET_KEY: str = os.getenv(
         "SECRET_KEY",
         ""

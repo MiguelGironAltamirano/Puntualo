@@ -174,3 +174,4 @@ docker-data/
 .sass-cache/
 
 .venv_wsl/
+/context/
