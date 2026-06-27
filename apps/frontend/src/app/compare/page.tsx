@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Navbar } from '@/components/layout/Navbar';
@@ -38,6 +38,12 @@ function mapProfessorToTeacher(professor: ProfessorRead): Teacher {
 export default function ComparePage() {
     const router = useRouter();
     const [slotA, setSlotA] = useState<Teacher | null>(null);
+
+    useEffect(() => {
+        if (!localStorage.getItem('access_token')) {
+            router.replace('/login');
+        }
+    }, [router]);
     const [slotB, setSlotB] = useState<Teacher | null>(null);
     const [searchA, setSearchA] = useState('');
     const [searchB, setSearchB] = useState('');

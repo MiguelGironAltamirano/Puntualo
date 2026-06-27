@@ -320,6 +320,11 @@ async function fetchAPI<T>(
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        clearAuthTokens();
+        window.location.replace('/login');
+        throw new Error('Sesión expirada');
+      }
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
         errorData?.detail?.message || `API Error: ${response.status}`

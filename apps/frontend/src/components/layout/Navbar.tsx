@@ -129,8 +129,7 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
                     onClick={() => {
                       localStorage.removeItem('access_token');
                       localStorage.removeItem('refresh_token');
-                      setIsAuthMenuOpen(false);
-                      router.push('/');
+                      window.location.replace('/');
                     }}
                     className="w-full px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors text-left"
                   >
@@ -205,8 +204,7 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
                 onClick={() => {
                   localStorage.removeItem('access_token');
                   localStorage.removeItem('refresh_token');
-                  setIsMobileMenuOpen(false);
-                  router.push('/');
+                  window.location.replace('/');
                 }}
                 className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-50 w-full"
               >

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, Suspense, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, Suspense, useCallback, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Navbar } from "@/components/layout/Navbar";
 import TeacherCatalog from "@/components/teachers/TeacherCatalog";
 import FilterSidebar from "@/components/teachers/FilterSidebar";
@@ -11,13 +11,20 @@ import { ChatPanel } from "@/components/chat/ChatPanel";
 import { ChatToggleButton } from "@/components/chat/ChatToggleButton";
 
 function SearchContent() {
+    const router = useRouter();
     const searchParams = useSearchParams();
     const initialQuery = searchParams.get('query') ?? '';
     const [searchQuery, setSearchQuery] = useState(initialQuery);
-    
+
     // Filter state
     const [filters, setFilters] = useState<Partial<ProfessorFilterState>>({});
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    useEffect(() => {
+        if (!localStorage.getItem('access_token')) {
+            router.replace('/login');
+        }
+    }, [router]);
 
     // Handle filter changes from FilterSidebar
     const handleFiltersChange = useCallback((newFilters: Partial<ProfessorFilterState>) => {
