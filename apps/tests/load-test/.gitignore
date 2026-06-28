@@ -1,0 +1,15 @@
+# --- Salidas de las corridas de carga ---
+# Regla: solo se versiona el REPORTE (reporte.html). La data cruda (CSV) NO.
+
+# 1) Ignora TODO lo que cae en results/
+results/*
+
+# 2) ...excepto el reporte HTML, que sí queremos versionar/mostrar.
+!results/reporte.html
+
+# 3) ...y el .gitkeep para que la carpeta exista en git aunque esté "vacía".
+!results/.gitkeep
+
+# Artefactos de Python
+__pycache__/
+*.pyc
