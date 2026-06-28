@@ -37,7 +37,10 @@ services:
       context: ./apps/backend
     container_name: puntualo_api
     restart: always
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    # --proxy-headers + --forwarded-allow-ips: uvicorn confía en X-Forwarded-Proto/Host
+    # que envía Caddy, de modo que los redirects (p.ej. trailing slash) usan https y no http.
+    # Es seguro permitir "*" porque el puerto 8000 NO se publica: solo Caddy (red interna) lo alcanza.
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2 --proxy-headers --forwarded-allow-ips="*"
     env_file:
       - ./apps/backend/.env
     expose:

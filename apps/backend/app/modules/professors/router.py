@@ -52,8 +52,11 @@ MAX_PAGE_SIZE = 50
 # ---------- create ----------
 
 
+# Se registra SIN barra final como ruta canónica (el frontend llama a /professors),
+# y CON barra como alias oculto. Así se evita el 307 redirect de FastAPI, que detrás
+# del proxy HTTPS rompía intermitentemente el CORS con credenciales en el navegador.
 @router.post(
-    "/",
+    "",
     response_model=ProfessorOut,
     status_code=status.HTTP_201_CREATED,
     summary="Registrar nuevo profesor (usuario verificado)",
@@ -64,6 +67,7 @@ MAX_PAGE_SIZE = 50
         422: {"model": ErrorResponse, "description": "Curso fuera de la facultad"},
     },
 )
+@router.post("/", include_in_schema=False)
 async def create_professor(
     payload: ProfessorCreate,
     db: AsyncSession = Depends(get_async_db),
@@ -103,10 +107,16 @@ async def create_professor(
 # ---------- list ----------
 
 
+# Canónica sin barra (evita el 307 redirect que rompía el CORS); alias con barra oculto.
+@router.get(
+    "",
+    response_model=PaginatedResponse[ProfessorOut] | PaginatedResponse[ProfessorAdminOut],
+    summary="Listar profesores (paginado, filtros, sort, búsqueda avanzada)",
+)
 @router.get(
     "/",
     response_model=PaginatedResponse[ProfessorOut] | PaginatedResponse[ProfessorAdminOut],
-    summary="Listar profesores (paginado, filtros, sort, búsqueda avanzada)",
+    include_in_schema=False,
 )
 async def list_professors(
     page: int = Query(1, ge=1),
