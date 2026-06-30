@@ -67,8 +67,8 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
                       router.push('/login');
                     }
                   }}
-                  className={`text-sm font-semibold no-underline transition-colors whitespace-nowrap ${
-                    active ? 'text-[#0284c7]' : 'text-slate-400 hover:text-slate-700'
+                  className={`text-sm font-semibold no-underline transition-colors whitespace-nowrap rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 ${
+                    active ? 'text-[#0284c7]' : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   {label}
@@ -88,7 +88,7 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery?.(e.target.value)}
                 placeholder="Buscar por profesor..."
-                className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none"
+                className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-500 focus:outline-none"
               />
             </div>
           ) : (
@@ -99,7 +99,7 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
         {/* RIGHT: Actions */}
         <div className="flex items-center justify-end gap-1">
           <div className="hidden md:flex items-center gap-1">
-            <button className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
+            <button type="button" aria-label="Notificaciones" className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2">
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#0284c7] rounded-full" />
             </button>
@@ -108,7 +108,10 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
               <button
                 type="button"
                 onClick={() => setIsAuthMenuOpen(o => !o)}
-                className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 hover:border-slate-300 hover:bg-slate-200 transition-all"
+                aria-label="Menú de cuenta"
+                aria-expanded={isAuthMenuOpen}
+                aria-haspopup="menu"
+                className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 hover:border-slate-300 hover:bg-slate-200 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
               >
                 <User className="w-3.5 h-3.5" />
               </button>
@@ -117,7 +120,7 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
                   <Link href="/login" className="px-3 py-2 rounded-lg text-xs font-bold text-[#0284c7] hover:bg-[#f0f9ff] transition-colors no-underline">
                     Login
                   </Link>
-                  <Link href="/register" className="px-3 py-2 rounded-lg text-xs font-bold text-white bg-[#ff8a00] hover:bg-[#e67e00] transition-colors no-underline block text-center">
+                  <Link href="/register" className="px-3 py-2 rounded-lg text-xs font-bold text-white bg-[#c2410c] hover:bg-[#9a3412] transition-colors no-underline block text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2">
                     Register
                   </Link>
                 </div>
@@ -144,7 +147,9 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors md:hidden"
+            aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={isMobileMenuOpen}
+            className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors md:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -162,7 +167,7 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery?.(e.target.value)}
                 placeholder="Buscar por profesor..."
-                className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none"
+                className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-500 focus:outline-none"
               />
             </div>
           )}
@@ -194,7 +199,7 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-2.5 rounded-xl text-xs font-bold text-center text-[#0284c7] bg-[#f0f9ff] no-underline">
                   Login
                 </Link>
-                <Link href="/register" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-2.5 rounded-xl text-xs font-bold text-center text-white bg-[#ff8a00] no-underline">
+                <Link href="/register" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-2.5 rounded-xl text-xs font-bold text-center text-white bg-[#c2410c] hover:bg-[#9a3412] no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2">
                   Register
                 </Link>
               </>

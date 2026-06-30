@@ -15,5 +15,69 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Reveal sutil al cargar. El contenido es visible por defecto (opacity:1);
+   la animación solo se aplica si el usuario NO pidió menos movimiento. */
+@keyframes pl-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pl-reveal {
+    animation: pl-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* Aurora del hero: deriva lenta de blobs cian. Decorativo, detrás del contenido. */
+@keyframes pl-aurora-a {
+  0%   { transform: translate(-8%, -6%) scale(1); }
+  50%  { transform: translate(10%, 8%) scale(1.18); }
+  100% { transform: translate(-8%, -6%) scale(1); }
+}
+@keyframes pl-aurora-b {
+  0%   { transform: translate(8%, 4%) scale(1.1); }
+  50%  { transform: translate(-10%, -8%) scale(0.92); }
+  100% { transform: translate(8%, 4%) scale(1.1); }
+}
+.pl-aurora-a { animation: pl-aurora-a 18s ease-in-out infinite; }
+.pl-aurora-b { animation: pl-aurora-b 22s ease-in-out infinite; }
+
+/* Marquee: cinta infinita. El track se duplica; -50% = un ciclo exacto. */
+@keyframes pl-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.pl-marquee-track {
+  animation: pl-marquee 38s linear infinite;
+}
+.pl-marquee:hover .pl-marquee-track {
+  animation-play-state: paused;
+}
+
+/* Caret del efecto typing. */
+@keyframes pl-caret {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+.pl-caret { animation: pl-caret 1s step-end infinite; }
+
+/* Red de seguridad: cualquier animación/transición se neutraliza con reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
