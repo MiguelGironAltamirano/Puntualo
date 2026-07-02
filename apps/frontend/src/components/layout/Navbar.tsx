@@ -12,6 +12,21 @@ interface NavbarProps {
   setSearchQuery?: (value: string) => void;
 }
 
+function NavLogo() {
+  return (
+    <Link href="/" className="shrink-0 no-underline flex items-center">
+      <Image
+        src="/puntualo_logo.png"
+        alt="Puntualo"
+        width={320}
+        height={180}
+        priority
+        className="h-20 w-auto"
+      />
+    </Link>
+  );
+}
+
 export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -33,22 +48,13 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
   ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-slate-100 h-[72px]">
+    <nav className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-slate-100 h-[88px]">
       <div className="max-w-[1400px] mx-auto px-6 h-full grid grid-cols-[1fr_auto_1fr] items-center gap-4">
 
         {/* LEFT: Logo + Nav links */}
         <div className="flex items-stretch self-stretch gap-8">
           <div className="flex items-center">
-            <Link href="/" className="shrink-0 no-underline">
-              <Image
-                src="/puntualo_logo.png"
-                alt="Puntualo"
-                width={110}
-                height={30}
-                priority
-                className="h-9 w-auto"
-              />
-            </Link>
+            <NavLogo />
           </div>
 
           <div className="hidden md:flex items-stretch gap-0">
@@ -158,7 +164,7 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
 
       {/* Mobile dropdown */}
       {isMobileMenuOpen && (
-        <div className="absolute top-[72px] left-0 w-full bg-white border-b border-slate-100 shadow-lg flex flex-col p-5 gap-4 md:hidden z-40">
+        <div className="absolute top-[88px] left-0 w-full bg-white border-b border-slate-100 shadow-lg flex flex-col p-5 gap-4 md:hidden z-40">
           {showSearch && (
             <div className="relative flex items-center bg-slate-50 border border-slate-200 rounded-full px-4 py-2 focus-within:border-sky-400 focus-within:bg-white transition-all">
               <Search className="w-3.5 h-3.5 text-slate-400 mr-2 shrink-0" />
