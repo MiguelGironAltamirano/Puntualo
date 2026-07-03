@@ -6,6 +6,11 @@ import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { HeroSection } from "@/components/home/HeroSection";
 import { FeatureCards } from "@/components/home/FeatureCards";
+import { HowItWorks } from "@/components/home/HowItWorks";
+import { FinalCTA } from "@/components/home/FinalCTA";
+import { AuroraBackground } from "@/components/home/AuroraBackground";
+import { SubjectMarquee } from "@/components/home/SubjectMarquee";
+import { Reveal } from "@/components/motion/Reveal";
 
 type UserProfile = {
     full_name: string;
@@ -80,7 +85,7 @@ export default function Home() {
             <div className="min-h-screen bg-white font-sans flex flex-col relative overflow-x-hidden selection:bg-sky-100 selection:text-sky-900">
                 <Navbar showSearch={false} />
                 <main className="flex-1 w-full max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center relative z-10 pt-20 pb-24">
-                    <div className="text-sm font-semibold text-slate-400">Cargando tu inicio...</div>
+                    <div className="text-sm font-semibold text-slate-500">Cargando tu inicio...</div>
                 </main>
             </div>
         );
@@ -96,10 +101,10 @@ export default function Home() {
                     <div className="w-[420px] h-[420px] bg-[#e0f2fe] rounded-full blur-[110px] translate-x-1/4 -translate-y-1/4"></div>
                 </div>
 
-                <main className="flex-1 w-full max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col relative z-10 pt-16 pb-24">
+                <main className="flex-1 w-full max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col relative z-10 pt-20 pb-24">
                     <section className="flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Inicio de estudiante</span>
+                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Inicio de estudiante</span>
                             <h1 className="text-4xl sm:text-5xl font-extrabold text-[#0f172a] tracking-tight">
                                 Bienvenido, {user.full_name.split(' ')[0]}.
                             </h1>
@@ -119,7 +124,7 @@ export default function Home() {
                                 <button
                                     type="button"
                                     onClick={() => router.push('/verify')}
-                                    className="px-4 py-2 rounded-full bg-[#ff8a00] hover:bg-[#e67e00] text-white text-xs font-bold transition-colors"
+                                    className="px-4 py-2 rounded-full bg-[#c2410c] hover:bg-[#9a3412] text-white text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2"
                                 >
                                     Prosigue con tu proceso de Verificación
                                 </button>
@@ -135,7 +140,7 @@ export default function Home() {
                                 <button
                                     type="button"
                                     onClick={() => router.push('/teachers')}
-                                    className="self-start px-5 py-2 rounded-full border-2 border-[#bae6fd] text-[#0284c7] font-bold text-sm hover:bg-[#f0f9ff] transition-colors"
+                                    className="self-start px-5 py-2 rounded-full border-2 border-[#bae6fd] text-[#0284c7] font-bold text-sm hover:bg-[#f0f9ff] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
                                 >
                                     Ir al Buscador
                                 </button>
@@ -148,7 +153,7 @@ export default function Home() {
                                 <button
                                     type="button"
                                     onClick={() => router.push('/compare')}
-                                    className="self-start px-5 py-2 rounded-full border-2 border-[#bae6fd] text-[#0284c7] font-bold text-sm hover:bg-[#f0f9ff] transition-colors"
+                                    className="self-start px-5 py-2 rounded-full border-2 border-[#bae6fd] text-[#0284c7] font-bold text-sm hover:bg-[#f0f9ff] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
                                 >
                                     Abrir Comparativo
                                 </button>
@@ -165,22 +170,29 @@ export default function Home() {
             {/* Navbar en modo Landing */}
             <Navbar showSearch={false} />
 
-            {/* Background gradients */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[600px] flex justify-between pointer-events-none opacity-50 z-0">
-                <div className="w-[500px] h-[500px] bg-[#e0f2fe] rounded-full blur-[100px] -translate-x-1/4 -translate-y-1/4"></div>
-                <div className="w-[500px] h-[500px] bg-[#e0f2fe] rounded-full blur-[100px] translate-x-1/4 -translate-y-1/4"></div>
-            </div>
+            {/* Aurora animada de fondo */}
+            <AuroraBackground />
 
             {/* Contenedor Principal */}
             <main className="flex-1 w-full max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col relative z-10 pt-20 pb-24 scale-100">
-                <HeroSection 
-                    searchQuery={searchQuery} 
-                    setSearchQuery={setSearchQuery} 
-                    canAccessBuscador={canAccessBuscador} 
-                    handleSearch={handleSearch} 
+                <HeroSection
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    canAccessBuscador={canAccessBuscador}
+                    handleSearch={handleSearch}
                 />
 
+                <SubjectMarquee />
+
                 <FeatureCards canAccessBuscador={canAccessBuscador} />
+
+                <Reveal>
+                    <HowItWorks />
+                </Reveal>
+
+                <Reveal>
+                    <FinalCTA />
+                </Reveal>
             </main>
 
             {/* Footer */}
@@ -190,11 +202,11 @@ export default function Home() {
                         Puntualo
                     </div>
                     <div className="flex items-center gap-6 text-[13px] text-[#64748b] font-bold">
-                        <Link href="#" className="hover:text-gray-900 transition-colors">Privacidad</Link>
-                        <Link href="#" className="hover:text-gray-900 transition-colors">Términos de Uso</Link>
-                        <Link href="#" className="hover:text-gray-900 transition-colors">Contacto</Link>
+                        <Link href="#" className="rounded hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2">Privacidad</Link>
+                        <Link href="#" className="rounded hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2">Términos de Uso</Link>
+                        <Link href="#" className="rounded hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2">Contacto</Link>
                     </div>
-                    <div className="text-[13px] text-[#94a3b8] font-medium">
+                    <div className="text-[13px] text-[#64748b] font-medium">
                         © 2026 Puntualo EdTech. Todos los derechos reservados.
                     </div>
                 </div>
