@@ -80,6 +80,7 @@ export default function AuthPage() {
                             <input
                                 type="email"
                                 required
+                                autoComplete="username"
                                 placeholder="estudiante@unmsm.edu.pe"
                                 pattern=".+@unmsm\.edu\.pe" // Validación de dominio institucional
                                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
@@ -98,6 +99,7 @@ export default function AuthPage() {
                             <input
                                 type="password"
                                 required
+                                autoComplete="current-password"
                                 placeholder="........"
                                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
                                 value={password}

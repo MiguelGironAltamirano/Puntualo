@@ -1,0 +1,53 @@
+# =============================================================================
+# Deploy del backend a la VM de Oracle Cloud (ARM) via self-hosted runner.
+#
+# Cómo funciona:
+#   - Se dispara en cada push a `main` que toque el backend (o este workflow).
+#   - Corre en el runner self-hosted instalado DENTRO de la VM (label `oracle-vm`),
+#     así el build de la imagen ocurre en ARM, que es lo que exige el proyecto.
+#   - Sincroniza el checkout existente en /home/opc/Puntualo/v1 con origin/main
+#     (el .env está gitignored, `git reset --hard` NO lo toca) y levanta compose.
+#
+# Requisito previo: tener el runner self-hosted activo (ver README de deploy).
+# =============================================================================
+name: Deploy backend a Oracle VM
+
+on:
+  push:
+    branches: [main]
+    # Solo redeploya cuando cambia algo del backend/infra. El frontend va por Vercel.
+    # Si prefieres desplegar en CUALQUIER commit de main, borra el bloque `paths:`.
+    paths:
+      - "apps/backend/**"
+      - "docker-compose.prod.yml"
+      - "Caddyfile"
+      - ".github/workflows/deploy-backend.yml"
+  # Permite lanzarlo a mano desde la pestaña Actions de GitHub.
+  workflow_dispatch:
+
+# Evita dos despliegues simultáneos pisándose; encola en vez de cancelar.
+concurrency:
+  group: deploy-oracle-vm
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, oracle-vm]
+    steps:
+      - name: Sincronizar código y redeployar
+        run: |
+          set -euo pipefail
+          cd /home/opc/Puntualo/v1
+
+          echo "==> Trayendo últimos cambios de origin/main"
+          git fetch --prune origin
+          git reset --hard origin/main
+
+          echo "==> Reconstruyendo y levantando contenedores"
+          docker compose --env-file apps/backend/.env -f docker-compose.prod.yml up -d --build
+
+          echo "==> Limpiando imágenes viejas sin usar"
+          docker image prune -f
+
+          echo "==> Estado final"
+          docker compose --env-file apps/backend/.env -f docker-compose.prod.yml ps
