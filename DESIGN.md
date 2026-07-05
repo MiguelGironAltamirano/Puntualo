@@ -15,6 +15,7 @@
 
 ---
 
+
 ## 1. Personalidad de marca
 
 Puntualo es una plataforma EdTech para que estudiantes universitarios elijan docentes con datos
