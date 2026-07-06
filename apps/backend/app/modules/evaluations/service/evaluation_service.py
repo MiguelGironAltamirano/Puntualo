@@ -242,11 +242,17 @@ class EvaluationService:
             raise CourseNotTaughtByProfessorError()
 
     async def _enqueue_score_recalc(self, professor_id: str) -> None:
-        """Encola la recalculacion del score del profesor via Celery.
+        """Encola la recalculacion del score del profesor via Celery y la ejecuta localmente."""
+        try:
+            from app.tasks.score_recalculation_tasks import _do_recalc
+            await _do_recalc(professor_id, self.db)
+            await self.db.commit()
+        except Exception as exc:
+            logger.warning(
+                "sync_score_recalc_failed | professor_id=%s | error=%s",
+                professor_id, exc,
+            )
 
-        Si Redis no esta disponible o el broker falla, solo se loggea un warning
-        — la evaluacion ya fue commiteada y no se rompe la respuesta.
-        """
         try:
             from app.tasks.score_recalculation_tasks import recalculate_professor_score
             recalculate_professor_score.delay(professor_id)
