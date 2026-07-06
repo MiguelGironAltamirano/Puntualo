@@ -24,6 +24,8 @@ function mapProfessorToTeacher(professor: ProfessorRead): Teacher {
         rating: professor.global_score ?? 0,
         difficulty: 3.0, // Placeholder
         clarity: 3.5, // Placeholder
+        helpfulness: 3.5, // Placeholder
+        punctuality: 4.0, // Placeholder
         takeAgain: '75%', // Placeholder
         avatar: '', // Will use default emoji
         tags: professor.validation_status === 'validated' ? ['Verificado'] : [],
@@ -92,23 +94,39 @@ export default function ComparePage() {
     );
 
     // Update slots with real comparison data when available
-    const displaySlotA = slotA && comparison?.professors[0]
+    const profAData = comparison?.professors.find(p => p.id === slotA?.id);
+    const displaySlotA = slotA && profAData
         ? {
             ...slotA,
-            rating: comparison.professors[0].global_score ?? 0,
-            clarity: comparison.professors[0].avg_clarity,
-            difficulty: 5 - (comparison.professors[0].avg_easiness || 0),
-            course: comparison.professors[0].common_courses?.[0]?.name || 'Ver en perfil',
+            rating: profAData.global_score ?? 0,
+            clarity: profAData.avg_clarity,
+            difficulty: 5 - (profAData.avg_easiness || 0),
+            helpfulness: profAData.avg_helpfulness,
+            punctuality: profAData.avg_punctuality,
+            course: profAData.common_courses?.[0]?.name || 'Ver en perfil',
+            reviews: profAData.recent_comments?.map((c: any) => ({
+                text: c.text,
+                course: c.course_name || 'Curso general',
+                date: new Date(c.created_at).toLocaleDateString(),
+            })) || [],
         }
         : slotA;
 
-    const displaySlotB = slotB && comparison?.professors[1]
+    const profBData = comparison?.professors.find(p => p.id === slotB?.id);
+    const displaySlotB = slotB && profBData
         ? {
             ...slotB,
-            rating: comparison.professors[1].global_score ?? 0,
-            clarity: comparison.professors[1].avg_clarity,
-            difficulty: 5 - (comparison.professors[1].avg_easiness || 0),
-            course: comparison.professors[1].common_courses?.[0]?.name || 'Ver en perfil',
+            rating: profBData.global_score ?? 0,
+            clarity: profBData.avg_clarity,
+            difficulty: 5 - (profBData.avg_easiness || 0),
+            helpfulness: profBData.avg_helpfulness,
+            punctuality: profBData.avg_punctuality,
+            course: profBData.common_courses?.[0]?.name || 'Ver en perfil',
+            reviews: profBData.recent_comments?.map((c: any) => ({
+                text: c.text,
+                course: c.course_name || 'Curso general',
+                date: new Date(c.created_at).toLocaleDateString(),
+            })) || [],
         }
         : slotB;
 

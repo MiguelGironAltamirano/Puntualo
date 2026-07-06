@@ -149,7 +149,9 @@ class ComparisonService:
                 Comment.like_count,
                 Comment.dislike_count,
                 Comment.created_at,
+                Course.name,
             )
+            .join(Course, Course.id == Comment.course_id)
             .where(
                 Comment.professor_id == professor_id,
                 Comment.status == CommentStatus.PUBLISHED.value,
@@ -166,6 +168,7 @@ class ComparisonService:
                 "like_count": row[2],
                 "dislike_count": row[3],
                 "created_at": row[4],
+                "course_name": row[5],
             }
             for row in rows
         ]
