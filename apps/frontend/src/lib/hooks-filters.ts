@@ -101,6 +101,7 @@ export interface ProfessorFilterState extends ProfessorListParams {
   search?: string;
   university_id?: number;
   faculty_id?: number;
+  course_id?: number;
   min_clarity?: number;
   max_clarity?: number;
   min_easiness?: number;
@@ -124,6 +125,7 @@ const INITIAL_PROFESSOR_FILTERS: ProfessorFilterState = {
   search: '',
   university_id: undefined,
   faculty_id: undefined,
+  course_id: undefined,
   min_clarity: undefined,
   max_clarity: undefined,
   min_easiness: undefined,

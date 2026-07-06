@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bell, Search, User, Menu, X } from "lucide-react";
 
 interface NavbarProps {
@@ -37,6 +37,17 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
     return Boolean(localStorage.getItem('access_token'));
   });
 
+  const [searchQueryState, setSearchQueryState] = useState(searchQuery);
+
+  useEffect(() => {
+    setSearchQueryState(searchQuery);
+  }, [searchQuery]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push(`/teachers?query=${encodeURIComponent(searchQueryState.trim())}`);
+  };
+
   const isHomeActive = pathname === "/";
   const isBuscadorActive = pathname.startsWith("/teachers");
   const isCompareActive = pathname.startsWith("/compare");
@@ -59,16 +70,19 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
         {/* CENTER: Search — always occupies space to avoid layout shift */}
         <div className="flex items-center self-center">
           {showSearch ? (
-            <div className="relative flex items-center bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 w-56 lg:w-72 focus-within:border-sky-400 focus-within:bg-white transition-all">
+            <form onSubmit={handleSearchSubmit} className="relative flex items-center bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 w-56 lg:w-72 focus-within:border-sky-400 focus-within:bg-white transition-all">
               <Search className="w-3.5 h-3.5 text-slate-400 mr-2 shrink-0" />
               <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery?.(e.target.value)}
+                value={searchQueryState}
+                onChange={(e) => {
+                  setSearchQueryState(e.target.value);
+                  setSearchQuery?.(e.target.value);
+                }}
                 placeholder="Buscar por profesor..."
                 className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-500 focus:outline-none"
               />
-            </div>
+            </form>
           ) : (
             <div className="w-56 lg:w-72" />
           )}
@@ -166,16 +180,19 @@ export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: 
       {isMobileMenuOpen && (
         <div className="absolute top-[88px] left-0 w-full bg-white border-b border-slate-100 shadow-lg flex flex-col p-5 gap-4 md:hidden z-40">
           {showSearch && (
-            <div className="relative flex items-center bg-slate-50 border border-slate-200 rounded-full px-4 py-2 focus-within:border-sky-400 focus-within:bg-white transition-all">
+            <form onSubmit={handleSearchSubmit} className="relative flex items-center bg-slate-50 border border-slate-200 rounded-full px-4 py-2 focus-within:border-sky-400 focus-within:bg-white transition-all">
               <Search className="w-3.5 h-3.5 text-slate-400 mr-2 shrink-0" />
               <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery?.(e.target.value)}
+                value={searchQueryState}
+                onChange={(e) => {
+                  setSearchQueryState(e.target.value);
+                  setSearchQuery?.(e.target.value);
+                }}
                 placeholder="Buscar por profesor..."
                 className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-500 focus:outline-none"
               />
-            </div>
+            </form>
           )}
 
           <div className="flex flex-col">

@@ -13,28 +13,33 @@ interface FilterSidebarProps {
 
 export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: FilterSidebarProps) {
     const [teacherName, setTeacherName] = useState('');
-    const [difficulty, setDifficulty] = useState(50);
-    const [selectedTags, setSelectedTags] = useState<string[]>(['Barco']);
-    const [minScore, setMinScore] = useState(0);
-    const [maxScore, setMaxScore] = useState(5);
-    
-    // Dropdown state
     const [selectedUniversity, setSelectedUniversity] = useState<number | null>(1);
     const [selectedFaculty, setSelectedFaculty] = useState<number | null>(null);
     const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
-
+    const [minEvaluations, setMinEvaluations] = useState<number | ''>('');
+    const [minScore, setMinScore] = useState(1.0);
+    const [minClarity, setMinClarity] = useState(1.0);
+    const [minEasiness, setMinEasiness] = useState(1.0);
+    const [minHelpfulness, setMinHelpfulness] = useState(1.0);
+    const [minPunctuality, setMinPunctuality] = useState(1.0);
+    
     // Fetch dropdown data
     const { data: universities } = useUniversities();
     const { data: faculties } = useFaculties(selectedUniversity);
     const { data: courses } = useCourses(selectedFaculty);
 
-    // Toggle tag selection
-    const toggleTag = (tagName: string) => {
-        setSelectedTags(prev => 
-            prev.includes(tagName)
-                ? prev.filter(t => t !== tagName)
-                : [...prev, tagName]
-        );
+    // Reset filters
+    const handleReset = () => {
+        setTeacherName('');
+        setSelectedUniversity(1);
+        setSelectedFaculty(null);
+        setSelectedCourse(null);
+        setMinEvaluations('');
+        setMinScore(1.0);
+        setMinClarity(1.0);
+        setMinEasiness(1.0);
+        setMinHelpfulness(1.0);
+        setMinPunctuality(1.0);
     };
 
     // Call parent callback when filters change
@@ -42,13 +47,31 @@ export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: Filt
         if (onFiltersChange) {
             const filters: Partial<ProfessorFilterState> = {
                 search: teacherName || undefined,
-                min_global_score: minScore > 0 ? minScore : undefined,
-                max_global_score: maxScore < 5 ? maxScore : undefined,
-                min_easiness: difficulty > 50 ? 5 - (difficulty / 100) * 5 : undefined,
+                university_id: selectedUniversity || undefined,
+                faculty_id: selectedFaculty || undefined,
+                course_id: selectedCourse || undefined,
+                min_global_score: minScore > 1.0 ? minScore : undefined,
+                min_clarity: minClarity > 1.0 ? minClarity : undefined,
+                min_easiness: minEasiness > 1.0 ? minEasiness : undefined,
+                min_helpfulness: minHelpfulness > 1.0 ? minHelpfulness : undefined,
+                min_punctuality: minPunctuality > 1.0 ? minPunctuality : undefined,
+                min_evaluations: minEvaluations !== '' && minEvaluations > 0 ? Number(minEvaluations) : undefined,
             };
             onFiltersChange(filters);
         }
-    }, [teacherName, difficulty, minScore, maxScore, selectedTags, onFiltersChange]);
+    }, [
+        teacherName,
+        selectedUniversity,
+        selectedFaculty,
+        selectedCourse,
+        minScore,
+        minClarity,
+        minEasiness,
+        minHelpfulness,
+        minPunctuality,
+        minEvaluations,
+        onFiltersChange
+    ]);
 
     return (
         <>
@@ -85,8 +108,8 @@ export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: Filt
                     </div>
 
                 {/* Professor Name Section */}
-                <div className="mb-5">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
+                <div className="mb-4">
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1.5">
                         👤 Nombre del Profesor
                     </label>
                     <input
@@ -99,9 +122,9 @@ export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: Filt
                 </div>
 
                 {/* Institution Section */}
-                <div className="mb-5">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
-                        🎓 Institución
+                <div className="mb-4">
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1.5">
+                        🎓 Institución y Cursos
                     </label>
                     <div className="space-y-2">
                         <div>
@@ -143,7 +166,7 @@ export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: Filt
                             </select>
                         </div>
                         <div>
-                            <span className="text-[9px] font-bold text-slate-400 block mb-1">CARRERA</span>
+                            <span className="text-[9px] font-bold text-slate-400 block mb-1">CURSO</span>
                             <select 
                                 value={selectedCourse || ''}
                                 onChange={(e) => {
@@ -161,128 +184,141 @@ export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: Filt
                                 ))}
                             </select>
                         </div>
-                        {/* CURSO placeholder (kept for future use) */}
-                        <div>
-                            <span className="text-[9px] font-bold text-slate-400 block mb-1">CURSO</span>
-                            <select className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer" disabled>
-                                <option>Seleccionar curso primero</option>
-                            </select>
+                    </div>
+                </div>
+
+                {/* Score and Metrics Section */}
+                <div className="mb-4 space-y-3">
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-0.5">
+                        ⭐ Métricas Mínimas
+                    </label>
+
+                    {/* Global Score Slider */}
+                    <div>
+                        <div className="flex justify-between text-[9px] font-bold text-slate-400 mb-1">
+                            <span>CALIFICACIÓN GLOBAL</span>
+                            <span>{minScore > 1.0 ? `${minScore.toFixed(1)} +` : 'Cualquiera'}</span>
                         </div>
+                        <input
+                            type="range"
+                            min="1.0"
+                            max="5.0"
+                            step="0.5"
+                            value={minScore}
+                            onChange={(e) => setMinScore(Number(e.target.value))}
+                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]"
+                        />
                     </div>
-                </div>
 
-                {/* Difficulty Section */}
-                <div className="mb-5">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
-                        ⭐ Facilidad
-                    </label>
-                    <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={difficulty}
-                        onChange={(e) => setDifficulty(Number(e.target.value))}
-                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]"
-                    />
-                    <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-1">
-                        <span>Fácil</span>
-                        <span>Exigente</span>
-                    </div>
-                </div>
-
-                {/* Score Range Section */}
-                <div className="mb-5">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
-                        🌟 Calificación Mínima
-                    </label>
-                    <div className="space-y-2">
-                        <div>
-                            <div className="flex justify-between text-[9px] font-bold text-slate-400 mb-1">
-                                <span>Min: {minScore.toFixed(1)}</span>
-                                <span>Max: {maxScore.toFixed(1)}</span>
-                            </div>
-                            <div className="flex gap-2">
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="5"
-                                    step="0.5"
-                                    value={minScore}
-                                    onChange={(e) => setMinScore(Math.min(Number(e.target.value), maxScore))}
-                                    className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]"
-                                />
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="5"
-                                    step="0.5"
-                                    value={maxScore}
-                                    onChange={(e) => setMaxScore(Math.max(Number(e.target.value), minScore))}
-                                    className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]"
-                                />
-                            </div>
+                    {/* Clarity Slider */}
+                    <div>
+                        <div className="flex justify-between text-[9px] font-bold text-slate-400 mb-1">
+                            <span>CLARIDAD AL EXPLICAR</span>
+                            <span>{minClarity > 1.0 ? `${minClarity.toFixed(1)} +` : 'Cualquiera'}</span>
                         </div>
+                        <input
+                            type="range"
+                            min="1.0"
+                            max="5.0"
+                            step="0.5"
+                            value={minClarity}
+                            onChange={(e) => setMinClarity(Number(e.target.value))}
+                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]"
+                        />
+                    </div>
+
+                    {/* Easiness Slider */}
+                    <div>
+                        <div className="flex justify-between text-[9px] font-bold text-slate-400 mb-1">
+                            <span>FACILIDAD</span>
+                            <span>{minEasiness > 1.0 ? `${minEasiness.toFixed(1)} +` : 'Cualquiera'}</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="1.0"
+                            max="5.0"
+                            step="0.5"
+                            value={minEasiness}
+                            onChange={(e) => setMinEasiness(Number(e.target.value))}
+                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]"
+                        />
+                    </div>
+
+                    {/* Helpfulness Slider */}
+                    <div>
+                        <div className="flex justify-between text-[9px] font-bold text-slate-400 mb-1">
+                            <span>AYUDA AL ALUMNO</span>
+                            <span>{minHelpfulness > 1.0 ? `${minHelpfulness.toFixed(1)} +` : 'Cualquiera'}</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="1.0"
+                            max="5.0"
+                            step="0.5"
+                            value={minHelpfulness}
+                            onChange={(e) => setMinHelpfulness(Number(e.target.value))}
+                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]"
+                        />
+                    </div>
+
+                    {/* Punctuality Slider */}
+                    <div>
+                        <div className="flex justify-between text-[9px] font-bold text-slate-400 mb-1">
+                            <span>PUNTUALIDAD</span>
+                            <span>{minPunctuality > 1.0 ? `${minPunctuality.toFixed(1)} +` : 'Cualquiera'}</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="1.0"
+                            max="5.0"
+                            step="0.5"
+                            value={minPunctuality}
+                            onChange={(e) => setMinPunctuality(Number(e.target.value))}
+                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#ff8a00]"
+                        />
                     </div>
                 </div>
 
-                {/* Evaluation Section */}
-                <div className="mb-5">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
-                        📝 Evaluación
-                    </label>
-                    <div className="space-y-2">
-                        {[
-                            { id: 'eval_teoricos', label: 'Exámenes Teóricos' },
-                            { id: 'eval_practicos', label: 'Proyectos Prácticos', defaultChecked: true },
-                            { id: 'eval_clase', label: 'Participación en clase' }
-                        ].map((item) => (
-                            <label key={item.id} className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    id={item.id}
-                                    defaultChecked={item.defaultChecked}
-                                    className="w-3.5 h-3.5 rounded border-slate-300 text-[#ff8a00] focus:ring-[#ff8a00]/20 cursor-pointer accent-[#ff8a00]"
-                                />
-                                <span className="text-xs font-medium text-slate-600">{item.label}</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Tags Section */}
+                {/* Evaluations Count Section */}
                 <div className="mb-6">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">
-                        🏷️ Etiquetas
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1.5">
+                        📝 Cantidad de Evaluaciones
                     </label>
-                    <div className="flex flex-wrap gap-1.5">
-                        {['Barco', 'Exigente', 'Inspirador', 'Teórico'].map((tagName) => {
-                            const isSelected = selectedTags.includes(tagName);
-                            return (
-                                <button
-                                    key={tagName}
-                                    type="button"
-                                    onClick={() => toggleTag(tagName)}
-                                    className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all duration-150 border cursor-pointer select-none ${isSelected
-                                        ? 'bg-sky-100 text-sky-700 border-sky-300 shadow-sm'
-                                        : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300 hover:text-slate-600'
-                                    }`}
-                                >
-                                    {tagName}
-                                </button>
-                            );
-                        })}
+                    <div>
+                        <div className="flex justify-between text-[9px] font-bold text-slate-400 mb-1">
+                            <span>EVALUACIONES MÍNIMAS</span>
+                            <span>{minEvaluations || 'Cualquiera'}</span>
+                        </div>
+                        <input
+                            type="number"
+                            min="0"
+                            value={minEvaluations}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setMinEvaluations(val === '' ? '' : Math.max(0, parseInt(val) || 0));
+                            }}
+                            placeholder="Ej: 3"
+                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-400 transition-colors shadow-sm"
+                        />
                     </div>
                 </div>
             </div>
 
-            {/* Apply Filters Button */}
-            <div className="pt-4 border-t border-slate-200/60">
+            {/* Apply and Reset Buttons */}
+            <div className="pt-4 border-t border-slate-200/60 space-y-2">
                 <button
                     type="button"
                     onClick={onClose}
                     className="w-full py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white font-bold text-xs rounded-lg transition-colors shadow-sm text-center cursor-pointer"
                 >
                     Aplicar Filtros
+                </button>
+                <button
+                    type="button"
+                    onClick={handleReset}
+                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-lg transition-colors shadow-sm text-center cursor-pointer"
+                >
+                    Limpiar Filtros
                 </button>
             </div>
         </aside>
