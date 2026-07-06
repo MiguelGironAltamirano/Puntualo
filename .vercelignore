@@ -1,0 +1,10 @@
+.venv_wsl
+.git
+apps/backend
+apps/tests
+docs
+recreate_db.sql
+openapi.json
+docker-compose.yml
+docker-compose.prod.yml
+Caddyfile

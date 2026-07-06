@@ -37,6 +37,48 @@ async def domain_error_handler(request: Request, exc: DomainError) -> JSONRespon
         content={"detail": {"code": exc.code, "message": exc.message}},
     )
 
+
+def _error_cors_headers(request: Request) -> dict[str, str]:
+    """Cabeceras CORS para respuestas de error que NO atraviesan el CORSMiddleware.
+
+    En Starlette el orden es ServerErrorMiddleware -> CORSMiddleware -> ExceptionMiddleware.
+    Los errores controlados (DomainError, HTTPException) responden desde el
+    ExceptionMiddleware y su respuesta *sube* por el CORSMiddleware, así que ya
+    llevan las cabeceras. En cambio, un 500 no controlado lo emite el
+    ServerErrorMiddleware por FUERA del CORSMiddleware: sin estas cabeceras el
+    navegador enmascara el error real como un falso bloqueo por 'CORS policy'.
+    """
+    origin = request.headers.get("origin")
+    if origin and origin in settings.FRONTEND_ORIGINS:
+        return {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+            "Vary": "Origin",
+        }
+    return {}
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Captura cualquier excepción no controlada y responde 500 con forma
+    ErrorResponse + cabeceras CORS, para que el frontend reciba el error real
+    en lugar de un bloqueo de CORS engañoso."""
+    logger.exception(
+        "unhandled_exception | path=%s | error=%s",
+        request.url.path,
+        exc,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": {
+                "code": "internal_error",
+                "message": "Error interno del servidor",
+            }
+        },
+        headers=_error_cors_headers(request),
+    )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.FRONTEND_ORIGINS,  # configurable por env (FRONTEND_ORIGINS)
