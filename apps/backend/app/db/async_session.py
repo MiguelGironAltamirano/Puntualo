@@ -1,6 +1,7 @@
 import ssl
 from collections.abc import AsyncIterator
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -54,13 +55,17 @@ def _build_async_url(url: str) -> tuple[str, dict]:
     # DuplicatePreparedStatementError en la siguiente sesión.
     # - statement_cache_size=0: deshabilita el cache interno de asyncpg
     # - prepared_statement_cache_size=0: deshabilita el cache de SQLAlchemy
-    # - prepared_statement_name_func=lambda:None: fuerza unnamed statements
-    #   (se destruyen solos al terminar el ciclo Parse/Execute, sin DEALLOCATE)
+    # - prepared_statement_name_func=uuid: cada prepared statement recibe un
+    #   nombre único, de modo que NUNCA colisiona con uno preexistente en la
+    #   conexión backend que reasigna PgBouncer. Devolver None (o el default de
+    #   asyncpg) reactiva la numeración secuencial __asyncpg_stmt_N__, que sí
+    #   colisiona; ese era el origen del 500 intermitente. Ver guía oficial:
+    #   SQLAlchemy asyncpg dialect -> "Prepared Statement Name with PGBouncer".
     parsed_final = urlparse(clean_url)
     if parsed_final.port == 6543:
         connect_args["statement_cache_size"] = 0
         connect_args["prepared_statement_cache_size"] = 0
-        connect_args["prepared_statement_name_func"] = lambda: None
+        connect_args["prepared_statement_name_func"] = lambda: f"__asyncpg_{uuid4()}__"
 
     return clean_url, connect_args
 
