@@ -27,7 +27,7 @@ function NavLogo() {
   );
 }
 
-export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: NavbarProps) {
+export function Navbar({ showSearch = false, searchQuery = '', setSearchQuery }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isAuthMenuOpen, setIsAuthMenuOpen] = useState(false);
