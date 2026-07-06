@@ -14,11 +14,11 @@ function SearchContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const initialQuery = searchParams.get('query') ?? '';
-    const [searchQuery, setSearchQuery] = useState(initialQuery);
 
-    // Filter state
+    // Filter and sidebar state
     const [filters, setFilters] = useState<Partial<ProfessorFilterState>>({});
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     useEffect(() => {
         if (!localStorage.getItem('access_token')) {
@@ -33,12 +33,8 @@ function SearchContent() {
 
     return (
         <div className="h-screen bg-white flex flex-col font-sans selection:bg-sky-100 selection:text-sky-900 overflow-hidden relative">
-            {/* Navbar with active search */}
-            <Navbar
-                showSearch={true}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-            />
+            {/* Navbar without active search */}
+            <Navbar />
 
             {/* Main layout */}
             <div className="flex-1 flex flex-col md:flex-row w-full overflow-hidden relative">
@@ -47,13 +43,28 @@ function SearchContent() {
                     onFiltersChange={handleFiltersChange} 
                     isOpen={isFilterOpen}
                     onClose={() => setIsFilterOpen(false)}
+                    isCollapsed={isSidebarCollapsed}
+                    onCollapseToggle={() => setIsSidebarCollapsed(prev => !prev)}
                 />
 
                 {/* Center - Catalog */}
-                <TeacherCatalog
-                    initialQuery={initialQuery}
-                    filters={filters}
-                />
+                <div className="flex-1 relative flex flex-col overflow-hidden">
+                    {isSidebarCollapsed && (
+                        <button
+                            type="button"
+                            onClick={() => setIsSidebarCollapsed(false)}
+                            className="hidden md:flex absolute left-8 top-7 z-30 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 hover:text-[#0284c7] shadow-sm transition-all items-center gap-2 text-xs font-bold active:scale-95 cursor-pointer"
+                        >
+                            <SlidersHorizontal className="w-3.5 h-3.5" />
+                            Mostrar Filtros
+                        </button>
+                    )}
+                    <TeacherCatalog
+                        initialQuery={initialQuery}
+                        filters={filters}
+                        isSidebarCollapsed={isSidebarCollapsed}
+                    />
+                </div>
 
                 {/* Right - Chat assistant (empuja en desktop, overlay en mobile) */}
                 <ChatPanel />
