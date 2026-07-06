@@ -18,12 +18,12 @@ function mapProfessorToTeacher(professor: ProfessorRead): TeacherSummary {
     return {
         id: professor.id,
         name: professor.full_name,
-        course: `${professor.total_evaluations} evaluaciones`, // Placeholder course info
+        course: `${professor.total_evaluations} evaluaciones`,
         rating: professor.global_score ?? 0,
-        claridad: 3.5, // Default - should come from evaluations API
-        dificultad: 2.5, // Default - should come from evaluations API
-        puntualidad: 4.0, // Default - should come from evaluations API
-        avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80', // Placeholder
+        claridad: 3.5,
+        dificultad: 2.5,
+        puntualidad: 4.0,
+        avatar: '', // Will fall back to User icon
         tags: professor.validation_status === 'validated' ? ['VERIFICADO'] : [],
     };
 }
@@ -175,8 +175,12 @@ export default function TeacherCatalog({
                                     {/* Top Row: Avatar & Info */}
                                     <div className="flex items-start justify-between gap-3 mb-5">
                                         <div className="flex items-center gap-3.5">
-                                            <div className="w-12 h-12 rounded-full border border-slate-100 overflow-hidden bg-slate-50 shrink-0">
-                                                <img src={prof.avatar} alt={prof.name} className="w-full h-full object-cover object-top" />
+                                            <div className="w-12 h-12 rounded-full border border-slate-100 overflow-hidden bg-sky-50 flex items-center justify-center shrink-0">
+                                                {prof.avatar ? (
+                                                    <img src={prof.avatar} alt={prof.name} className="w-full h-full object-cover object-top" />
+                                                ) : (
+                                                    <User className="w-6 h-6 text-sky-600" />
+                                                )}
                                             </div>
                                             <div>
                                                 <h3 className="text-sm font-black text-slate-900 tracking-tight leading-snug group-hover:text-[#0284c7] transition-colors">{prof.name}</h3>

@@ -125,11 +125,13 @@ export default function TeacherProfilePage() {
                 return res.json() as Promise<ProfessorDetail>;
             }).then((data) => {
                 if (data) setProfessor(data);
+                setLoading(false);
             }).catch((err: Error) => {
                 if (err.name !== 'AbortError') {
                     setError('No se pudo cargar el profesor.');
+                    setLoading(false);
                 }
-            }).finally(() => setLoading(false));
+            });
 
             const commentsPromise = fetch(
                 `${API_URL}/professors/${id}/comments?page=1&page_size=20&order_by=recent`,
@@ -298,16 +300,9 @@ export default function TeacherProfilePage() {
         return (
             <div className="min-h-screen bg-white flex flex-col font-sans">
                 <Navbar showSearch={false} />
-                <main className="flex-1 w-full max-w-[1000px] mx-auto px-4 py-8">
-                    <div className="bg-white border border-slate-100 rounded-2xl p-6 animate-pulse">
-                        <div className="flex items-center gap-5">
-                            <div className="w-16 h-16 rounded-full bg-slate-100" />
-                            <div className="flex-1 space-y-2">
-                                <div className="h-4 bg-slate-100 rounded w-1/2" />
-                                <div className="h-3 bg-slate-100 rounded w-1/3" />
-                            </div>
-                        </div>
-                    </div>
+                <main className="flex-1 w-full max-w-[1000px] mx-auto px-4 py-24 flex flex-col items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ff8a00] mb-4"></div>
+                    <p className="text-slate-500 font-medium text-sm">Cargando perfil del profesor...</p>
                 </main>
             </div>
         );
