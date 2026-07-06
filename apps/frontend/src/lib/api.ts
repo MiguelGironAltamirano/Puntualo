@@ -198,6 +198,7 @@ export interface ProfessorListParams {
   search?: string;
   university_id?: number;
   faculty_id?: number;
+  course_id?: number;
   min_clarity?: number;
   max_clarity?: number;
   min_easiness?: number;
