@@ -2,10 +2,34 @@
 
 TOOL_DECLARATIONS = [
     {
+        "name": "search_courses",
+        "description": (
+            "Busca cursos activos por nombre para resolver su course_id. "
+            "Úsala SIEMPRE que el usuario mencione un curso por nombre, antes "
+            "de llamar a search_professors con ese course_id — el filtro "
+            "por curso solo funciona con el ID exacto, no con el nombre."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Nombre (parcial) del curso a buscar.",
+                },
+                "university_id": {
+                    "type": "integer",
+                    "description": "Filtra por ID de universidad.",
+                },
+            },
+            "required": ["query"],
+        },
+    },
+    {
         "name": "search_professors",
         "description": (
             "Busca profesores validados por nombre/tema, con filtros opcionales "
-            "de curso, facultad o hashtags. Devuelve una lista breve."
+            "de curso (usa course_id obtenido de search_courses), facultad o "
+            "hashtags. Devuelve una lista breve."
         ),
         "parameters": {
             "type": "object",

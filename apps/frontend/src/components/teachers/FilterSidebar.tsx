@@ -1,18 +1,23 @@
-'use client'
-
 import { useState, useCallback, useEffect } from 'react';
 import { ProfessorFilterState } from '@/lib/hooks-filters';
 import { useUniversities, useFaculties, useCourses } from '@/lib/hooks-catalogs';
-import { X } from 'lucide-react';
+import { X, ChevronLeft } from 'lucide-react';
 
 interface FilterSidebarProps {
     onFiltersChange?: (filters: Partial<ProfessorFilterState>) => void;
     isOpen?: boolean;
     onClose?: () => void;
+    isCollapsed?: boolean;
+    onCollapseToggle?: () => void;
 }
 
-export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: FilterSidebarProps) {
-    const [teacherName, setTeacherName] = useState('');
+export default function FilterSidebar({ 
+    onFiltersChange, 
+    isOpen, 
+    onClose,
+    isCollapsed = false,
+    onCollapseToggle
+}: FilterSidebarProps) {
     const [selectedUniversity, setSelectedUniversity] = useState<number | null>(1);
     const [selectedFaculty, setSelectedFaculty] = useState<number | null>(null);
     const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
@@ -30,7 +35,6 @@ export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: Filt
 
     // Reset filters
     const handleReset = () => {
-        setTeacherName('');
         setSelectedUniversity(1);
         setSelectedFaculty(null);
         setSelectedCourse(null);
@@ -46,7 +50,6 @@ export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: Filt
     useEffect(() => {
         if (onFiltersChange) {
             const filters: Partial<ProfessorFilterState> = {
-                search: teacherName || undefined,
                 university_id: selectedUniversity || undefined,
                 faculty_id: selectedFaculty || undefined,
                 course_id: selectedCourse || undefined,
@@ -60,7 +63,6 @@ export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: Filt
             onFiltersChange(filters);
         }
     }, [
-        teacherName,
         selectedUniversity,
         selectedFaculty,
         selectedCourse,
@@ -86,10 +88,11 @@ export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: Filt
             <aside className={`
                 bg-[#f8fafc] border-r border-slate-200 p-6 flex flex-col justify-between text-left
                 /* Mobile Drawer positioning */
-                fixed inset-y-0 left-0 z-50 w-[80%] max-w-[320px] h-full shadow-2xl transition-transform duration-300 transform overflow-y-auto
+                fixed inset-y-0 left-0 z-50 w-[80%] max-w-[320px] h-full shadow-2xl transition-all duration-300 transform overflow-y-auto
                 ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                 /* Desktop positioning overrides */
-                md:relative md:inset-auto md:z-0 md:flex md:w-64 md:h-[calc(100vh-69px)] md:shadow-none md:translate-x-0 md:transition-none md:overflow-y-auto md:shrink-0
+                md:relative md:inset-auto md:z-0 md:flex md:h-[calc(100vh-69px)] md:shadow-none md:translate-x-0 md:overflow-y-auto md:shrink-0
+                ${isCollapsed ? 'md:w-0 md:p-0 md:border-r-0 md:opacity-0 md:overflow-hidden' : 'md:w-64 md:opacity-100'}
             `}>
                 <div>
                     <div className="flex items-center justify-between mb-6">
@@ -97,29 +100,27 @@ export default function FilterSidebar({ onFiltersChange, isOpen, onClose }: Filt
                             <h2 className="text-base font-bold text-slate-900 tracking-tight">Búsqueda Inteligente</h2>
                             <p className="text-xs text-slate-400 mt-0.5">Refina tus resultados</p>
                         </div>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors md:hidden cursor-pointer"
-                            aria-label="Cerrar filtros"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                            {onCollapseToggle && (
+                                <button
+                                    type="button"
+                                    onClick={onCollapseToggle}
+                                    className="hidden md:flex p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                                    aria-label="Colapsar filtros"
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors md:hidden cursor-pointer"
+                                aria-label="Cerrar filtros"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
-
-                {/* Professor Name Section */}
-                <div className="mb-4">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1.5">
-                        👤 Nombre del Profesor
-                    </label>
-                    <input
-                        type="text"
-                        value={teacherName}
-                        onChange={(e) => setTeacherName(e.target.value)}
-                        placeholder="Ej: Roberto Sánchez"
-                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-400 transition-colors shadow-sm"
-                    />
-                </div>
 
                 {/* Institution Section */}
                 <div className="mb-4">

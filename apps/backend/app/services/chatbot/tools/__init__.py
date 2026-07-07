@@ -6,9 +6,11 @@ from app.services.chatbot.tools.definitions import TOOL_DECLARATIONS
 from app.services.chatbot.tools.get_professor_details import (
     get_professor_details as _get_detail,
 )
+from app.services.chatbot.tools.search_courses import search_courses as _search_courses
 from app.services.chatbot.tools.search_professors import search_professors as _search
 
 TOOL_EXECUTORS: dict = {
+    "search_courses": _search_courses,
     "search_professors": _search,
     "get_professor_details": _get_detail,
     "compare_professors": _compare,

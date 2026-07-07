@@ -329,6 +329,9 @@ class Settings:
     COHERE_API_KEY: str = os.getenv("COHERE_API_KEY", "")
     COHERE_EMBED_MODEL: str = os.getenv("COHERE_EMBED_MODEL", "embed-v4.0")
     COHERE_EMBED_DIM: int = int(os.getenv("COHERE_EMBED_DIM", "1536"))
+    # Modelo propio del chatbot (alto volumen): flash-lite tiene mayor cuota gratuita.
+    # GEMINI_MODEL queda para el NLP batch (resúmenes), que prioriza calidad.
+    CHATBOT_GEMINI_MODEL: str = os.getenv("CHATBOT_GEMINI_MODEL", "gemini-2.5-flash-lite")
     CHATBOT_TOP_K: int = int(os.getenv("CHATBOT_TOP_K", "5"))
     CHATBOT_HISTORY_TURNS: int = int(os.getenv("CHATBOT_HISTORY_TURNS", "10"))
     CHATBOT_MAX_TOOL_ROUNDS: int = int(os.getenv("CHATBOT_MAX_TOOL_ROUNDS", "4"))

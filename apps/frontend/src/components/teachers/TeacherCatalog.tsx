@@ -1,11 +1,10 @@
-'use client'
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { Plus, AlertCircle, CheckCircle2, User } from "lucide-react";
+import { Plus, AlertCircle, CheckCircle2, User, Search, X } from "lucide-react";
 import { TeacherSummary } from "./types";
 import { SearchAIAnalysis } from "./SearchAIAnalysis";
 import { RegisterTeacherModal } from "./RegisterTeacherModal";
-import { useProfessors } from "@/lib/hooks";
+import { useProfessors, useDebounce } from "@/lib/hooks";
 import { ProfessorRead, PaginatedResponse } from "@/lib/api";
 
 type SortBy = 'global_score' | 'total_evaluations' | 'created_at';
@@ -30,25 +29,35 @@ function mapProfessorToTeacher(professor: ProfessorRead): TeacherSummary {
 
 export default function TeacherCatalog({ 
     initialQuery, 
-    filters = {} 
+    filters = {},
+    isSidebarCollapsed = false
 }: { 
     initialQuery?: string;
     filters?: Record<string, unknown>;
+    isSidebarCollapsed?: boolean;
 }) {
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [sortBy, setSortBy] = useState<SortBy>('global_score');
     const pageSize = 20;
 
+    const [localSearchQuery, setLocalSearchQuery] = useState(initialQuery || '');
+    const debouncedSearch = useDebounce(localSearchQuery, 300);
+
+    // Keep local search input in sync with initialQuery parameter
+    useEffect(() => {
+        setLocalSearchQuery(initialQuery || '');
+    }, [initialQuery]);
+
     // Memoize search params to prevent infinite fetch loops
     const searchParams = useMemo(() => ({
-        search: initialQuery,
+        search: debouncedSearch || undefined,
         page: currentPage,
         page_size: pageSize,
         sort_by: sortBy,
         sort_order: 'desc' as const,
         ...filters,
-    }), [initialQuery, currentPage, pageSize, sortBy, filters]);
+    }), [debouncedSearch, currentPage, pageSize, sortBy, filters]);
 
     // Poll while any visible professor is still being validated (max ~2 min).
     const pollOptions = useMemo(() => ({
@@ -79,21 +88,46 @@ export default function TeacherCatalog({
             <div className="max-w-[1300px] mx-auto">
 
                 {/* AI Analysis Banner - Show only if we have results and a query */}
-                {teachers.length > 0 && initialQuery && (
-                    <SearchAIAnalysis analysis={{ matchesText: `Hemos encontrado ${teachers.length} docentes relacionados con "${initialQuery}".` }} />
+                {teachers.length > 0 && debouncedSearch && (
+                    <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'md:pl-36' : ''}`}>
+                        <SearchAIAnalysis analysis={{ matchesText: `Hemos encontrado ${teachers.length} docentes relacionados con "${debouncedSearch}".` }} />
+                    </div>
                 )}
 
                {/* Controles de Acción (Botón y Ordenamiento) */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full mb-6">
-                    <button
-                        type="button"
-                        onClick={() => setIsRegisterModalOpen(true)}
-                        className="w-full sm:w-auto justify-center px-4 py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
-                    >
-                        <Plus className="w-4 h-4" strokeWidth={3} /> Agregar nuevo profesor
-                    </button>
+                <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 w-full mb-8 transition-all duration-300 ${isSidebarCollapsed ? 'md:pl-36' : ''}`}>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 flex-1">
+                        <button
+                            type="button"
+                            onClick={() => setIsRegisterModalOpen(true)}
+                            className="justify-center px-4 py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                        >
+                            <Plus className="w-4 h-4" strokeWidth={3} /> Agregar nuevo profesor
+                        </button>
 
-                    <div className="text-xs font-semibold text-slate-500 flex items-center justify-between sm:justify-start gap-1.5 border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0">
+                        {/* Search Input - Relocated, stylized and longer */}
+                        <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 focus-within:border-sky-400 focus-within:ring-2 focus-within:ring-sky-100 transition-all flex-1 max-w-md shadow-sm">
+                            <Search className="w-4 h-4 text-slate-400 mr-2.5 shrink-0" />
+                            <input
+                                type="text"
+                                value={localSearchQuery}
+                                onChange={(e) => setLocalSearchQuery(e.target.value)}
+                                placeholder="Buscar profesor por nombre..."
+                                className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none"
+                            />
+                            {localSearchQuery && (
+                                <button
+                                    onClick={() => setLocalSearchQuery('')}
+                                    className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                                    aria-label="Limpiar búsqueda"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="text-xs font-semibold text-slate-500 flex items-center justify-between sm:justify-start gap-1.5 border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
                         <span className="text-slate-400 font-medium">Ordenar por:</span>
                         <select
                             value={sortBy}

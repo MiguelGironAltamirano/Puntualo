@@ -27,15 +27,16 @@ function NavLogo() {
   );
 }
 
-export function Navbar({ showSearch = true, searchQuery = '', setSearchQuery }: NavbarProps) {
+export function Navbar({ showSearch = false, searchQuery = '', setSearchQuery }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isAuthMenuOpen, setIsAuthMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [hasSession] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return Boolean(localStorage.getItem('access_token'));
-  });
+  const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    setHasSession(Boolean(localStorage.getItem('access_token')));
+  }, []);
 
   const [searchQueryState, setSearchQueryState] = useState(searchQuery);
 
