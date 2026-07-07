@@ -40,17 +40,20 @@ class GeminiChatClient:
         model: str | None = None,
         _sdk_client=None,
     ) -> None:
-        self.model = model or settings.GEMINI_MODEL
+        self.model = model or settings.CHATBOT_GEMINI_MODEL
         if _sdk_client is not None:
             self._client = _sdk_client
         else:
             from google import genai  # import perezoso: el SDK solo se necesita en runtime
             self._client = genai.Client(api_key=api_key or settings.GEMINI_API_KEY)
 
-    async def generate_with_tools(self, *, system_instruction: str, contents: list):
-        """Una ronda con tools habilitadas (no-stream). Devuelve la respuesta cruda."""
+    async def stream_with_tools(
+        self, *, system_instruction: str, contents: list
+    ) -> AsyncIterator:
+        """Una ronda en streaming con tools habilitadas. Emite los chunks crudos:
+        el caller extrae texto y function_calls de cada uno."""
         from google.genai import types
-        return await self._client.aio.models.generate_content(
+        stream = await self._client.aio.models.generate_content_stream(
             model=self.model,
             contents=contents,
             config=types.GenerateContentConfig(
@@ -60,6 +63,8 @@ class GeminiChatClient:
                 automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
             ),
         )
+        async for chunk in stream:
+            yield chunk
 
     async def stream_final(
         self, *, system_instruction: str, contents: list
