@@ -71,13 +71,21 @@ class AdminService:
             reason = report.reason
             reason_breakdown[reason] = reason_breakdown.get(reason, 0) + 1
 
+        heuristic_res = await heuristic_filter(comment.content, db=self.db)
+        heuristic_flags = heuristic_res.reasons
+
         weighted_score = await self._calculate_weighted_score(comment)
+        if heuristic_res.action in ("flag", "block"):
+            # Scale spam score up to 5.0 for the weighted score
+            weighted_score += heuristic_res.spam_score * 5.0
 
         return {
             "comment_id": comment.id,
             "content": comment.content,
+            "text": comment.content,
             "status": comment.status,
             "reports_count": comment.reports_count,
+            "report_count": comment.reports_count,
             "professor_id": comment.professor_id,
             "user_id": comment.user_id,
             "created_at": comment.created_at,
@@ -85,6 +93,7 @@ class AdminService:
             "reason_breakdown": reason_breakdown,
             "weighted_score": weighted_score,
             "escalated_count": sum(1 for r in reports if r.escalated),
+            "heuristic_flags": heuristic_flags,
             "reports": [
                 {
                     "id": r.id,
@@ -225,3 +234,116 @@ class AdminService:
             score += weight
 
         return score
+
+    async def get_users_list(
+        self,
+        search: str | None = None,
+        role: str | None = None,
+        is_active: bool | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[User], int]:
+        """Get paginated list of users with optional filtering."""
+        stmt = select(User)
+        count_stmt = select(func.count(User.id))
+
+        filters = []
+        if search:
+            search_pattern = f"%{search.strip()}%"
+            filters.append(
+                (User.email.ilike(search_pattern)) | 
+                (User.full_name.ilike(search_pattern)) | 
+                (User.username.ilike(search_pattern))
+            )
+        if role:
+            filters.append(User.role == role)
+        if is_active is not None:
+            filters.append(User.is_active == is_active)
+
+        if filters:
+            stmt = stmt.where(*filters)
+            count_stmt = count_stmt.where(*filters)
+
+        # Count total
+        count_result = await self.db.execute(count_stmt)
+        total = count_result.scalar() or 0
+
+        # Get paginated results
+        stmt = stmt.order_by(User.created_at.desc()).limit(page_size).offset((page - 1) * page_size)
+        result = await self.db.execute(stmt)
+        users = result.scalars().all()
+
+        return list(users), total
+
+    async def ban_user(self, user_id: str) -> User:
+        """Deactivate a user (ban)."""
+        user_uuid = uuid.UUID(str(user_id))
+        user = await self.db.get(User, user_uuid)
+        if not user:
+            raise ValueError("Usuario no encontrado")
+        
+        user.is_active = False
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def unban_user(self, user_id: str) -> User:
+        """Activate a user and reset strike count (unban)."""
+        user_uuid = uuid.UUID(str(user_id))
+        user = await self.db.get(User, user_uuid)
+        if not user:
+            raise ValueError("Usuario no encontrado")
+        
+        user.is_active = True
+        user.strike_count = 0
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def get_user_reports(
+        self,
+        user_id: str,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[dict], int]:
+        """Get reports made against a user's comments."""
+        user_uuid = uuid.UUID(str(user_id))
+        
+        # Query total count of reports
+        count_stmt = (
+            select(func.count(Report.id))
+            .join(Comment, Report.comment_id == Comment.id)
+            .where(Comment.user_id == user_uuid)
+        )
+        count_result = await self.db.execute(count_stmt)
+        total = count_result.scalar() or 0
+
+        # Query reports with comment details
+        stmt = (
+            select(Report, Comment.text)
+            .join(Comment, Report.comment_id == Comment.id)
+            .where(Comment.user_id == user_uuid)
+            .order_by(Report.created_at.desc())
+            .limit(page_size)
+            .offset((page - 1) * page_size)
+        )
+        result = await self.db.execute(stmt)
+        rows = result.all()
+
+        reports_data = []
+        for report, comment_content in rows:
+            reports_data.append({
+                "id": report.id,
+                "comment_id": report.comment_id,
+                "comment_content": comment_content,
+                "user_id": report.user_id,
+                "reason": report.reason,
+                "description": report.description,
+                "escalated": report.escalated,
+                "status": report.status,
+                "created_at": report.created_at,
+            })
+
+        return reports_data, total
+
+

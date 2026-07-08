@@ -63,7 +63,7 @@ class ModerationPipeline:
         )
 
         # Step 1: Heuristic filter
-        heuristic_result = await heuristic_filter(comment.content)
+        heuristic_result = await heuristic_filter(comment.content, db=self.db)
         logger.info(
             f"moderation.heuristic_filter | comment_id={comment.id} "
             f"action={heuristic_result.action} spam_score={heuristic_result.spam_score}"
@@ -212,7 +212,7 @@ class ModerationCheckpoint:
         Returns:
             (should_block: bool, reason: str | None)
         """
-        heuristic_result = await heuristic_filter(content)
+        heuristic_result = await heuristic_filter(content, db=self.db)
         
         if heuristic_result.action == "block":
             return True, f"Blocked: {', '.join(heuristic_result.reasons)}"

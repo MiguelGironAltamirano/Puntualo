@@ -199,7 +199,7 @@ class EvaluationService:
             )
 
         # Use enhanced heuristic filter
-        heuristic_result = await heuristic_filter(stripped)
+        heuristic_result = await heuristic_filter(stripped, db=self.db)
         
         if heuristic_result.action == "block":
             raise OffensiveContentError(

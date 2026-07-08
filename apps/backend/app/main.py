@@ -8,6 +8,7 @@ import app.core.celery_app  # noqa: F401 — ensures shared_task binds to Redis 
 from app.core.config import settings
 from app.db.session import engine
 from app.modules.admin.router import router as admin_router
+from app.modules.admin.router.admin_router import router as admin_moderation_router
 from app.modules.auth.router import router as auth_router
 from app.modules.catalogs.router import router as catalogs_router
 from app.modules.chat.router import router as chat_router
@@ -133,6 +134,11 @@ app.include_router(
 app.include_router(
     admin_router,
     prefix="/admin",
+    tags=["admin"],
+)
+
+app.include_router(
+    admin_moderation_router,
     tags=["admin"],
 )
 
