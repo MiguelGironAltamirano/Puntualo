@@ -1,7 +1,9 @@
 """Endpoints del chatbot RAG (Tarea 4.5)."""
 from __future__ import annotations
 
+import logging
 import uuid
+from collections.abc import AsyncIterator
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -20,6 +22,66 @@ from app.services.chatbot.rate_limit import check_and_increment
 # El prefijo /chat se agrega en main.py al momento del montaje,
 # siguiendo la convención del resto de los routers del proyecto.
 router = APIRouter(tags=["chat"])
+
+logger = logging.getLogger(__name__)
+
+
+def _friendly_stream_error(exc: Exception) -> str:
+    """Mensaje legible (una sola línea, apto para SSE) para un fallo del LLM.
+
+    Distingue el caso de cuota/rate-limit del proveedor (p.ej. Gemini 429
+    RESOURCE_EXHAUSTED) de un error genérico, para orientar mejor al usuario.
+    """
+    code = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+    text = str(exc)
+    if code == 429 or "RESOURCE_EXHAUSTED" in text or "quota" in text.lower():
+        return (
+            "⚠️ El asistente alcanzó su límite de solicitudes por ahora. "
+            "Inténtalo de nuevo en unos minutos."
+        )
+    return (
+        "⚠️ El asistente no está disponible en este momento. "
+        "Inténtalo de nuevo más tarde."
+    )
+
+
+async def _stream_answer(
+    session_id: uuid.UUID,
+    user_message: str,
+    history: list[dict],
+) -> AsyncIterator[str]:
+    """Genera el stream SSE de la respuesta del chatbot con degradación grácil.
+
+    Como ``StreamingResponse`` ya envió las cabeceras 200 text/event-stream, una
+    excepción propagada aquí abortaría el stream HTTP/2 (el navegador lo ve como
+    ERR_HTTP2_PROTOCOL_ERROR). Por eso capturamos cualquier fallo del LLM y
+    emitimos un evento de error legible en su lugar, cerrando el stream limpio.
+    """
+    chunks: list[str] = []
+    try:
+        # El retrieval/tools usan su propia sesión; el stream NO retiene la del request.
+        async with AsyncSessionLocal() as work_db:
+            async for chunk in answer_stream(
+                db=work_db, user_message=user_message, history=history
+            ):
+                chunks.append(chunk)
+                yield f"data: {chunk}\n\n"
+    except Exception as exc:  # noqa: BLE001 — headers ya enviados; hay que degradar, no propagar
+        logger.exception(
+            "chat_stream_failed | session=%s | error=%s", session_id, exc
+        )
+        yield f"event: error\ndata: {_friendly_stream_error(exc)}\n\n"
+        yield "event: done\ndata: [DONE]\n\n"
+        return
+
+    # Persistir el mensaje del asistente solo si hubo respuesta real.
+    if chunks:
+        async with AsyncSessionLocal() as persist_db:
+            await ChatService(persist_db).add_message(
+                session_id, "assistant", "".join(chunks)
+            )
+            await persist_db.commit()
+    yield "event: done\ndata: [DONE]\n\n"
 
 
 def _map_domain_error(exc: Exception) -> None:
@@ -104,21 +166,7 @@ async def post_message(
     history = await service.recent_history(session_id)
     await db.commit()
 
-    async def _gen():
-        # El retrieval/tools usan su propia sesión; el stream NO retiene la del request.
-        chunks: list[str] = []
-        async with AsyncSessionLocal() as work_db:
-            async for chunk in answer_stream(
-                db=work_db, user_message=body.content, history=history
-            ):
-                chunks.append(chunk)
-                yield f"data: {chunk}\n\n"
-        # Persistir el mensaje del asistente en una sesión nueva y corta.
-        async with AsyncSessionLocal() as persist_db:
-            await ChatService(persist_db).add_message(
-                session_id, "assistant", "".join(chunks)
-            )
-            await persist_db.commit()
-        yield "event: done\ndata: [DONE]\n\n"
-
-    return StreamingResponse(_gen(), media_type="text/event-stream")
+    return StreamingResponse(
+        _stream_answer(session_id, body.content, history),
+        media_type="text/event-stream",
+    )
