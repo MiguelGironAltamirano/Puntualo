@@ -69,7 +69,7 @@ export function ReportModal({
             const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
             const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
-            const response = await fetch(`${API_BASE_URL}/evaluations/${commentId}/report`, {
+            const response = await fetch(`${API_BASE_URL}/comments/${commentId}/reports`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ export function ReportModal({
                 },
                 body: JSON.stringify({
                     reason,
-                    details: details.trim() || undefined,
+                    description: details.trim() || undefined,
                 }),
             });
 

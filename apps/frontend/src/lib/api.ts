@@ -630,6 +630,44 @@ export interface PendingModerationItem {
   weighted_score: number;
 }
 
+export interface UserAdminRead {
+  id: string;
+  email: string;
+  full_name: string;
+  username: string;
+  role: string;
+  is_active: boolean;
+  strike_count: number;
+  created_at: string;
+}
+
+export interface UserAdminListResponse {
+  items: UserAdminRead[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+export interface UserReportItem {
+  id: string;
+  comment_id: string;
+  comment_content: string;
+  user_id: string;
+  reason: string;
+  description: string | null;
+  escalated: boolean;
+  status: string;
+  created_at: string;
+}
+
+export interface UserReportsListResponse {
+  items: UserReportItem[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
 export interface ModerationDecision {
   comment_id: string;
   decision: 'allow' | 'remove';
@@ -681,8 +719,50 @@ export const adminAPI = {
   getUserReports: async (userId: string, params?: {
     page?: number;
     page_size?: number;
-  }): Promise<PaginatedResponse<any>> => {
+  }): Promise<UserReportsListResponse> => {
     const query = buildQueryString(params || {});
     return fetchAPI(`/api/admin/users/${userId}/reports${query}`);
   },
+
+  /**
+   * Get users list for bans/strikes management (admin only)
+   */
+  getUsersList: async (params?: {
+    search?: string;
+    role?: string;
+    is_active?: boolean;
+    page?: number;
+    page_size?: number;
+  }): Promise<UserAdminListResponse> => {
+    const query = buildQueryString(params || {});
+    return fetchAPI(`/api/admin/users${query}`);
+  },
+
+  /**
+   * Ban/deactivate user (admin only)
+   */
+  banUser: async (userId: string): Promise<UserAdminRead> => {
+    return fetchAPI(`/api/admin/users/${userId}/ban`, { method: 'POST' });
+  },
+
+  /**
+   * Unban/reactivate user (admin only)
+   */
+  unbanUser: async (userId: string): Promise<UserAdminRead> => {
+    return fetchAPI(`/api/admin/users/${userId}/unban`, { method: 'POST' });
+  },
+};
+
+/**
+ * Report a comment manually (student / public)
+ */
+export const reportComment = async (
+  commentId: string,
+  reason: string,
+  description?: string
+): Promise<{ comment_id: string; reports_count: number; was_escalated: boolean }> => {
+  return fetchAPI(`/comments/${commentId}/reports`, {
+    method: 'POST',
+    body: JSON.stringify({ reason, description }),
+  });
 };

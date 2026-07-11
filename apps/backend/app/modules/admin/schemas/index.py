@@ -26,8 +26,10 @@ class CommentModerationDetail(BaseModel):
     """Detailed info about a comment pending moderation."""
     comment_id: UUID
     content: str
+    text: str
     status: str
     reports_count: int
+    report_count: int
     professor_id: UUID
     user_id: UUID
     created_at: datetime
@@ -35,6 +37,7 @@ class CommentModerationDetail(BaseModel):
     reason_breakdown: dict[str, int]
     weighted_score: float
     escalated_count: int
+    heuristic_flags: list[str] = []
     reports: list[ReportSummary]
 
     class Config:
@@ -45,6 +48,7 @@ class ModerationDecisionRequest(BaseModel):
     """Request to apply admin moderation decision."""
     decision: str = Field(..., pattern="^(remove|allow)$")
     admin_notes: str | None = None
+    reason: str | None = None
 
 
 class ModerationActionResponse(BaseModel):
@@ -80,3 +84,49 @@ class ModerationStatsResponse(BaseModel):
     total_strikes_issued: int
     active_users: int
     deactivated_users_due_to_strikes: int
+
+
+class UserAdminRead(BaseModel):
+    id: UUID
+    email: str
+    full_name: str
+    username: str
+    role: str
+    is_active: bool
+    strike_count: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UserAdminListResponse(BaseModel):
+    items: list[UserAdminRead]
+    total: int
+    page: int
+    pages: int
+
+
+class UserReportItem(BaseModel):
+    id: UUID
+    comment_id: UUID
+    comment_content: str
+    user_id: UUID
+    reason: str
+    description: str | None
+    escalated: bool
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UserReportsListResponse(BaseModel):
+    items: list[UserReportItem]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
