@@ -45,7 +45,7 @@ export function ChatInput() {
 
   return (
     <div className="border-t border-slate-200 p-3 bg-white">
-      <div className="relative">
+      <div className="flex items-end gap-1.5 rounded-xl border border-slate-200 bg-slate-50 p-1.5 focus-within:bg-white focus-within:border-sky-400 focus-within:ring-1 focus-within:ring-sky-400">
         <textarea
           ref={ref}
           rows={1}
@@ -55,14 +55,14 @@ export function ChatInput() {
           onInput={onInput}
           onKeyDown={onKeyDown}
           placeholder="Pregúntame algo…"
-          className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-sky-400 focus:ring-1 focus:ring-sky-400 text-sm p-3 pr-12 outline-none disabled:opacity-60"
+          className="flex-1 resize-none bg-transparent text-sm p-1.5 outline-none disabled:opacity-60"
         />
         <button
           type="button"
           onClick={submit}
           disabled={!canSend}
           aria-label="Enviar"
-          className="absolute right-2 bottom-2 w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center disabled:opacity-40 active:scale-95 transition-transform"
+          className="w-8 h-8 shrink-0 rounded-lg bg-sky-600 text-white flex items-center justify-center disabled:opacity-40 active:scale-95 transition-transform"
         >
           <Send className="w-4 h-4" />
         </button>
