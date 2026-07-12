@@ -45,7 +45,16 @@ class GeminiChatClient:
             self._client = _sdk_client
         else:
             from google import genai  # import perezoso: el SDK solo se necesita en runtime
-            self._client = genai.Client(api_key=api_key or settings.GEMINI_API_KEY)
+            if settings.CHATBOT_USE_VERTEXAI:
+                # Vertex AI autentica con ADC (GOOGLE_APPLICATION_CREDENTIALS
+                # o `gcloud auth application-default login`), no con API key.
+                self._client = genai.Client(
+                    vertexai=True,
+                    project=settings.GOOGLE_CLOUD_PROJECT,
+                    location=settings.GOOGLE_CLOUD_LOCATION,
+                )
+            else:
+                self._client = genai.Client(api_key=api_key or settings.GEMINI_API_KEY)
 
     async def stream_with_tools(
         self, *, system_instruction: str, contents: list

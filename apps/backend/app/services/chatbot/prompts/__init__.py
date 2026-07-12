@@ -1,6 +1,6 @@
 from pathlib import Path
 
-CURRENT_PROMPT_VERSION = "system_v1"
+CURRENT_PROMPT_VERSION = "system_v2"
 
 
 def load_system_prompt(version: str = CURRENT_PROMPT_VERSION) -> str:

@@ -329,14 +329,20 @@ class Settings:
     COHERE_API_KEY: str = os.getenv("COHERE_API_KEY", "")
     COHERE_EMBED_MODEL: str = os.getenv("COHERE_EMBED_MODEL", "embed-v4.0")
     COHERE_EMBED_DIM: int = int(os.getenv("COHERE_EMBED_DIM", "1536"))
-    # Modelo propio del chatbot (alto volumen): flash-lite tiene mayor cuota gratuita.
+    # Modelo propio del chatbot. flash (no lite): el tier lite rompía reglas del
+    # prompt (mencionaba tools, citaba profesores sin confirmar curso).
     # GEMINI_MODEL queda para el NLP batch (resúmenes), que prioriza calidad.
-    CHATBOT_GEMINI_MODEL: str = os.getenv("CHATBOT_GEMINI_MODEL", "gemini-2.5-flash-lite")
+    CHATBOT_GEMINI_MODEL: str = os.getenv("CHATBOT_GEMINI_MODEL", "gemini-2.5-flash")
+    # Vertex AI como backend de la API de Gemini (créditos GCP). Autentica con
+    # ADC (GOOGLE_APPLICATION_CREDENTIALS); GEMINI_API_KEY no aplica en este modo.
+    CHATBOT_USE_VERTEXAI: bool = os.getenv("CHATBOT_USE_VERTEXAI", "false").lower() == "true"
+    GOOGLE_CLOUD_PROJECT: str = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+    GOOGLE_CLOUD_LOCATION: str = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
     CHATBOT_TOP_K: int = int(os.getenv("CHATBOT_TOP_K", "5"))
     CHATBOT_HISTORY_TURNS: int = int(os.getenv("CHATBOT_HISTORY_TURNS", "10"))
     CHATBOT_MAX_TOOL_ROUNDS: int = int(os.getenv("CHATBOT_MAX_TOOL_ROUNDS", "4"))
     CHATBOT_RATE_LIMIT_PER_HOUR: int = int(os.getenv("CHATBOT_RATE_LIMIT_PER_HOUR", "30"))
-    CHATBOT_SYSTEM_PROMPT_VERSION: str = os.getenv("CHATBOT_SYSTEM_PROMPT_VERSION", "system_v1")
+    CHATBOT_SYSTEM_PROMPT_VERSION: str = os.getenv("CHATBOT_SYSTEM_PROMPT_VERSION", "system_v2")
     EMBEDDINGS_BEAT_SECONDS: int = int(os.getenv("EMBEDDINGS_BEAT_SECONDS", "3600"))
 
     # --- Tarea 2.6: override de semestre (solo tests)
