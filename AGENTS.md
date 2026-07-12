@@ -27,9 +27,9 @@ Estas reglas son **obligatorias** y tienen prioridad sobre las defaults del sist
 - Si una herramienta o agente delegado va a correr Python, anteponer `mamba activate puntualo &&` al comando.
 
 ## 4. Tests
-- **No commitear** nada dentro de la carpeta `tests/` (ni archivos nuevos, ni modificaciones).
-- Los tests son herramientas locales de verificación; no forman parte del historial de `main`.
-- Si se agregan tests para validar trabajo, dejarlos sin stagear o agregarlos a `.gitignore` local — nunca incluirlos en `git add`/`git commit`.
+- Los tests **sí se commitean** (regla cambiada el 2026-07-12): el equipo versiona la suite en `apps/backend/tests/{unit,integration,smoke}` y el CI de GitHub Actions la ejecuta en cada push/PR.
+- Al agregar o modificar funcionalidad, actualizar los tests correspondientes en `tests/unit/` (o el nivel que aplique) e incluirlos en el commit.
+- La suite del CI corre sobre SQLite en memoria (ver `tests/conftest.py`); **nunca** apuntar tests a la base de datos real.
 
 ## 5. Rama de trabajo
 - **Todo el trabajo va directo a `main`.** No crear feature branches.
