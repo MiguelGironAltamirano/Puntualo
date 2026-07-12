@@ -80,6 +80,9 @@ cache-loader/
 
 coverage/
 htmlcov/
+.coverage
+coverage.xml
+reports/
 
 .pytest_cache/
 
