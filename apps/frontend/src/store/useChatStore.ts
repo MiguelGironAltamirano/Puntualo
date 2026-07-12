@@ -3,12 +3,36 @@ import { create } from 'zustand';
 import {
   ChatMessage,
   ChatError,
+  closeSession,
   createSession,
   getMessages,
   streamMessage,
 } from '@/lib/chat';
 
 const SESSION_KEY = 'chat_session_id';
+const ACTIVITY_KEY = 'chat_last_activity';
+// Tras 48 h sin actividad se descarta la sesión y se arranca conversación limpia,
+// para que temas viejos no contaminen el contexto que ve el modelo.
+const SESSION_MAX_IDLE_MS = 48 * 60 * 60 * 1000;
+
+function touchActivity() {
+  if (typeof window !== 'undefined')
+    localStorage.setItem(ACTIVITY_KEY, String(Date.now()));
+}
+
+function sessionExpired(): boolean {
+  if (typeof window === 'undefined') return false;
+  const last = Number(localStorage.getItem(ACTIVITY_KEY));
+  return Number.isFinite(last) && last > 0
+    ? Date.now() - last > SESSION_MAX_IDLE_MS
+    : false; // sin timestamp (sesiones previas a este cambio): conservarla
+}
+
+function discardStoredSession() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(ACTIVITY_KEY);
+}
 
 export type ChatStatus =
   | 'idle'
@@ -26,6 +50,7 @@ interface ChatState {
   error: string | null;
   open: () => Promise<void>;
   close: () => void;
+  newSession: () => Promise<void>;
   sendMessage: (content: string, isRetry?: boolean) => Promise<void>;
   retry: () => void;
 }
@@ -57,20 +82,37 @@ export const useChatStore = create<ChatState>((set, get) => ({
       (typeof window !== 'undefined'
         ? localStorage.getItem(SESSION_KEY)
         : null);
+    // Sesión inactiva por más de 48 h: descartarla y empezar conversación limpia.
+    if (stored && messages.length === 0 && sessionExpired()) {
+      void closeSession(stored);
+      discardStoredSession();
+      set({ sessionId: null, status: 'idle' });
+      return;
+    }
     if (stored && messages.length === 0) {
       set({ sessionId: stored, status: 'loading-history' });
       try {
         const history = await getMessages(stored);
         set({ messages: history, status: 'ready' });
+        touchActivity();
       } catch {
         // sesión vieja / de otro usuario: descartarla y empezar limpio
-        if (typeof window !== 'undefined') localStorage.removeItem(SESSION_KEY);
+        discardStoredSession();
         set({ sessionId: null, status: 'idle' });
       }
     }
   },
 
   close: () => set({ isOpen: false }),
+
+  newSession: async () => {
+    const { sessionId, status } = get();
+    if (status === 'waiting' || status === 'streaming') return;
+    if (sessionId) void closeSession(sessionId);
+    discardStoredSession();
+    // La próxima sendMessage crea la sesión nueva bajo demanda.
+    set({ sessionId: null, messages: [], status: 'idle', error: null });
+  },
 
   sendMessage: async (raw, isRetry = false) => {
     const content = raw.trim();
@@ -85,6 +127,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         sessionId = await createSession();
         if (typeof window !== 'undefined')
           localStorage.setItem(SESSION_KEY, sessionId);
+        touchActivity();
         set({ sessionId });
       } catch (e) {
         if (e instanceof ChatError && e.status === 401) {
@@ -127,6 +170,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       onDone: (full) => {
         updateAssistant(full);
         set({ status: 'ready' });
+        touchActivity();
       },
       onError: (err) => {
         // sesión inválida → recrear una vez y reintentar

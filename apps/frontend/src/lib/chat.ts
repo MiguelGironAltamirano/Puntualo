@@ -47,6 +47,14 @@ export async function createSession(): Promise<string> {
   return data.session_id as string;
 }
 
+export async function closeSession(sessionId: string): Promise<void> {
+  // Best effort: cerrar la sesión server-side; si falla igual se descarta local.
+  await fetch(`${API_BASE_URL}/chat/sessions/${sessionId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  }).catch(() => undefined);
+}
+
 export async function getMessages(sessionId: string): Promise<ChatMessage[]> {
   const res = await fetch(
     `${API_BASE_URL}/chat/sessions/${sessionId}/messages`,
