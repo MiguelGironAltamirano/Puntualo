@@ -86,11 +86,11 @@ Formato: **Nivel · Tipo · Técnica** · Estado · 👤 Responsable · `ruta/ar
 - Detección de abuso en reportes — Unitaria · Funcional · Caja Blanca · ✅ · 👤 **Tarqui** · `apps/backend/tests/unit/test_rate_limiter.py`
 - Servicio de reportes (crear/escalar/score) — Integración · Funcional · Caja Blanca · ✅ · 👤 **Tarqui** · `apps/backend/tests/integration/test_report_service.py`
 - Carga backend 50 usuarios — Sistema · No Funcional (Rendimiento) · Caja Negra · ✅ · 👤 **Sevan** · `apps/tests/load-test/locustfile.py`
-- Hashing y JWT (core/security) — Unitaria · Funcional · Caja Blanca · 🟡 · 👤 **Miguel** · `apps/backend/tests/unit/test_security.py`
-- Autenticación API (login/registro/refresh) — Integración · Funcional · Caja Blanca · 🟡 · 👤 **Miguel** · `apps/backend/tests/integration/test_auth_api.py`
+- Hashing y JWT (core/security) — Unitaria · Funcional · Caja Blanca · ✅ · 👤 **Miguel** · `apps/backend/tests/unit/test_security.py`
+- Autenticación API (login/registro/refresh) — Integración · Funcional · Caja Blanca · ✅ · 👤 **Miguel** · `apps/backend/tests/integration/test_auth_api.py`
 - Control de acceso (401/403) — Integración · No Funcional (Seguridad) · Caja Negra · 🟡 · 👤 **Sevan** · `apps/backend/tests/integration/test_access_control.py`
 - Flujo de comentarios (crear→moderar→publicar) — Integración · Funcional · Caja Blanca · 🟡 · 👤 **Tarqui** · `apps/backend/tests/integration/test_comments_flow.py`
-- Humo (arranque + `/health/db`) — Sistema · Asociada al Cambio (Humo) · Caja Negra · 🟡 · 👤 **Miguel** · `apps/backend/tests/smoke/test_smoke.py`
+- Humo (arranque + `/health/db`) — Sistema · Asociada al Cambio (Humo) · Caja Negra · ✅ · 👤 **Miguel** · `apps/backend/tests/smoke/test_smoke.py`
 
 ## Should have
 
@@ -100,7 +100,7 @@ Formato: **Nivel · Tipo · Técnica** · Estado · 👤 Responsable · `ruta/ar
 - Score de evaluación — Unitaria · Funcional · Caja Blanca · 🟡 · 👤 **Tarqui** · `apps/backend/tests/unit/test_scoring.py`
 - Score de profesor (agregado) — Unitaria · Funcional · Caja Blanca · 🟡 · 👤 **Mathias** · `apps/backend/tests/unit/test_professor_score.py`
 - Moderación con DB (términos baneados/l33t) — Integración · Funcional · Caja Blanca · 🟡 · 👤 **Tarqui** · `apps/backend/tests/integration/test_moderation_db.py`
-- Suite de regresión en CI (con reporte archivado) — Integración · Asociada al Cambio (Regresión) · Caja Negra · ⬜ · 👤 **Miguel** · (config CI, no un archivo de test)
+- Suite de regresión en CI (con reporte archivado) — Integración · Asociada al Cambio (Regresión) · Caja Negra · ✅ · 👤 **Miguel** · `.github/workflows/ci.yml`
 
 ## Could have
 
@@ -162,23 +162,26 @@ Verifica `app/modules/evaluations/service/report_service.py` con DB real.
 - [x] Escenario Locust (tareas GET ponderadas) definido
 - [x] Corrida ejecutada, resultados en `ANALISIS.md` + `results/reporte.html`
 
-### 🟡 Hashing de contraseñas y JWT · 👤 Miguel
+### ✅ Hashing de contraseñas y JWT · 👤 Miguel
 `apps/backend/tests/unit/test_security.py` — _Unitaria · Funcional · Caja Blanca_
-Bajo prueba: `app/core/security.py`.
-- [ ] Hash y verificación de contraseña correcta
-- [ ] Contraseña incorrecta no verifica
-- [ ] Crear access token con payload/expiración esperados
-- [ ] Decodificar token válido expone claims
-- [ ] Token expirado rechazado
-- [ ] Token con firma alterada rechazado
+Bajo prueba: `app/core/security.py` (cobertura 100%).
+- [x] Hash y verificación de contraseña correcta
+- [x] Contraseña incorrecta no verifica
+- [x] Crear access token con payload/expiración esperados
+- [x] Decodificar token válido expone claims
+- [x] Token expirado rechazado
+- [x] Token con firma alterada rechazado
+- [x] Hash salteado (no determinista) + token de otra clave rechazado (extra)
 
-### 🟡 Autenticación API · 👤 Miguel
+### ✅ Autenticación API · 👤 Miguel
 `apps/backend/tests/integration/test_auth_api.py` — _Integración · Funcional · Caja Blanca_
-Bajo prueba: `app/modules/auth/`.
-- [ ] Registro de usuario nuevo → 201
-- [ ] Login válido devuelve token
-- [ ] Login inválido → 401
-- [ ] Flujo de refresh token
+Bajo prueba: `app/modules/auth/` (registro en 2 pasos: start + verify).
+- [x] Registro de usuario nuevo → 201 (start + verify con código mockeado)
+- [x] Login válido devuelve token
+- [x] Login inválido → 401 (contraseña incorrecta y usuario inexistente)
+- [x] Flujo de refresh token (+ refresh inválido → 401)
+- [x] Correo no institucional → 422 y correo duplicado → 400 (extra)
+- [x] `/auth/me` protegido: sin token → 401/403, con token → usuario (extra)
 
 ### 🟡 Control de acceso · 👤 Sevan
 `apps/backend/tests/integration/test_access_control.py` — _Integración · No Funcional (Seguridad) · Caja Negra_
@@ -192,11 +195,11 @@ Bajo prueba: `app/modules/auth/`.
 - [ ] Comentario que dispara moderación → retenido
 - [ ] Transiciones de estado correctas
 
-### 🟡 Humo · 👤 Miguel
+### ✅ Humo · 👤 Miguel
 `apps/backend/tests/smoke/test_smoke.py` — _Sistema · Asociada al Cambio (Humo) · Caja Negra_
-- [ ] La app se levanta sin errores
-- [ ] `/health/db` → 200
-- [ ] Esquema OpenAPI disponible
+- [x] La app se levanta sin errores (raíz `/` → 200)
+- [x] `/health/db` → 200 (engine parcheado a SQLite en el test)
+- [x] Esquema OpenAPI disponible (incluye `/auth/login`)
 
 ---
 
@@ -242,10 +245,12 @@ Bajo prueba: `app/utils/moderation.py` + `app/models/banned_term.py`.
 - [ ] L33t de término baneado detectado
 - [ ] Comentario limpio pasa con etapa DB activa
 
-### ⬜ Suite de regresión en CI · 👤 Miguel
-(config de CI, no un archivo de test) — _Integración · Asociada al Cambio (Regresión) · Caja Negra_
-- [ ] Ejecución automatizada de toda la suite en cada push/PR
-- [ ] Reporte JUnit/coverage archivado como evidencia
+### ✅ Suite de regresión en CI · 👤 Miguel
+`.github/workflows/ci.yml` — _Integración · Asociada al Cambio (Regresión) · Caja Negra_
+- [x] Ejecución automatizada de la suite en cada push/PR (job `test-backend`)
+- [x] Reporte JUnit/coverage archivado como artefacto (`upload-artifact`)
+- [x] Job `gate` para check obligatorio en PR a `main`
+- Nota: `test_report_service.py` excluido temporalmente (fixtures de WS-B desalineadas con el modelo actual).
 
 ---
 
