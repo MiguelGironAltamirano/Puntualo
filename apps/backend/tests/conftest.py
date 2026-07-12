@@ -1,11 +1,15 @@
 """tests/conftest.py - Pytest configuration and shared fixtures."""
 import asyncio
 import os
-from typing import AsyncGenerator
+import uuid as _uuid
+from typing import AsyncGenerator, Generator
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import create_engine as _create_sync_engine
+from sqlalchemy import event as _sa_event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
@@ -17,6 +21,45 @@ from app.models.report import Report, ReportReason, ReportStatus
 
 # Use in-memory SQLite for tests
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+
+def _register_sqlite_uuid_fn(dbapi_conn, _record) -> None:
+    """Emula gen_random_uuid() (server_default de las PK) en SQLite."""
+    dbapi_conn.create_function("gen_random_uuid", 0, lambda: _uuid.uuid4().hex)
+
+
+def _create_all_best_effort(sync_conn) -> None:
+    """Crea el esquema en SQLite tolerando tablas con DDL exclusivo de Postgres.
+
+    Algunos modelos usan tipos/constructos que SQLite no compila (JSONB, ARRAY,
+    pgvector, server-defaults como '{}'::text[]). Con `create_all` global, la
+    primera tabla incompatible aborta *toda* la creación y ninguna prueba puede
+    correr. Creamos tabla por tabla y omitimos las incompatibles: las pruebas
+    que corren sobre este motor solo usan el subconjunto compatible.
+    """
+    from sqlalchemy.exc import CompileError, OperationalError
+
+    for table in Base.metadata.sorted_tables:
+        try:
+            table.create(bind=sync_conn, checkfirst=True)
+        except (CompileError, OperationalError):
+            continue
+
+
+@pytest.fixture(autouse=True)
+def _ensure_test_secret() -> Generator[None, None, None]:
+    """Garantiza un SECRET_KEY determinista para las funciones de seguridad.
+
+    En local suele venir de .env; en CI se inyecta por env. Este autouse cubre
+    el caso en que no exista, para que las pruebas de JWT no dependan del entorno.
+    """
+    from app.core.config import settings
+
+    if not settings.SECRET_KEY:
+        settings.SECRET_KEY = "test-secret-key-not-for-production"
+    if not settings.ALGORITHM:
+        settings.ALGORITHM = "HS256"
+    yield
 
 
 @pytest.fixture(scope="session")
@@ -37,14 +80,14 @@ async def test_db() -> AsyncGenerator[AsyncSession, None]:
         echo=False,
     )
 
-    # Create all tables
+    # Create all tables (best-effort: se omiten las tablas con DDL solo-Postgres)
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(_create_all_best_effort)
 
-    async with engine.begin() as conn:
-        Session = AsyncSession(bind=engine, expire_on_commit=False)
-        async with Session() as session:
-            yield session
+    async with AsyncSession(bind=engine, expire_on_commit=False) as session:
+        yield session
+
+    await engine.dispose()
 
 
 @pytest_asyncio.fixture
@@ -110,3 +153,75 @@ async def test_comment(
     test_db.add(comment)
     await test_db.flush()
     return comment
+
+
+# ---------------------------------------------------------------------------
+# Cliente HTTP síncrono (para los endpoints de FastAPI, que usan Session sync)
+# ---------------------------------------------------------------------------
+# El backend de auth/health opera con `sqlalchemy.orm.Session` síncrona vía
+# `get_db`. Estas fixtures montan un motor SQLite en memoria, crean el esquema
+# completo y exponen un TestClient con `get_db` sobreescrito, sin tocar la BD
+# real. Requisito técnico pedido en 04_automatizacion_y_cicd.md (fixture de
+# cliente HTTP sobre la app FastAPI).
+@pytest.fixture
+def sync_db_engine():
+    """Motor SQLite en memoria con el esquema necesario para auth.
+
+    Se crean solo las tablas que ejercita el flujo de autenticación. La FK a
+    `careers` queda colgante, lo que SQLite tolera; evitamos así las tablas con
+    DDL exclusivo de PostgreSQL (pgvector, ARRAY server-defaults, etc.).
+    """
+    from app.models.email_verification import EmailVerification
+    from app.models.password_reset import PasswordReset
+
+    engine = _create_sync_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    _sa_event.listen(engine, "connect", _register_sqlite_uuid_fn)
+
+    tables = [
+        User.__table__,
+        EmailVerification.__table__,
+        PasswordReset.__table__,
+    ]
+    Base.metadata.create_all(engine, tables=tables)
+    try:
+        yield engine
+    finally:
+        Base.metadata.drop_all(engine, tables=tables)
+        engine.dispose()
+
+
+@pytest.fixture
+def sync_db_session(sync_db_engine) -> Generator[Session, None, None]:
+    """Sesión síncrona ligada al motor SQLite de pruebas."""
+    SessionLocal = sessionmaker(
+        bind=sync_db_engine,
+        autoflush=False,
+        autocommit=False,
+        expire_on_commit=False,
+    )
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@pytest.fixture
+def api_client(sync_db_session: Session):
+    """TestClient sobre la app real con `get_db` apuntando a SQLite de pruebas."""
+    from fastapi.testclient import TestClient
+
+    from app.db.session import get_db
+    from app.main import app
+
+    def _override_get_db():
+        yield sync_db_session
+
+    app.dependency_overrides[get_db] = _override_get_db
+    with TestClient(app) as client:
+        yield client
+    app.dependency_overrides.pop(get_db, None)
