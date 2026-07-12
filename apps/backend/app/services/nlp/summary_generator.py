@@ -164,8 +164,15 @@ async def generate_and_store(
 
     version = model_version()
     now = datetime.now(timezone.utc)
+    is_sqlite = db.bind.dialect.name == "sqlite" if db.bind else False
+    if is_sqlite:
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+        insert_fn = sqlite_insert
+    else:
+        insert_fn = pg_insert
+
     stmt = (
-        pg_insert(ProfessorAiSummary)
+        insert_fn(ProfessorAiSummary)
         .values(
             professor_id=prof_uuid,
             summary=result.summary,
@@ -175,7 +182,7 @@ async def generate_and_store(
             generated_at=now,
         )
         .on_conflict_do_update(
-            constraint="uq_professor_ai_summaries_professor",
+            index_elements=["professor_id"],
             set_=dict(
                 summary=result.summary,
                 pros=result.pros,

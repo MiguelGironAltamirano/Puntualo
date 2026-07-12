@@ -79,15 +79,18 @@ class EvaluationService:
 
         semester = current_semester()
 
+        import uuid
+        prof_uuid = uuid.UUID(payload.professor_id) if isinstance(payload.professor_id, str) else payload.professor_id
+
         # 2) Profesor existe, activo, validated.
-        professor = await self._get_validated_professor(payload.professor_id)
+        professor = await self._get_validated_professor(prof_uuid)
 
         # 3) Curso existe y activo.
         course = await self._get_active_course(payload.course_id)
 
         # 4) Curso es dictado por el profesor.
         await self._assert_course_taught_by_professor(
-            professor_id=professor.id, course_id=course.id
+            professor_id=prof_uuid, course_id=course.id
         )
 
         # 5) Procesar hashtags (puede levantar HashtagLimitExceededError /
@@ -101,7 +104,7 @@ class EvaluationService:
         # 6) Tx: INSERT eval -> [INSERT comment] -> INSERT eval_hashtags.
         evaluation = Evaluation(
             user_id=user.id,
-            professor_id=payload.professor_id,
+            professor_id=prof_uuid,
             course_id=payload.course_id,
             semester=semester,
             clarity=payload.clarity,
@@ -122,7 +125,7 @@ class EvaluationService:
             comment = Comment(
                 evaluation_id=evaluation.id,
                 user_id=user.id,
-                professor_id=payload.professor_id,
+                professor_id=prof_uuid,
                 course_id=payload.course_id,
                 text=normalized_comment,
                 modality=payload.modality,
@@ -215,9 +218,11 @@ class EvaluationService:
         
         return stripped, status
 
-    async def _get_validated_professor(self, professor_id: str) -> Professor:
+    async def _get_validated_professor(self, professor_id: str | uuid.UUID) -> Professor:
         """Obtiene el profesor validando existencia, estado activo y validation_status."""
-        professor = await self.db.get(Professor, professor_id)
+        import uuid
+        prof_uuid = uuid.UUID(str(professor_id)) if isinstance(professor_id, str) else professor_id
+        professor = await self.db.get(Professor, prof_uuid)
         if professor is None or not professor.is_active:
             raise ProfessorNotFoundError()
         if professor.validation_status != "validated":
@@ -231,10 +236,12 @@ class EvaluationService:
         return course
 
     async def _assert_course_taught_by_professor(
-        self, *, professor_id, course_id: int
+        self, *, professor_id: str | uuid.UUID, course_id: int
     ) -> None:
+        import uuid
+        prof_uuid = uuid.UUID(str(professor_id)) if isinstance(professor_id, str) else professor_id
         stmt = select(ProfessorCourse).where(
-            ProfessorCourse.professor_id == professor_id,
+            ProfessorCourse.professor_id == prof_uuid,
             ProfessorCourse.course_id == course_id,
         )
         row = (await self.db.execute(stmt)).first()

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.comment import Comment, CommentStatus
 from app.models.report import Report
+from app.models.user import User
 from app.modules.evaluations.errors import (
     CommentNotFoundError,
     CommentAlreadyRemovedError,
@@ -30,8 +31,10 @@ class TestReportService:
             with patch.object(service.rate_limiter, 'record') as mock_record:
                 with patch.object(service.abuse_detector, 'check') as mock_abuse:
                     with patch.object(service, '_calculate_weighted_score') as mock_score:
-                        mock_check.return_value = AsyncMock(allowed=True, remaining=9)()
-                        mock_check.return_value.allowed = True
+                        mock_status = AsyncMock()
+                        mock_status.allowed = True
+                        mock_status.remaining = 9
+                        mock_check.return_value = mock_status
                         mock_abuse.return_value = False
                         mock_score.return_value = 0.5
                         
@@ -137,6 +140,19 @@ class TestReportService:
         """Test weighted score calculation for different reasons."""
         service = ReportService(test_db)
         
+        # Create another user to satisfy the foreign key constraint
+        another_user = User(
+            id=uuid.uuid4(),
+            email="anotheruser@unmsm.edu.pe",
+            username="anotheruser",
+            full_name="Another User",
+            hashed_password="hashed_password_placeholder",
+            is_active=True,
+            role="student",
+        )
+        test_db.add(another_user)
+        await test_db.flush()
+
         # Create reports with different reasons
         hate_report = Report(
             comment_id=test_comment.id,
@@ -145,7 +161,7 @@ class TestReportService:
         )
         spam_report = Report(
             comment_id=test_comment.id,
-            user_id=uuid.uuid4(),
+            user_id=another_user.id,
             reason="spam",
         )
         test_db.add(hate_report)
