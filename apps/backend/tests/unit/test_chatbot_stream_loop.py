@@ -118,6 +118,65 @@ async def test_error_no_429_se_propaga():
         ))
 
 
+class FakeGroundingDB:
+    """Enruta las tres queries de grounding (cursos, nombres, professor_courses)."""
+
+    def __init__(self, course_rows, teaching_rows, named_rows=()):
+        self.course_rows = course_rows
+        self.teaching_rows = teaching_rows
+        self.named_rows = list(named_rows)
+
+    async def execute(self, stmt, params=None):
+        from sqlalchemy.sql import Select
+        if isinstance(stmt, Select):
+            return self.teaching_rows
+        return self.named_rows if "FROM professors" in str(stmt) else self.course_rows
+
+
+async def test_grounding_gate_pide_correccion_y_emite_la_version_corregida():
+    # Prof X no dicta "Cálculo I": la respuesta que lo cita dispara una ronda
+    # correctiva sin tools y se emite la corrección (que ya no lo menciona).
+    db = FakeGroundingDB(course_rows=[(10, "Cálculo I")], teaching_rows=[])
+    client = FakeClient(
+        rounds=[[_text_chunk("Te recomiendo a Prof X para Cálculo I")]],
+        final_rounds=[["No tengo profesores confirmados para Cálculo I."]],
+    )
+    out = await _collect(stream_tool_loop(
+        client=client, system_instruction="s", contents=[], db=db, max_rounds=4,
+        known_professors={"Prof X": "p1"}, convo_text="quiero un profe de Cálculo I",
+    ))
+    assert "".join(out) == "No tengo profesores confirmados para Cálculo I."
+    assert client.final_calls == 1
+
+
+async def test_grounding_gate_correccion_fallida_anexa_advertencia():
+    # La corrección sigue citando a Prof X: se emite con advertencia visible.
+    db = FakeGroundingDB(course_rows=[(10, "Cálculo I")], teaching_rows=[])
+    client = FakeClient(
+        rounds=[[_text_chunk("Te recomiendo a Prof X")]],
+        final_rounds=[["Insisto con Prof X"]],
+    )
+    out = await _collect(stream_tool_loop(
+        client=client, system_instruction="s", contents=[], db=db, max_rounds=4,
+        known_professors={"Prof X": "p1"}, convo_text="quiero un profe de Cálculo I",
+    ))
+    joined = "".join(out)
+    assert joined.startswith("Insisto con Prof X")
+    assert "No pude confirmar" in joined
+    assert "Prof X" in joined
+
+
+async def test_grounding_gate_no_interviene_si_el_profesor_dicta_el_curso():
+    db = FakeGroundingDB(course_rows=[(10, "Cálculo I")], teaching_rows=[("p1", 10)])
+    client = FakeClient(rounds=[[_text_chunk("Te recomiendo a Prof X")]])
+    out = await _collect(stream_tool_loop(
+        client=client, system_instruction="s", contents=[], db=db, max_rounds=4,
+        known_professors={"Prof X": "p1"}, convo_text="quiero un profe de Cálculo I",
+    ))
+    assert "".join(out) == "Te recomiendo a Prof X"
+    assert client.final_calls == 0
+
+
 async def test_max_rounds_agotado_cae_a_stream_final(monkeypatch):
     async def fake_tool(*, db, **kwargs):
         return {"ok": True}

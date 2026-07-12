@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Bot, X } from 'lucide-react';
+import { Bot, SquarePen, X } from 'lucide-react';
 import { useChatStore } from '@/store/useChatStore';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
@@ -10,6 +10,10 @@ import { ChatInput } from './ChatInput';
 export function ChatPanel() {
   const isOpen = useChatStore((s) => s.isOpen);
   const close = useChatStore((s) => s.close);
+  const newSession = useChatStore((s) => s.newSession);
+  const status = useChatStore((s) => s.status);
+  const hasMessages = useChatStore((s) => s.messages.length > 0);
+  const busy = status === 'waiting' || status === 'streaming';
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -18,7 +22,7 @@ export function ChatPanel() {
       if (e.key === 'Escape') close();
     };
     window.addEventListener('keydown', onKey);
-    panelRef.current?.querySelector('textarea')?.focus();
+    panelRef.current?.querySelector('textarea')?.focus({ preventScroll: true });
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, close]);
 
@@ -44,14 +48,28 @@ export function ChatPanel() {
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={close}
-          aria-label="Cerrar"
-          className="text-slate-400 hover:text-slate-600 p-1"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          {hasMessages && (
+            <button
+              type="button"
+              onClick={() => void newSession()}
+              disabled={busy}
+              aria-label="Nueva conversación"
+              title="Nueva conversación"
+              className="text-slate-400 hover:text-slate-600 p-1 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <SquarePen className="w-5 h-5" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Cerrar"
+            className="text-slate-400 hover:text-slate-600 p-1"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <MessageList />

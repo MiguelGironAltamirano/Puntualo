@@ -115,7 +115,7 @@ class CommentRead(BaseModel):
 # ---------------------------------------------------------------------------
 
 ReactionType = Literal["like", "dislike"]
-ReportReason = Literal["spam", "hate_speech", "harassment", "off_topic", "other"]
+ReportReason = Literal["spam", "hate_speech", "harassment", "off_topic", "false_information", "impersonation", "privacy_violation", "other"]
 
 
 class ReactionCreate(BaseModel):

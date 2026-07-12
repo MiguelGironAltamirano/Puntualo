@@ -9,19 +9,24 @@ from sqlalchemy.sql import Select
 
 from app.services.chatbot.grounding import (
     append_grounding_warnings,
+    check_grounding,
+    correction_instruction,
     professors_mentioned_in,
 )
 
 
 class FakeDB:
-    """Diferencia la query de cursos (sa_text) de la de professor_courses (Select)."""
+    """Enruta las tres queries: cursos y nombres (sa_text) y professor_courses (Select)."""
 
-    def __init__(self, course_rows, teaching_rows):
+    def __init__(self, course_rows, teaching_rows, named_rows=()):
         self.course_rows = course_rows
         self.teaching_rows = teaching_rows
+        self.named_rows = list(named_rows)  # [(id, full_name)] de professors
 
     async def execute(self, stmt, params=None):
-        return self.teaching_rows if isinstance(stmt, Select) else self.course_rows
+        if isinstance(stmt, Select):
+            return self.teaching_rows
+        return self.named_rows if "FROM professors" in str(stmt) else self.course_rows
 
 
 def test_professors_mentioned_in_encuentra_nombre_exacto():
@@ -74,6 +79,65 @@ async def test_no_agrega_advertencia_si_el_profesor_si_dicta_el_curso():
         known_professors={"Mtro. Gustavo Arredondo Castillo": "p-gustavo"},
     )
     assert out == text
+
+
+async def test_check_grounding_detecta_profesor_inventado():
+    # Nombre con título académico que no vino de tools ni existe en `professors`.
+    db = FakeDB(course_rows=[(3, "Cálculo I")], teaching_rows=[], named_rows=[])
+    check = await check_grounding(
+        db=db,
+        text="Te recomiendo al Ing. Rafael Adolfo Quiñones Romaní para Cálculo I.",
+        convo_text="profe para Cálculo I",
+        known_professors={},
+    )
+    assert not check.ok
+    assert check.invented == ["Ing. Rafael Adolfo Quiñones Romaní"]
+
+
+async def test_check_grounding_profesor_real_citado_de_memoria_se_valida_por_curso():
+    # No vino de tools este turno, pero existe en la BD: se valida contra professor_courses.
+    db = FakeDB(
+        course_rows=[(10, "Cálculo I")],
+        teaching_rows=[("p-real", 10)],
+        named_rows=[("p-real", "Dr. Juan Pérez Rojas")],
+    )
+    check = await check_grounding(
+        db=db,
+        text="Como te dije, el Dr. Juan Pérez Rojas es buena opción para Cálculo I.",
+        convo_text="profe para Cálculo I",
+        known_professors={},
+    )
+    assert check.ok
+
+
+async def test_check_grounding_reporta_ungrounded_y_cursos():
+    db = FakeDB(
+        course_rows=[(10, "Análisis y Diseño de Sistemas")],
+        teaching_rows=[],
+    )
+    check = await check_grounding(
+        db=db,
+        text="Te recomiendo al Mtro. Winston Ignacio Ugaz Cachay.",
+        convo_text="... Análisis y Diseño de Sistemas ...",
+        known_professors={"Mtro. Winston Ignacio Ugaz Cachay": "p-winston"},
+    )
+    assert not check.ok
+    assert check.ungrounded == [("Mtro. Winston Ignacio Ugaz Cachay", "p-winston")]
+    assert check.courses == [(10, "Análisis y Diseño de Sistemas")]
+
+
+async def test_correction_instruction_nombra_profesor_y_curso():
+    db = FakeDB(course_rows=[(10, "Cálculo I")], teaching_rows=[])
+    check = await check_grounding(
+        db=db,
+        text="Te recomiendo a Prof X.",
+        convo_text="profe para Cálculo I",
+        known_professors={"Prof X": "p1"},
+    )
+    msg = correction_instruction(check)
+    assert "Prof X" in msg
+    assert "Cálculo I" in msg
+    assert "Reescribe" in msg
 
 
 async def test_sin_curso_mencionado_no_agrega_advertencia():

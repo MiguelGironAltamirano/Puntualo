@@ -17,7 +17,6 @@ export function MessageList() {
   const retry = useChatStore((s) => s.retry);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const endRef = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
 
   const onScroll = () => {
@@ -27,7 +26,8 @@ export function MessageList() {
   };
 
   useEffect(() => {
-    if (stick.current) endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = containerRef.current;
+    if (stick.current && el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages, status]);
 
   if (status === 'loading-history') {
@@ -78,8 +78,6 @@ export function MessageList() {
           </button>
         </div>
       )}
-
-      <div ref={endRef} />
     </div>
   );
 }

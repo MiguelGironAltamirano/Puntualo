@@ -10,11 +10,14 @@ from app.modules.professors.service import ProfessorService
 async def search_professors(
     *,
     db: AsyncSession,
-    query: str,
+    query: str = "",
     course_id: int | None = None,
     faculty_id: int | None = None,
 ) -> list[dict]:
     """Devuelve hasta CHATBOT_TOP_K profesores que coincidan con `query`.
+
+    `query` es opcional: con solo course_id/faculty_id lista todos los
+    profesores validados de ese curso/facultad (el modelo suele llamarla así).
 
     - Sólo incluye profesores con validation_status='validated'.
     - Ordena por global_score descendente.
@@ -22,7 +25,7 @@ async def search_professors(
     """
     service = ProfessorService(db)
     stmt = service.list_query(
-        search=query,
+        search=query or None,
         course_id=course_id,
         faculty_id=faculty_id,
         validation_status="validated",

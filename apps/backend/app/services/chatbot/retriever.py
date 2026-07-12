@@ -16,6 +16,7 @@ from app.models.professor import Professor
 from app.models.professor_ai_summary import ProfessorAiSummary
 from app.models.professor_embedding import ProfessorEmbedding
 from app.services.chatbot.cohere_client import CohereEmbedder
+from app.utils.db import escape_like
 
 logger = logging.getLogger(__name__)
 
@@ -82,14 +83,14 @@ class Retriever:
         return [await self._to_dto(prof, summ) for prof, summ in rows]
 
     async def _textual(self, query: str, top_k: int) -> list[RetrievedProfessor]:
-        like = f"%{query}%"
+        like = f"%{escape_like(query)}%"
         stmt = (
             select(Professor, ProfessorAiSummary)
             .join(ProfessorAiSummary, ProfessorAiSummary.professor_id == Professor.id)
             .where(
                 Professor.is_active.is_(True),
                 Professor.validation_status == "validated",
-                ProfessorAiSummary.summary.ilike(like),
+                ProfessorAiSummary.summary.ilike(like, escape="\\"),
             )
             .order_by(Professor.global_score.desc().nullslast())
             .limit(top_k)
