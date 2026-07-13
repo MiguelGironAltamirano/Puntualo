@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { Plus, AlertCircle, CheckCircle2, User, Search, X } from "lucide-react";
+import { Plus, AlertCircle, CheckCircle2, User, Search, X, SlidersHorizontal } from "lucide-react";
 import { TeacherSummary } from "./types";
 import { SearchAIAnalysis } from "./SearchAIAnalysis";
 import { RegisterTeacherModal } from "./RegisterTeacherModal";
@@ -27,14 +27,16 @@ function mapProfessorToTeacher(professor: ProfessorRead): TeacherSummary {
     };
 }
 
-export default function TeacherCatalog({ 
-    initialQuery, 
+export default function TeacherCatalog({
+    initialQuery,
     filters = {},
-    isSidebarCollapsed = false
-}: { 
+    isSidebarCollapsed = false,
+    onOpenFilters
+}: {
     initialQuery?: string;
     filters?: Record<string, unknown>;
     isSidebarCollapsed?: boolean;
+    onOpenFilters?: () => void;
 }) {
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -94,16 +96,18 @@ export default function TeacherCatalog({
                     </div>
                 )}
 
-               {/* Controles de Acción (Botón y Ordenamiento) */}
+               {/* Controles de Acción: Filtros → Buscador → Agregar profesor → Ordenar */}
                 <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 w-full mb-8 transition-all duration-300 ${isSidebarCollapsed ? 'md:pl-36' : ''}`}>
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 flex-1">
-                        <button
-                            type="button"
-                            onClick={() => setIsRegisterModalOpen(true)}
-                            className="justify-center px-4 py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" strokeWidth={3} /> Agregar nuevo profesor
-                        </button>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+                        {onOpenFilters && (
+                            <button
+                                type="button"
+                                onClick={onOpenFilters}
+                                className="justify-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-[#0284c7] text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer whitespace-nowrap active:scale-95"
+                            >
+                                <SlidersHorizontal className="w-4 h-4" /> Filtros
+                            </button>
+                        )}
 
                         {/* Search Input - Relocated, stylized and longer */}
                         <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 focus-within:border-sky-400 focus-within:ring-2 focus-within:ring-sky-100 transition-all flex-1 max-w-md shadow-sm">
@@ -125,6 +129,14 @@ export default function TeacherCatalog({
                                 </button>
                             )}
                         </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setIsRegisterModalOpen(true)}
+                            className="justify-center px-4 py-2.5 bg-[#c2410c] hover:bg-[#9a3412] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                        >
+                            <Plus className="w-4 h-4" strokeWidth={3} /> Agregar nuevo profesor
+                        </button>
                     </div>
 
                     <div className="text-xs font-semibold text-slate-500 flex items-center justify-between sm:justify-start gap-1.5 border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
