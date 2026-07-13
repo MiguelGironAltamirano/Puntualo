@@ -20,7 +20,8 @@ function NavLogo() {
         alt="Puntualo"
         width={320}
         height={180}
-        priority
+        preload
+        fetchPriority="high"
         className="h-20 w-auto"
       />
     </Link>
