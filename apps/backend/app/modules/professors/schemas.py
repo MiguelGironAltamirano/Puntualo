@@ -36,6 +36,10 @@ class _ProfessorBase(BaseModel):
     validation_status: str
     global_score: float | None = None
     total_evaluations: int = 0
+    avg_clarity: float | None = None
+    avg_easiness: float | None = None
+    avg_helpfulness: float | None = None
+    avg_punctuality: float | None = None
     is_active: bool
     created_at: datetime
     updated_at: datetime

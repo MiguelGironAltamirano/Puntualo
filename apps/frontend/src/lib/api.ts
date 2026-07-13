@@ -82,6 +82,10 @@ export interface ProfessorRead {
   validation_status: string;
   global_score: number | null;
   total_evaluations: number;
+  avg_clarity: number | null;
+  avg_easiness: number | null;
+  avg_helpfulness: number | null;
+  avg_punctuality: number | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

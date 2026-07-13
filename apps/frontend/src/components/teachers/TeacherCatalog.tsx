@@ -10,8 +10,9 @@ import { ProfessorRead, PaginatedResponse } from "@/lib/api";
 type SortBy = 'global_score' | 'total_evaluations' | 'created_at';
 
 /**
- * Maps API ProfessorRead to frontend TeacherSummary
- * Calculates metrics from evaluations data
+ * Maps API ProfessorRead to frontend TeacherSummary.
+ * Las métricas vienen de promedios reales sobre evaluations (null si el
+ * profesor todavía no tiene evaluaciones registradas).
  */
 function mapProfessorToTeacher(professor: ProfessorRead): TeacherSummary {
     return {
@@ -19,9 +20,9 @@ function mapProfessorToTeacher(professor: ProfessorRead): TeacherSummary {
         name: professor.full_name,
         course: `${professor.total_evaluations} evaluaciones`,
         rating: professor.global_score ?? 0,
-        claridad: 3.5,
-        dificultad: 2.5,
-        puntualidad: 4.0,
+        claridad: professor.avg_clarity,
+        dificultad: professor.avg_easiness,
+        puntualidad: professor.avg_punctuality,
         avatar: '', // Will fall back to User icon
         tags: professor.validation_status === 'validated' ? ['VERIFICADO'] : [],
     };
@@ -238,24 +239,25 @@ export default function TeacherCatalog({
                                         </div>
                                     </div>
 
-                                    {/* Metric Bars */}
+                                    {/* Metric Bars — promedios reales; "Sin datos" si el profesor aún no tiene evaluaciones */}
                                     <div className="space-y-3 mb-6">
-                                        <div>
-                                            <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-                                                <span>Claridad</span>
+                                        {([
+                                            { label: 'Claridad', value: prof.claridad, fill: 'bg-[#ff8a00]' },
+                                            { label: 'Facilidad', value: prof.dificultad, fill: 'bg-slate-300' },
+                                        ] as const).map(({ label, value, fill }) => (
+                                            <div key={label}>
+                                                <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
+                                                    <span>{label}</span>
+                                                    <span>{value === null ? 'Sin datos' : value.toFixed(1)}</span>
+                                                </div>
+                                                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`${fill} h-full rounded-full transition-all duration-500`}
+                                                        style={{ width: value === null ? '0%' : `${(value / 5) * 100}%` }}
+                                                    ></div>
+                                                </div>
                                             </div>
-                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                                <div className="bg-[#ff8a00] h-full rounded-full transition-all duration-500" style={{ width: `${(prof.claridad / 5) * 100}%` }}></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-                                                <span>Dificultad</span>
-                                            </div>
-                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                                <div className="bg-slate-300 h-full rounded-full transition-all duration-500" style={{ width: `${(prof.dificultad / 5) * 100}%` }}></div>
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
 
                                     {/* Bottom Row */}
