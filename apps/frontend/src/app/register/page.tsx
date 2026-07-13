@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BookOpen, GraduationCap, IdCard, Lock, Mail, User } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -114,21 +115,21 @@ export default function RegisterPage() {
         <main className="flex min-h-screen items-center justify-center bg-[#f0f9ff] p-4">
             {showCodeModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-6 border border-gray-100">
-                        <h2 className="text-xl font-extrabold text-[#004a7c]">Verifica tu correo</h2>
-                        <p className="text-sm text-gray-500 mt-2">
+                    <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-100">
+                        <h2 className="text-2xl font-extrabold text-[#0f172a]">Verifica tu correo</h2>
+                        <p className="text-base text-gray-500 mt-2">
                             Enviamos un codigo de 6 digitos a <span className="font-semibold text-gray-700">{pendingEmail}</span>.
                         </p>
 
                         {codeError && (
-                            <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                            <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-xl text-sm">
                                 {codeError}
                             </div>
                         )}
 
                         <form onSubmit={handleVerify} className="mt-6 space-y-4">
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Codigo de verificacion</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Codigo de verificacion</label>
                                 <input
                                     type="text"
                                     inputMode="numeric"
@@ -136,7 +137,7 @@ export default function RegisterPage() {
                                     maxLength={6}
                                     required
                                     placeholder="123456"
-                                    className="w-full mt-1 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                    className="w-full mt-1 px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:border-sky-300 text-base text-gray-800 placeholder:text-gray-400"
                                     value={code}
                                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                                 />
@@ -145,8 +146,8 @@ export default function RegisterPage() {
                             <button
                                 type="submit"
                                 disabled={verifyLoading || code.length !== 6}
-                                className={`w-full py-3 text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
-                                    verifyLoading || code.length !== 6 ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#ff8a00] hover:bg-[#e67e00]'
+                                className={`w-full py-3.5 text-white font-bold text-base rounded-full shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 ${
+                                    verifyLoading || code.length !== 6 ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#c2410c] hover:bg-[#9a3412]'
                                 }`}
                             >
                                 {verifyLoading ? 'Verificando...' : 'Validar codigo'}
@@ -156,32 +157,42 @@ export default function RegisterPage() {
                 </div>
             )}
 
-            <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 border border-gray-100">
+            <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 sm:p-10 border border-gray-100">
                 {/* CABECERA: Branding de Puntualo */}
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-extrabold text-[#004a7c]">Puntualo</h1>
-                    <p className="text-sm text-gray-400 mt-1 italic">La guía precisa para tu carrera</p>
+                    <Link href="/" className="inline-flex">
+                        <Image
+                            src="/puntualo_logo.png"
+                            alt="Puntualo"
+                            width={490}
+                            height={200}
+                            priority
+                            fetchPriority="high"
+                            className="h-14 w-auto mx-auto"
+                        />
+                    </Link>
+                    <p className="text-base text-gray-400 mt-2 italic">La guía precisa para tu carrera</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {error && (
-                        <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm mb-4">
+                        <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm mb-4">
                             {error}
                         </div>
                     )}
 
                     {/* BLOQUE: Datos de Identidad */}
                     <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Nombre Completo</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Nombre Completo</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                            <span className="absolute inset-y-0 left-4 flex items-center text-gray-600">
                                 <User className="w-4 h-4" />
                             </span>
                             <input
                                 type="text"
                                 required
                                 placeholder="Juan Pérez"
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:border-sky-300 text-base text-gray-800 placeholder:text-gray-400"
                                 value={fullName}
                                 onChange={(e) => setFullName(e.target.value)}
                             />
@@ -189,16 +200,16 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Nombre de Usuario</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Nombre de Usuario</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                            <span className="absolute inset-y-0 left-4 flex items-center text-gray-600">
                                 <GraduationCap className="w-4 h-4" />
                             </span>
                             <input
                                 type="text"
                                 required
                                 placeholder="estudiante123"
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:border-sky-300 text-base text-gray-800 placeholder:text-gray-400"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                             />
@@ -206,15 +217,15 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">DNI (Opcional)</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">DNI (Opcional)</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                            <span className="absolute inset-y-0 left-4 flex items-center text-gray-600">
                                 <IdCard className="w-4 h-4" />
                             </span>
                             <input
                                 type="text"
                                 placeholder="12345678"
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:border-sky-300 text-base text-gray-800 placeholder:text-gray-400"
                                 value={dni}
                                 onChange={(e) => setDni(e.target.value)}
                             />
@@ -223,9 +234,9 @@ export default function RegisterPage() {
 
                     {/* BLOQUE: Credenciales Universitarias */}
                     <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Correo Universitario</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Correo Universitario</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                            <span className="absolute inset-y-0 left-4 flex items-center text-gray-600">
                                 <Mail className="w-4 h-4" />
                             </span>
                             <input
@@ -233,7 +244,7 @@ export default function RegisterPage() {
                                 required
                                 placeholder="estudiante@unmsm.edu.pe"
                                 pattern=".+@unmsm\.edu\.pe"
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:border-sky-300 text-base text-gray-800 placeholder:text-gray-400"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                             />
@@ -241,16 +252,16 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Contraseña</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Contraseña</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                            <span className="absolute inset-y-0 left-4 flex items-center text-gray-600">
                                 <Lock className="w-4 h-4" />
                             </span>
                             <input
                                 type="password"
                                 required
                                 placeholder="........"
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:border-sky-300 text-base text-gray-800 placeholder:text-gray-400"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
@@ -259,15 +270,15 @@ export default function RegisterPage() {
 
                     {/* BLOQUE: Requerimientos Funcionales (RF-02) */}
                     <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Carrera (Opcional)</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Carrera (Opcional)</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                            <span className="absolute inset-y-0 left-4 flex items-center text-gray-600">
                                 <BookOpen className="w-4 h-4" />
                             </span>
                             <input
                                 type="text"
                                 placeholder="Ingeniería X"
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:border-sky-300 text-base text-gray-800 placeholder:text-gray-400"
                                 value={career}
                                 onChange={(e) => setCareer(e.target.value)}
                             />
@@ -279,7 +290,7 @@ export default function RegisterPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-3 text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98] ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#ff8a00] hover:bg-[#e67e00]'
+                        className={`w-full py-3.5 text-white font-bold text-base rounded-full shadow-md transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#c2410c] hover:bg-[#9a3412]'
                             }`}
                     >
                         {loading ? 'Procesando...' : (
@@ -290,9 +301,9 @@ export default function RegisterPage() {
 
                 {/* PIE DE PÁGINA: Switch a Login */}
                 <div className="text-center mt-8">
-                    <p className="text-[12px] text-gray-500 font-medium">
+                    <p className="text-sm text-gray-500 font-medium">
                         ¿Ya tienes una cuenta en Puntualo?{' '}
-                        <Link href="/login" className="text-[#004a7c] font-bold hover:underline">
+                        <Link href="/login" className="text-[#0284c7] font-bold hover:underline">
                             Inicia sesión
                         </Link>
                     </p>

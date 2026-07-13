@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Mail, Lock } from 'lucide-react';
 
 export default function AuthPage() {
@@ -55,26 +56,36 @@ export default function AuthPage() {
     return (
         <main className="flex min-h-screen items-center justify-center bg-[#f0f9ff] p-4">
 
-            <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 border border-gray-100">
+            <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 sm:p-10 border border-gray-100">
 
                 {/* CABECERA: Branding de Puntualo */}
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-extrabold text-[#004a7c]">Puntualo</h1>
-                    <p className="text-sm text-gray-400 mt-1 italic">La guía precisa para tu carrera</p>
+                    <Link href="/" className="inline-flex">
+                        <Image
+                            src="/puntualo_logo.png"
+                            alt="Puntualo"
+                            width={490}
+                            height={200}
+                            priority
+                            fetchPriority="high"
+                            className="h-14 w-auto mx-auto"
+                        />
+                    </Link>
+                    <p className="text-base text-gray-400 mt-2 italic">La guía precisa para tu carrera</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {error && (
-                        <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm mb-4">
+                        <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm mb-4">
                             {error}
                         </div>
                     )}
 
                     {/* BLOQUE: Credenciales Universitarias (Login) */}
                     <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Correo Universitario</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Correo Universitario</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                            <span className="absolute inset-y-0 left-4 flex items-center text-gray-600">
                                 <Mail className="w-4 h-4" />
                             </span>
                             <input
@@ -83,7 +94,7 @@ export default function AuthPage() {
                                 autoComplete="username"
                                 placeholder="estudiante@unmsm.edu.pe"
                                 pattern=".+@unmsm\.edu\.pe" // Validación de dominio institucional
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:border-sky-300 text-base text-gray-800 placeholder:text-gray-400"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                             />
@@ -91,17 +102,17 @@ export default function AuthPage() {
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Contraseña</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Contraseña</label>
                         <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-600">
+                            <span className="absolute inset-y-0 left-4 flex items-center text-gray-600">
                                 <Lock className="w-4 h-4" />
                             </span>
                             <input
                                 type="password"
                                 required
                                 autoComplete="current-password"
-                                placeholder="........"
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-400 outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                                placeholder="········"
+                                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:border-sky-300 text-base text-gray-800 placeholder:text-gray-400"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
@@ -112,7 +123,7 @@ export default function AuthPage() {
                     <div className="text-right">
                         <Link
                             href="/reset-password"
-                            className="text-[11px] text-[#004a7c] opacity-80 hover:opacity-100 font-semibold transition-opacity"
+                            className="text-sm text-[#0284c7] opacity-80 hover:opacity-100 font-semibold transition-opacity"
                         >
                             Olvidé mi contraseña
                         </Link>
@@ -121,8 +132,8 @@ export default function AuthPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-3 text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98] ${
-                            loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#ff8a00] hover:bg-[#e67e00]'
+                        className={`w-full py-3.5 text-white font-bold text-base rounded-full shadow-md transition-all flex items-center justify-center gap-2 mt-4 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 ${
+                            loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#c2410c] hover:bg-[#9a3412]'
                         }`}
                     >
                         {loading ? 'Accediendo...' : (
@@ -133,9 +144,9 @@ export default function AuthPage() {
 
                 {/* PIE DE PÁGINA: Switch a Registro */}
                 <div className="text-center mt-8">
-                    <p className="text-[12px] text-gray-500 font-medium">
+                    <p className="text-sm text-gray-500 font-medium">
                         ¿Aún no estás en Puntualo?{' '}
-                        <Link href="/register" className="text-[#004a7c] font-bold hover:underline">
+                        <Link href="/register" className="text-[#0284c7] font-bold hover:underline">
                             Crear cuenta
                         </Link>
                     </p>
