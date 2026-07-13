@@ -25,11 +25,11 @@ from app.modules.admin.schemas import (
 
 
 def get_admin_stats(db: Session) -> dict:
+    # Debe medir lo mismo que get_pending_verifications: solicitudes por revisar,
+    # no usuarios sin verificar (un usuario sin carnet enviado no es accionable).
     users_pending: int = db.execute(
-        select(func.count()).select_from(User).where(
-            User.is_verified == False,  # noqa: E712
-            User.role == "student",
-            User.is_active == True,  # noqa: E712
+        select(func.count()).select_from(VerificationRequest).where(
+            VerificationRequest.status == "pending",
         )
     ).scalar_one()
 

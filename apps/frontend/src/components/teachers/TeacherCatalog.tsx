@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { Plus, AlertCircle, CheckCircle2, User, Search, X } from "lucide-react";
+import { Plus, AlertCircle, CheckCircle2, User, Search, X, SlidersHorizontal } from "lucide-react";
 import { TeacherSummary } from "./types";
 import { SearchAIAnalysis } from "./SearchAIAnalysis";
 import { RegisterTeacherModal } from "./RegisterTeacherModal";
@@ -10,8 +10,9 @@ import { ProfessorRead, PaginatedResponse } from "@/lib/api";
 type SortBy = 'global_score' | 'total_evaluations' | 'created_at';
 
 /**
- * Maps API ProfessorRead to frontend TeacherSummary
- * Calculates metrics from evaluations data
+ * Maps API ProfessorRead to frontend TeacherSummary.
+ * Las métricas vienen de promedios reales sobre evaluations (null si el
+ * profesor todavía no tiene evaluaciones registradas).
  */
 function mapProfessorToTeacher(professor: ProfessorRead): TeacherSummary {
     return {
@@ -19,22 +20,24 @@ function mapProfessorToTeacher(professor: ProfessorRead): TeacherSummary {
         name: professor.full_name,
         course: `${professor.total_evaluations} evaluaciones`,
         rating: professor.global_score ?? 0,
-        claridad: 3.5,
-        dificultad: 2.5,
-        puntualidad: 4.0,
+        claridad: professor.avg_clarity,
+        dificultad: professor.avg_easiness,
+        puntualidad: professor.avg_punctuality,
         avatar: '', // Will fall back to User icon
         tags: professor.validation_status === 'validated' ? ['VERIFICADO'] : [],
     };
 }
 
-export default function TeacherCatalog({ 
-    initialQuery, 
+export default function TeacherCatalog({
+    initialQuery,
     filters = {},
-    isSidebarCollapsed = false
-}: { 
+    isSidebarCollapsed = false,
+    onOpenFilters
+}: {
     initialQuery?: string;
     filters?: Record<string, unknown>;
     isSidebarCollapsed?: boolean;
+    onOpenFilters?: () => void;
 }) {
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -94,16 +97,18 @@ export default function TeacherCatalog({
                     </div>
                 )}
 
-               {/* Controles de Acción (Botón y Ordenamiento) */}
+               {/* Controles de Acción: Filtros → Buscador → Agregar profesor → Ordenar */}
                 <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 w-full mb-8 transition-all duration-300 ${isSidebarCollapsed ? 'md:pl-36' : ''}`}>
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 flex-1">
-                        <button
-                            type="button"
-                            onClick={() => setIsRegisterModalOpen(true)}
-                            className="justify-center px-4 py-2.5 bg-[#ff8a00] hover:bg-[#ea580c] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" strokeWidth={3} /> Agregar nuevo profesor
-                        </button>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+                        {onOpenFilters && (
+                            <button
+                                type="button"
+                                onClick={onOpenFilters}
+                                className="justify-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-[#0284c7] text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer whitespace-nowrap active:scale-95"
+                            >
+                                <SlidersHorizontal className="w-4 h-4" /> Filtros
+                            </button>
+                        )}
 
                         {/* Search Input - Relocated, stylized and longer */}
                         <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 focus-within:border-sky-400 focus-within:ring-2 focus-within:ring-sky-100 transition-all flex-1 max-w-md shadow-sm">
@@ -125,6 +130,14 @@ export default function TeacherCatalog({
                                 </button>
                             )}
                         </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setIsRegisterModalOpen(true)}
+                            className="justify-center px-4 py-2.5 bg-[#c2410c] hover:bg-[#9a3412] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                        >
+                            <Plus className="w-4 h-4" strokeWidth={3} /> Agregar nuevo profesor
+                        </button>
                     </div>
 
                     <div className="text-xs font-semibold text-slate-500 flex items-center justify-between sm:justify-start gap-1.5 border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
@@ -226,24 +239,25 @@ export default function TeacherCatalog({
                                         </div>
                                     </div>
 
-                                    {/* Metric Bars */}
+                                    {/* Metric Bars — promedios reales; "Sin datos" si el profesor aún no tiene evaluaciones */}
                                     <div className="space-y-3 mb-6">
-                                        <div>
-                                            <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-                                                <span>Claridad</span>
+                                        {([
+                                            { label: 'Claridad', value: prof.claridad, fill: 'bg-[#ff8a00]' },
+                                            { label: 'Facilidad', value: prof.dificultad, fill: 'bg-slate-300' },
+                                        ] as const).map(({ label, value, fill }) => (
+                                            <div key={label}>
+                                                <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
+                                                    <span>{label}</span>
+                                                    <span>{value === null ? 'Sin datos' : value.toFixed(1)}</span>
+                                                </div>
+                                                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`${fill} h-full rounded-full transition-all duration-500`}
+                                                        style={{ width: value === null ? '0%' : `${(value / 5) * 100}%` }}
+                                                    ></div>
+                                                </div>
                                             </div>
-                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                                <div className="bg-[#ff8a00] h-full rounded-full transition-all duration-500" style={{ width: `${(prof.claridad / 5) * 100}%` }}></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-                                                <span>Dificultad</span>
-                                            </div>
-                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                                <div className="bg-slate-300 h-full rounded-full transition-all duration-500" style={{ width: `${(prof.dificultad / 5) * 100}%` }}></div>
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
 
                                     {/* Bottom Row */}
