@@ -43,6 +43,10 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2 --proxy-headers --forwarded-allow-ips="*"
     env_file:
       - ./apps/backend/.env
+    volumes:
+      # Service account del chatbot para Vertex AI (ADC). Solo el `api` corre el
+      # orchestrator del chatbot; los tasks de Celery no lo usan. Read-only.
+      - /etc/puntualo/puntualo-chatbot-sa.json:/etc/puntualo/puntualo-chatbot-sa.json:ro
     expose:
       - "8000"            # visible solo para Caddy en la red interna; NO publicado
     depends_on:
