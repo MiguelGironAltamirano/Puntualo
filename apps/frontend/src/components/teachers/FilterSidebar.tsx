@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { ProfessorFilterState } from '@/lib/hooks-filters';
-import { useUniversities, useFaculties, useCourses } from '@/lib/hooks-catalogs';
-import { X, ChevronLeft } from 'lucide-react';
+import { useUniversities, useFaculties } from '@/lib/hooks-catalogs';
+import { useDebounce } from '@/lib/hooks';
+import { catalogsAPI, CourseRead } from '@/lib/api';
+import { X, ChevronLeft, GraduationCap, Star, ClipboardList } from 'lucide-react';
 
 interface FilterSidebarProps {
     onFiltersChange?: (filters: Partial<ProfessorFilterState>) => void;
@@ -20,24 +22,73 @@ export default function FilterSidebar({
 }: FilterSidebarProps) {
     const [selectedUniversity, setSelectedUniversity] = useState<number | null>(1);
     const [selectedFaculty, setSelectedFaculty] = useState<number | null>(null);
-    const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
+    const [selectedCourse, setSelectedCourse] = useState<CourseRead | null>(null);
     const [minEvaluations, setMinEvaluations] = useState<number | ''>('');
     const [minScore, setMinScore] = useState(1.0);
     const [minClarity, setMinClarity] = useState(1.0);
     const [minEasiness, setMinEasiness] = useState(1.0);
     const [minHelpfulness, setMinHelpfulness] = useState(1.0);
     const [minPunctuality, setMinPunctuality] = useState(1.0);
-    
+
+    // Buscador de curso: en vez de traer los cursos de la facultad de una
+    // sola vez (con un tope fijo que deja cursos invisibles), se busca en el
+    // backend a medida que se escribe.
+    const [courseSearch, setCourseSearch] = useState('');
+    const debouncedCourseSearch = useDebounce(courseSearch, 300);
+    const [courseResults, setCourseResults] = useState<CourseRead[]>([]);
+    const [loadingCourses, setLoadingCourses] = useState(false);
+    const [showCourseDropdown, setShowCourseDropdown] = useState(false);
+
     // Fetch dropdown data
     const { data: universities } = useUniversities();
     const { data: faculties } = useFaculties(selectedUniversity);
-    const { data: courses } = useCourses(selectedFaculty);
+
+    // Cursos que dicta la facultad elegida, filtrados por lo que se escriba
+    useEffect(() => {
+        if (!selectedFaculty) {
+            setCourseResults([]);
+            return;
+        }
+
+        let cancelled = false;
+        setLoadingCourses(true);
+        catalogsAPI
+            .listCourses({
+                faculty_id: selectedFaculty,
+                page: 1,
+                page_size: 20,
+                q: debouncedCourseSearch || undefined,
+            })
+            .then((data) => {
+                if (!cancelled) setCourseResults(data.items ?? []);
+            })
+            .catch(() => {
+                if (!cancelled) setCourseResults([]);
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingCourses(false);
+            });
+
+        return () => { cancelled = true; };
+    }, [selectedFaculty, debouncedCourseSearch]);
+
+    const selectCourse = (course: CourseRead) => {
+        setSelectedCourse(course);
+        setCourseSearch(course.name);
+        setShowCourseDropdown(false);
+    };
+
+    const clearCourse = () => {
+        setSelectedCourse(null);
+        setCourseSearch('');
+    };
 
     // Reset filters
     const handleReset = () => {
         setSelectedUniversity(1);
         setSelectedFaculty(null);
         setSelectedCourse(null);
+        setCourseSearch('');
         setMinEvaluations('');
         setMinScore(1.0);
         setMinClarity(1.0);
@@ -52,7 +103,7 @@ export default function FilterSidebar({
             const filters: Partial<ProfessorFilterState> = {
                 university_id: selectedUniversity || undefined,
                 faculty_id: selectedFaculty || undefined,
-                course_id: selectedCourse || undefined,
+                course_id: selectedCourse?.id || undefined,
                 min_global_score: minScore > 1.0 ? minScore : undefined,
                 min_clarity: minClarity > 1.0 ? minClarity : undefined,
                 min_easiness: minEasiness > 1.0 ? minEasiness : undefined,
@@ -124,8 +175,8 @@ export default function FilterSidebar({
 
                 {/* Institution Section */}
                 <div className="mb-4">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1.5">
-                        🎓 Institución y Cursos
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                        <GraduationCap className="w-3.5 h-3.5 text-slate-500" strokeWidth={2.5} /> Institución y Cursos
                     </label>
                     <div className="space-y-2">
                         <div>
@@ -136,7 +187,7 @@ export default function FilterSidebar({
                                     const val = Number(e.target.value);
                                     setSelectedUniversity(val || null);
                                     setSelectedFaculty(null);
-                                    setSelectedCourse(null);
+                                    clearCourse();
                                 }}
                                 className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer"
                             >
@@ -153,7 +204,7 @@ export default function FilterSidebar({
                                 onChange={(e) => {
                                     const val = Number(e.target.value);
                                     setSelectedFaculty(val || null);
-                                    setSelectedCourse(null);
+                                    clearCourse();
                                 }}
                                 disabled={!selectedUniversity}
                                 className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
@@ -166,32 +217,68 @@ export default function FilterSidebar({
                                 ))}
                             </select>
                         </div>
-                        <div>
+                        <div className="relative">
                             <span className="text-[9px] font-bold text-slate-400 block mb-1">CURSO</span>
-                            <select 
-                                value={selectedCourse || ''}
-                                onChange={(e) => {
-                                    const val = Number(e.target.value);
-                                    setSelectedCourse(val || null);
-                                }}
-                                disabled={!selectedFaculty}
-                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
-                            >
-                                <option value="">
-                                    {!selectedFaculty ? 'Seleccionar facultad primero' : 'Seleccionar curso...'}
-                                </option>
-                                {courses?.items?.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={courseSearch}
+                                    onChange={(e) => {
+                                        setCourseSearch(e.target.value);
+                                        setSelectedCourse(null);
+                                        setShowCourseDropdown(true);
+                                    }}
+                                    onFocus={() => setShowCourseDropdown(true)}
+                                    onBlur={() => setTimeout(() => setShowCourseDropdown(false), 150)}
+                                    disabled={!selectedFaculty}
+                                    placeholder={!selectedFaculty ? 'Seleccionar facultad primero' : 'Buscar curso por nombre...'}
+                                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-sky-400 shadow-sm disabled:bg-slate-100 disabled:text-slate-400"
+                                />
+                                {selectedCourse && (
+                                    <button
+                                        type="button"
+                                        onClick={clearCourse}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                                        aria-label="Quitar curso seleccionado"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {showCourseDropdown && selectedFaculty && (
+                                <div className="absolute z-10 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                    {loadingCourses && (
+                                        <div className="px-2.5 py-1.5 text-[11px] text-slate-400 font-medium">
+                                            Buscando...
+                                        </div>
+                                    )}
+                                    {!loadingCourses && courseResults.length === 0 && (
+                                        <div className="px-2.5 py-1.5 text-[11px] text-slate-400 font-medium">
+                                            Sin resultados
+                                        </div>
+                                    )}
+                                    {!loadingCourses && courseResults.map(c => (
+                                        <button
+                                            key={c.id}
+                                            type="button"
+                                            onMouseDown={(e) => e.preventDefault()}
+                                            onClick={() => selectCourse(c)}
+                                            className="block w-full text-left px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-800 transition-colors cursor-pointer"
+                                        >
+                                            {c.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
 
                 {/* Score and Metrics Section */}
                 <div className="mb-4 space-y-3">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-0.5">
-                        ⭐ Métricas Mínimas
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
+                        <Star className="w-3.5 h-3.5 text-slate-500" strokeWidth={2.5} /> Métricas Mínimas
                     </label>
 
                     {/* Global Score Slider */}
@@ -282,8 +369,8 @@ export default function FilterSidebar({
 
                 {/* Evaluations Count Section */}
                 <div className="mb-6">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1.5">
-                        📝 Cantidad de Evaluaciones
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                        <ClipboardList className="w-3.5 h-3.5 text-slate-500" strokeWidth={2.5} /> Cantidad de Evaluaciones
                     </label>
                     <div>
                         <div className="flex justify-between text-[9px] font-bold text-slate-400 mb-1">

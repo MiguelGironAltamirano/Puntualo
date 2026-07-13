@@ -236,8 +236,10 @@ export function RegisterTeacherModal({ isOpen, onClose, onCreated }: RegisterTea
                     ? (detail as { code?: string }).code
                     : undefined;
 
-                if (res.status === 403) {
-                    setError('Necesitás verificar tu correo institucional para registrar profesores.');
+                if (res.status === 403 && code === 'USER_NOT_VERIFIED') {
+                    setError('Tu cuenta todavía no está verificada. Si ya enviaste las fotos de tu carnet, tu solicitud está en revisión por un administrador.');
+                } else if (res.status === 403) {
+                    setError('No tenés permisos para registrar profesores.');
                 } else if (res.status === 401) {
                     setError('Tu sesión expiró. Iniciá sesión de nuevo.');
                 } else if (res.status === 409) {

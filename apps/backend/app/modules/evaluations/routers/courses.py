@@ -45,10 +45,12 @@ async def list_courses(
     - page_size: Items per page (1-50)
     """
     service = CourseService(db)
-    
-    # Get base query with filters
-    base_query = service.list_query(q=q, university_id=university_id)
-    
+
+    # Get base query with filters. list_query() applies its own default
+    # ordering (created_at desc) for other callers (chatbot tool) — clear it
+    # here since this endpoint has its own sort_by/sort_order contract.
+    base_query = service.list_query(q=q, university_id=university_id).order_by(None)
+
     # Apply faculty filter if provided
     if faculty_id is not None:
         base_query = base_query.where(Course.faculty_id == faculty_id)

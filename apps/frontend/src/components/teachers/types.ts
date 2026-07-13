@@ -41,9 +41,9 @@ export interface TeacherSummary {
     name: string;
     course: string;
     rating: number;
-    claridad: number;
-    dificultad: number;
-    puntualidad: number;
+    claridad: number | null;
+    dificultad: number | null;
+    puntualidad: number | null;
     avatar: string;
     tags: string[];
 }

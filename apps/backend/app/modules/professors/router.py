@@ -5,6 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.async_session import get_async_db
+from app.models.evaluation import Evaluation
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_user
 from app.modules.professors.dependencies import (
@@ -195,6 +196,32 @@ async def list_professors(
     paginated = query.offset((page - 1) * page_size).limit(page_size)
     items = list((await db.execute(paginated)).scalars().all())
     total_pages = ceil(total / page_size) if total > 0 else 0
+
+    # Promedios reales por métrica, una sola query agregada para toda la página
+    # (evita N+1 y evita mostrar valores inventados en las cards del buscador).
+    professor_ids = [item.id for item in items]
+    averages_by_id: dict = {}
+    if professor_ids:
+        avg_stmt = (
+            select(
+                Evaluation.professor_id,
+                func.avg(Evaluation.clarity).label("clarity"),
+                func.avg(Evaluation.easiness).label("easiness"),
+                func.avg(Evaluation.helpfulness).label("helpfulness"),
+                func.avg(Evaluation.punctuality).label("punctuality"),
+            )
+            .where(Evaluation.professor_id.in_(professor_ids))
+            .group_by(Evaluation.professor_id)
+        )
+        for row in (await db.execute(avg_stmt)).all():
+            averages_by_id[row.professor_id] = row
+
+    for item in items:
+        averages = averages_by_id.get(item.id)
+        item.avg_clarity = float(averages.clarity) if averages else None
+        item.avg_easiness = float(averages.easiness) if averages else None
+        item.avg_helpfulness = float(averages.helpfulness) if averages else None
+        item.avg_punctuality = float(averages.punctuality) if averages else None
 
     schema = ProfessorAdminOut if admin else ProfessorOut
     return {
