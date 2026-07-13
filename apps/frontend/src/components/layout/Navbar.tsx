@@ -18,11 +18,11 @@ function NavLogo() {
       <Image
         src="/puntualo_logo.png"
         alt="Puntualo"
-        width={320}
-        height={180}
+        width={490}
+        height={200}
         preload
         fetchPriority="high"
-        className="h-20 w-auto"
+        className="h-10 sm:h-14 md:h-20 w-auto"
       />
     </Link>
   );
@@ -69,8 +69,8 @@ export function Navbar({ showSearch = false, searchQuery = '', setSearchQuery }:
           <NavLogo />
         </div>
 
-        {/* CENTER: Search — always occupies space to avoid layout shift */}
-        <div className="flex items-center self-center">
+        {/* CENTER: Search — always occupies space to avoid layout shift (desktop only; mobile search lives in the dropdown) */}
+        <div className="hidden md:flex items-center self-center">
           {showSearch ? (
             <form onSubmit={handleSearchSubmit} className="relative flex items-center bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 w-56 lg:w-72 focus-within:border-sky-400 focus-within:bg-white transition-all">
               <Search className="w-3.5 h-3.5 text-slate-400 mr-2 shrink-0" />
