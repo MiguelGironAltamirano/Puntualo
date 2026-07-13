@@ -178,3 +178,6 @@ docker-data/
 
 .venv_wsl/
 /context/
+# Service account key del chatbot (Vertex AI) — NUNCA commitear
+Puntualo Chatbot.json
+*puntualo-chatbot-sa*.json
