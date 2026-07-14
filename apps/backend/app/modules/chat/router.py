@@ -26,8 +26,22 @@ router = APIRouter(tags=["chat"])
 logger = logging.getLogger(__name__)
 
 
+def sse_event(data: str, event: str | None = None) -> str:
+    """Codifica un evento SSE a partir de un payload que puede ser multilínea.
+
+    Cada línea del payload necesita su propio prefijo ``data:``: en SSE la línea
+    en blanco cierra el evento, así que interpolar el texto crudo lo trunca en el
+    primer salto (la respuesta del chatbot es markdown y su lista de profesores
+    quedaba fuera del evento). El cliente reconstruye el texto uniendo con \\n
+    las líneas ``data:`` del evento.
+    """
+    lines = [f"event: {event}"] if event else []
+    lines += [f"data: {line}" for line in data.split("\n")]
+    return "\n".join(lines) + "\n\n"
+
+
 def _friendly_stream_error(exc: Exception) -> str:
-    """Mensaje legible (una sola línea, apto para SSE) para un fallo del LLM.
+    """Mensaje legible para un fallo del LLM.
 
     Distingue el caso de cuota/rate-limit del proveedor (p.ej. Gemini 429
     RESOURCE_EXHAUSTED) de un error genérico, para orientar mejor al usuario.
@@ -65,13 +79,13 @@ async def _stream_answer(
                 db=work_db, user_message=user_message, history=history
             ):
                 chunks.append(chunk)
-                yield f"data: {chunk}\n\n"
+                yield sse_event(chunk)
     except Exception as exc:  # noqa: BLE001 — headers ya enviados; hay que degradar, no propagar
         logger.exception(
             "chat_stream_failed | session=%s | error=%s", session_id, exc
         )
-        yield f"event: error\ndata: {_friendly_stream_error(exc)}\n\n"
-        yield "event: done\ndata: [DONE]\n\n"
+        yield sse_event(_friendly_stream_error(exc), event="error")
+        yield sse_event("[DONE]", event="done")
         return
 
     # Persistir el mensaje del asistente solo si hubo respuesta real.
@@ -81,7 +95,7 @@ async def _stream_answer(
                 session_id, "assistant", "".join(chunks)
             )
             await persist_db.commit()
-    yield "event: done\ndata: [DONE]\n\n"
+    yield sse_event("[DONE]", event="done")
 
 
 def _map_domain_error(exc: Exception) -> None:

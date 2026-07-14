@@ -99,15 +99,30 @@ export async function streamMessage(
   const decoder = new TextDecoder();
   let buffer = '';
   let full = '';
+  let data: string[] = [];
 
-  const handleLine = (raw: string): boolean => {
+  // Un evento SSE puede traer varias líneas `data:` (la respuesta del bot es
+  // markdown multilínea); se unen con \n y la línea en blanco despacha el evento.
+  const dispatch = (): boolean => {
     // returns true if [DONE] reached
-    const line = raw.replace(/\r$/, '');
-    if (!line.startsWith('data:')) return false;
-    const payload = line.slice(5).replace(/^ /, ''); // quita 1 espacio SSE
+    if (data.length === 0) return false;
+    const payload = data.join('\n');
+    data = [];
     if (payload === '[DONE]') return true;
     full += payload;
     cb.onChunk(full);
+    return false;
+  };
+
+  const handleLine = (raw: string): boolean => {
+    const line = raw.replace(/\r$/, '');
+    if (line === '') return dispatch();
+    if (line.startsWith(':')) return false; // comentario/keep-alive
+    const sep = line.indexOf(':');
+    const field = sep === -1 ? line : line.slice(0, sep);
+    let value = sep === -1 ? '' : line.slice(sep + 1);
+    if (value.startsWith(' ')) value = value.slice(1); // quita 1 espacio SSE
+    if (field === 'data') data.push(value);
     return false;
   };
 
@@ -125,8 +140,8 @@ export async function streamMessage(
         }
       }
     }
-    // flush del remanente
-    if (handleLine(buffer)) {
+    // flush del remanente: última línea parcial + evento sin línea en blanco final
+    if (handleLine(buffer) || dispatch()) {
       cb.onDone(full);
       return;
     }
