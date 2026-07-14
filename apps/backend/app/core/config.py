@@ -263,18 +263,11 @@ class Settings:
     SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     SUPABASE_BUCKET_NAME: str = os.getenv("SUPABASE_BUCKET_NAME", "")
 
-    # Verificacion de carnet (calidad minima)
+    # Verificacion de carnet: solo limitamos el tamano del archivo (guarda de
+    # seguridad). No se valida calidad (resolucion/nitidez): cualquier imagen
+    # legible de un tipo aceptado se acepta.
     VERIFICATION_MAX_FILE_SIZE_BYTES: int = int(
         os.getenv("VERIFICATION_MAX_FILE_SIZE_BYTES", str(5 * 1024 * 1024))
-    )
-    VERIFICATION_MIN_WIDTH: int = int(
-        os.getenv("VERIFICATION_MIN_WIDTH", "800")
-    )
-    VERIFICATION_MIN_HEIGHT: int = int(
-        os.getenv("VERIFICATION_MIN_HEIGHT", "600")
-    )
-    VERIFICATION_MIN_SHARPNESS: float = float(
-        os.getenv("VERIFICATION_MIN_SHARPNESS", "10.0")
     )
 
     # --- Tarea 2.6: pesos del score global (hardcoded, no env)
