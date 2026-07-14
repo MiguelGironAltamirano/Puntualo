@@ -6,6 +6,7 @@ import logging
 import ssl
 import unicodedata
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Literal
 
 import httpx
@@ -21,6 +22,11 @@ from app.services.professor_validation.sources.base import (
 import app.utils.cache as _cache_mod
 
 logger = logging.getLogger(__name__)
+
+# Intermediate CA que sistemas.unmsm.edu.pe omite en su cadena TLS (envía por
+# error la cadena de un certificado anterior). Lo aportamos nosotros; ver el
+# encabezado del .pem para el detalle.
+_UNMSM_CA_BUNDLE = str(Path(__file__).parent / "_certs" / "sectigo_public_server_auth_ca_ov_r36.pem")
 
 _ACADEMIC_PREFIXES = {
     "dr.", "dr", "dra.", "dra",
@@ -123,9 +129,12 @@ class UnmsmDirectorySource:
             connect=settings.PIPELINE_TIMEOUT_CONNECT,
         )
         headers = {"User-Agent": settings.UNMSM_USER_AGENT}
-        # UNMSM serves an incomplete TLS chain (missing intermediate). Use the OS
-        # trust store, which performs AIA fetching to recover the missing cert.
+        # UNMSM sirve una cadena TLS incompleta: falta el intermediate del leaf
+        # actual. En Linux `truststore` NO hace AIA fetching (solo macOS/Windows),
+        # así que aportamos el intermediate empaquetado para completar la cadena
+        # contra el trust store del SO.
         ssl_ctx = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ssl_ctx.load_verify_locations(cafile=_UNMSM_CA_BUNDLE)
         all_professors: list[dict] = []
 
         async with httpx.AsyncClient(timeout=timeout, headers=headers, follow_redirects=True, verify=ssl_ctx) as client:
