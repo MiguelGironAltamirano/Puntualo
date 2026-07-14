@@ -243,8 +243,22 @@ class AdminService:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[User], int]:
-        """Get paginated list of users with optional filtering."""
-        stmt = select(User)
+        """Get paginated list of users with optional filtering. Prioritizes users with unresolved reports."""
+        from app.models.report import Report, ReportStatus
+        
+        # Subquery to count unresolved reports per user
+        unresolved_subquery = (
+            select(
+                Comment.user_id,
+                func.count(Report.id).label("unresolved_count")
+            )
+            .join(Report, Comment.id == Report.comment_id)
+            .where(Report.status.in_([ReportStatus.PENDING.value, ReportStatus.UNDER_REVIEW.value]))
+            .group_by(Comment.user_id)
+            .subquery()
+        )
+
+        stmt = select(User).outerjoin(unresolved_subquery, User.id == unresolved_subquery.c.user_id)
         count_stmt = select(func.count(User.id))
 
         filters = []
@@ -268,8 +282,15 @@ class AdminService:
         count_result = await self.db.execute(count_stmt)
         total = count_result.scalar() or 0
 
-        # Get paginated results
-        stmt = stmt.order_by(User.created_at.desc()).limit(page_size).offset((page - 1) * page_size)
+        # Get paginated results ordered by unresolved reports count (desc), then created_at (desc)
+        stmt = (
+            stmt.order_by(
+                func.coalesce(unresolved_subquery.c.unresolved_count, 0).desc(),
+                User.created_at.desc()
+            )
+            .limit(page_size)
+            .offset((page - 1) * page_size)
+        )
         result = await self.db.execute(stmt)
         users = result.scalars().all()
 
