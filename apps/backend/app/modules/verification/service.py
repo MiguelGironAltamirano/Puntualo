@@ -55,22 +55,15 @@ def _validate_image_quality(file_bytes: bytes, content_type: str) -> dict:
             detail="Formato de imagen no permitido",
         )
 
+    # Ya no rechazamos por calidad (resolucion o nitidez): basta con que sea una
+    # imagen legible de un tipo aceptado. Las metricas se siguen calculando y
+    # guardando como metadata para que el administrador las tenga a la vista en la
+    # revision manual, pero no bloquean la subida.
     width, height = image.size
-    if width < settings.VERIFICATION_MIN_WIDTH or height < settings.VERIFICATION_MIN_HEIGHT:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Resolucion demasiado baja",
-        )
 
     gray = image.convert("L")
     edges = gray.filter(ImageFilter.FIND_EDGES)
     variance = ImageStat.Stat(edges).var[0]
-
-    if variance < settings.VERIFICATION_MIN_SHARPNESS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La imagen esta borrosa",
-        )
 
     return {
         "width": width,
