@@ -2,7 +2,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, nullslast, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.utils.db import escape_like
@@ -416,7 +416,14 @@ class ProfessorService:
             "total_evaluations": Professor.total_evaluations,
         }[sort_by]
 
-        order = sort_column.desc() if sort_order == "desc" else sort_column.asc()
+        # global_score es NULL mientras el docente no tenga evaluaciones, y en
+        # Postgres DESC implica NULLS FIRST: sin esto, "Mayor puntaje" encabeza
+        # el listado con los docentes que todavía no tienen puntaje.
+        order = (
+            nullslast(sort_column.desc())
+            if sort_order == "desc"
+            else nullslast(sort_column.asc())
+        )
         return base.order_by(order, Professor.id.desc())
 
     async def list_courses(self, professor_id: str | uuid.UUID) -> list[Course]:
