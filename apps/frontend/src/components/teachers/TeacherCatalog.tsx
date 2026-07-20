@@ -1,11 +1,12 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { Plus, AlertCircle, CheckCircle2, User, Search, X, SlidersHorizontal } from "lucide-react";
+import { Plus, Check, AlertCircle, CheckCircle2, User, Search, X, SlidersHorizontal } from "lucide-react";
 import { TeacherSummary } from "./types";
 import { SearchAIAnalysis } from "./SearchAIAnalysis";
 import { RegisterTeacherModal } from "./RegisterTeacherModal";
 import { useProfessors, useDebounce } from "@/lib/hooks";
 import { ProfessorRead, PaginatedResponse } from "@/lib/api";
+import { useCompareStore, useCompareHydration, mapProfessorToTeacher as mapToCompareTeacher, MAX_COMPARE } from "@/store/useCompareStore";
 
 type SortBy = 'global_score' | 'total_evaluations' | 'created_at';
 
@@ -40,6 +41,11 @@ export default function TeacherCatalog({
     onOpenFilters?: () => void;
 }) {
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+    useCompareHydration();
+    const compareSelected = useCompareStore((s) => s.selected);
+    const toggleCompare = useCompareStore((s) => s.toggle);
+    // Ids como string: la API entrega ids string aunque TeacherSummary.id diga number.
+    const compareIds = useMemo(() => new Set(compareSelected.map(t => String(t.id))), [compareSelected]);
     const [currentPage, setCurrentPage] = useState(1);
     const [sortBy, setSortBy] = useState<SortBy>('global_score');
     const pageSize = 20;
@@ -269,9 +275,36 @@ export default function TeacherCatalog({
                                                 </span>
                                             ))}
                                         </div>
-                                        <div className="w-7 h-7 border border-slate-200 group-hover:border-sky-400 group-hover:bg-sky-50 rounded-full flex items-center justify-center text-slate-400 group-hover:text-[#0284c7] transition-all text-sm font-bold shadow-none">
-                                            +
-                                        </div>
+                                        {(() => {
+                                            const isSelected = compareIds.has(String(prof.id));
+                                            const isFull = !isSelected && compareSelected.length >= MAX_COMPARE;
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        const original = professorsData?.items?.find(p => String(p.id) === String(prof.id));
+                                                        if (original) toggleCompare(mapToCompareTeacher(original));
+                                                    }}
+                                                    disabled={isFull}
+                                                    title={isSelected
+                                                        ? 'Quitar de la comparación'
+                                                        : isFull
+                                                            ? `Máximo ${MAX_COMPARE} profesores en la comparación`
+                                                            : 'Agregar a la comparación'}
+                                                    aria-label={isSelected ? `Quitar a ${prof.name} de la comparación` : `Agregar a ${prof.name} a la comparación`}
+                                                    aria-pressed={isSelected}
+                                                    className={`w-7 h-7 border rounded-full flex items-center justify-center transition-all text-sm font-bold shadow-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${
+                                                        isSelected
+                                                            ? 'border-sky-400 bg-sky-50 text-[#0284c7]'
+                                                            : 'border-slate-200 text-slate-400 hover:border-sky-400 hover:bg-sky-50 hover:text-[#0284c7]'
+                                                    }`}
+                                                >
+                                                    {isSelected ? <Check className="w-4 h-4" strokeWidth={3} /> : <Plus className="w-4 h-4" strokeWidth={2.5} />}
+                                                </button>
+                                            );
+                                        })()}
                                     </div>
                                 </Link>
                             ))}

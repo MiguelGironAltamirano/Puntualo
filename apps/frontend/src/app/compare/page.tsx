@@ -5,41 +5,20 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Navbar } from '@/components/layout/Navbar';
 import { Search, Plus, X, RotateCcw, Loader2, AlertCircle } from 'lucide-react';
-import { Teacher } from '@/components/compare/types';
 import { IASummary } from '@/components/compare/IASummary';
 import { CompareMetrics } from '@/components/compare/CompareMetrics';
 import { StudentReviews } from '@/components/compare/StudentReviews';
 import { useProfessors, useCompareProfessors, useDebounce } from '@/lib/hooks';
-import { ProfessorRead, ProfessorComparisonResponse } from '@/lib/api';
-
-/**
- * Maps API ProfessorRead to compare Teacher type
- */
-function mapProfessorToTeacher(professor: ProfessorRead): Teacher {
-    return {
-        id: professor.id,
-        name: professor.full_name,
-        course: 'Ver en perfil',
-        school: `${professor.total_evaluations} evaluaciones`,
-        rating: professor.global_score ?? 0,
-        difficulty: 3.0, // Placeholder
-        clarity: 3.5, // Placeholder
-        helpfulness: 3.5, // Placeholder
-        punctuality: 4.0, // Placeholder
-        takeAgain: '75%', // Placeholder
-        avatar: '', // Will use default emoji
-        tags: professor.validation_status === 'validated' ? ['Verificado'] : [],
-        reviews: [],
-        aiSummary: {
-            pros: [],
-            contras: []
-        }
-    };
-}
+import { ProfessorComparisonResponse } from '@/lib/api';
+import { useCompareStore, useCompareHydration, mapProfessorToTeacher } from '@/store/useCompareStore';
 
 export default function ComparePage() {
     const router = useRouter();
-    const [selectedTeachers, setSelectedTeachers] = useState<Teacher[]>([]);
+    useCompareHydration();
+    const selectedTeachers = useCompareStore((s) => s.selected);
+    const toggleTeacher = useCompareStore((s) => s.toggle);
+    const removeTeacher = useCompareStore((s) => s.remove);
+    const clearTeachers = useCompareStore((s) => s.clear);
 
     useEffect(() => {
         if (!localStorage.getItem('access_token')) {
@@ -128,7 +107,7 @@ export default function ComparePage() {
                     </div>
                     {displayTeachers.length > 0 && (
                         <button
-                            onClick={() => { setSelectedTeachers([]); }}
+                            onClick={() => { clearTeachers(); }}
                             className="flex items-center gap-2 px-4 py-2 justify-center border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors shadow-sm cursor-pointer w-full sm:w-auto shrink-0"
                         >
                             <RotateCcw className="w-4 h-4 text-slate-400" />
@@ -157,8 +136,8 @@ export default function ComparePage() {
                             <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm relative h-full">
                                 <button 
                                     onClick={() => {
-                                        setSelectedTeachers(prev => prev.filter(t => t.id !== teacher.id));
-                                    }} 
+                                        removeTeacher(teacher.id);
+                                    }}
                                     className="absolute right-4 top-4 p-1.5 bg-slate-50 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
                                 >
                                     <X size={16} />
@@ -207,7 +186,7 @@ export default function ComparePage() {
                                                         <div
                                                             key={t.id}
                                                             onClick={() => {
-                                                                setSelectedTeachers(prev => [...prev, t]);
+                                                                toggleTeacher(t);
                                                                 setSearchQuery('');
                                                             }}
                                                             className="p-3 hover:bg-sky-50 rounded-xl cursor-pointer text-sm font-bold text-slate-800 transition-all text-left"
