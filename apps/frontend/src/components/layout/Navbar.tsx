@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Bell, Search, User, Menu, X } from "lucide-react";
+import { useCompareStore, useCompareHydration } from "@/store/useCompareStore";
 
 interface NavbarProps {
   showSearch?: boolean;
@@ -34,6 +35,8 @@ export function Navbar({ showSearch = false, searchQuery = '', setSearchQuery }:
   const [isAuthMenuOpen, setIsAuthMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hasSession, setHasSession] = useState(false);
+  useCompareHydration();
+  const compareCount = useCompareStore((s) => s.selected.length);
 
   useEffect(() => {
     setHasSession(Boolean(localStorage.getItem('access_token')));
@@ -57,8 +60,15 @@ export function Navbar({ showSearch = false, searchQuery = '', setSearchQuery }:
   const navLinks = [
     { href: '/', label: 'Home', active: isHomeActive, requiresAuth: false },
     { href: '/teachers', label: 'Buscador', active: isBuscadorActive, requiresAuth: true },
-    { href: '/compare', label: 'Comparativo', active: isCompareActive, requiresAuth: true },
+    { href: '/compare', label: 'Comparativo', active: isCompareActive, requiresAuth: true, badge: compareCount },
   ];
+
+  const NavBadge = ({ count }: { count?: number }) =>
+    count ? (
+      <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#0284c7] text-white text-[10px] font-black leading-none align-middle">
+        {count}
+      </span>
+    ) : null;
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-slate-100 h-[88px]">
@@ -93,7 +103,7 @@ export function Navbar({ showSearch = false, searchQuery = '', setSearchQuery }:
         {/* RIGHT: Nav links + Actions */}
         <div className="flex items-stretch justify-end self-stretch">
           <div className="hidden md:flex items-stretch gap-0">
-            {navLinks.map(({ href, label, active, requiresAuth }) => (
+            {navLinks.map(({ href, label, active, requiresAuth, badge }) => (
               <div
                 key={href}
                 className={`flex items-center px-4 border-b-2 transition-colors ${
@@ -113,6 +123,7 @@ export function Navbar({ showSearch = false, searchQuery = '', setSearchQuery }:
                   }`}
                 >
                   {label}
+                  <NavBadge count={badge} />
                 </Link>
               </div>
             ))}
@@ -198,7 +209,7 @@ export function Navbar({ showSearch = false, searchQuery = '', setSearchQuery }:
           )}
 
           <div className="flex flex-col">
-            {navLinks.map(({ href, label, active, requiresAuth }) => (
+            {navLinks.map(({ href, label, active, requiresAuth, badge }) => (
               <Link
                 key={href}
                 href={href}
@@ -214,6 +225,7 @@ export function Navbar({ showSearch = false, searchQuery = '', setSearchQuery }:
                 }`}
               >
                 {label}
+                <NavBadge count={badge} />
               </Link>
             ))}
           </div>
