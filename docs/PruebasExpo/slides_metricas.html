@@ -1,0 +1,363 @@
+<title>Puntualo — Métricas de calidad</title>
+<style>
+  :root{
+    /* neutros con sesgo frío elegidos, no heredados */
+    --bg:#f5f7fa;
+    --surface:#ffffff;
+    --surface-2:#eef2f7;
+    --ink:#0f1620;
+    --ink-2:#3a4656;
+    --muted:#6b7789;
+    --line:#dbe2ea;
+    --accent:#0f8f83;        /* cian atenuado del producto */
+    --accent-soft:#d7efec;
+    /* semánticos reservados para estado / umbral */
+    --good:#1f9d57;
+    --good-soft:#dcf0e4;
+    --warn:#c98a12;
+    --warn-soft:#f6ecd4;
+    --crit:#cf4b3f;
+    --crit-soft:#f6dedb;
+    --seq-hi:#0d7a70;        /* rampa magnitud (hue único) */
+    --seq-lo:#a9d9d3;
+    --shadow:0 1px 2px rgba(15,22,32,.06),0 8px 24px rgba(15,22,32,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0b1017; --surface:#131b26; --surface-2:#0f1620;
+      --ink:#eef2f7; --ink-2:#c2ccd9; --muted:#8794a6; --line:#25303f;
+      --accent:#4fd6c8; --accent-soft:#123833;
+      --good:#54c684; --good-soft:#123021;
+      --warn:#e0b258; --warn-soft:#332812;
+      --crit:#eb7568; --crit-soft:#331916;
+      --seq-hi:#57d3c6; --seq-lo:#1f5a54;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f5f7fa;--surface:#ffffff;--surface-2:#eef2f7;--ink:#0f1620;--ink-2:#3a4656;
+    --muted:#6b7789;--line:#dbe2ea;--accent:#0f8f83;--accent-soft:#d7efec;
+    --good:#1f9d57;--good-soft:#dcf0e4;--warn:#c98a12;--warn-soft:#f6ecd4;
+    --crit:#cf4b3f;--crit-soft:#f6dedb;--seq-hi:#0d7a70;--seq-lo:#a9d9d3;
+    --shadow:0 1px 2px rgba(15,22,32,.06),0 8px 24px rgba(15,22,32,.06);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b1017;--surface:#131b26;--surface-2:#0f1620;--ink:#eef2f7;--ink-2:#c2ccd9;
+    --muted:#8794a6;--line:#25303f;--accent:#4fd6c8;--accent-soft:#123833;
+    --good:#54c684;--good-soft:#123021;--warn:#e0b258;--warn-soft:#332812;
+    --crit:#eb7568;--crit-soft:#331916;--seq-hi:#57d3c6;--seq-lo:#1f5a54;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    font-feature-settings:"tnum" 1;
+    -webkit-font-smoothing:antialiased;
+  }
+  .num{font-variant-numeric:tabular-nums}
+
+  .deck{max-width:1180px;margin:0 auto;padding:clamp(20px,4vw,52px)}
+  .slide{
+    background:var(--surface);border:1px solid var(--line);border-radius:20px;
+    box-shadow:var(--shadow);padding:clamp(22px,3.4vw,44px);
+    margin-bottom:clamp(20px,3vw,36px);
+  }
+
+  /* --- encabezado --- */
+  .eyebrow{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    font-size:.72rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 10px;
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  .eyebrow .sep{color:var(--line)}
+  h1{
+    font-size:clamp(1.9rem,3.8vw,2.9rem);line-height:1.04;letter-spacing:-.02em;
+    font-weight:800;margin:0 0 6px;text-wrap:balance;
+  }
+  .sub{color:var(--ink-2);font-size:clamp(.98rem,1.4vw,1.12rem);max-width:62ch;margin:0}
+
+  /* --- rejilla KPIs --- */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px}
+  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.kpis{grid-template-columns:1fr}}
+  .kpi{
+    background:var(--surface-2);border:1px solid var(--line);border-radius:14px;
+    padding:18px 18px 16px;position:relative;overflow:hidden;
+  }
+  .kpi.hero{grid-column:span 2}
+  @media(max-width:520px){.kpi.hero{grid-column:span 1}}
+  .kpi .label{
+    font-size:.7rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 8px;display:flex;align-items:center;gap:7px;
+  }
+  .kpi .big{
+    font-size:clamp(2.1rem,4.6vw,3.2rem);font-weight:800;line-height:.95;letter-spacing:-.03em;
+  }
+  .kpi .big .unit{font-size:.44em;font-weight:600;color:var(--muted);letter-spacing:0}
+  .kpi .foot{margin:10px 0 0;font-size:.82rem;color:var(--ink-2);line-height:1.3}
+  .kpi.hero .big{font-size:clamp(2.6rem,6vw,4rem)}
+  .kpi.accent{background:var(--accent-soft);border-color:transparent}
+
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:700;
+    padding:3px 9px;border-radius:999px;letter-spacing:.02em;
+  }
+  .pill.good{background:var(--good-soft);color:var(--good)}
+  .pill.warn{background:var(--warn-soft);color:var(--warn)}
+  .pill.crit{background:var(--crit-soft);color:var(--crit)}
+  .pill .g{width:7px;height:7px;border-radius:50%;background:currentColor}
+
+  /* --- barras cobertura --- */
+  .cov{display:grid;grid-template-columns:1.55fr 1fr;gap:clamp(20px,3vw,40px);margin-top:24px;align-items:start}
+  @media(max-width:820px){.cov{grid-template-columns:1fr}}
+  .bars{display:flex;flex-direction:column;gap:11px}
+  .bar-row{display:grid;grid-template-columns:150px 1fr 52px;align-items:center;gap:12px}
+  @media(max-width:520px){.bar-row{grid-template-columns:110px 1fr 44px}}
+  .bar-row .name{font-size:.86rem;color:var(--ink-2);font-weight:600;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar-row .name code{font-family:inherit}
+  /* track = 100% del total, con marco visible y línea de umbral al 70% */
+  .track{
+    position:relative;height:22px;background:var(--surface-2);
+    border:1px solid var(--line);border-radius:6px;overflow:hidden;
+  }
+  .track::after{ /* marca del umbral 70% respecto al total */
+    content:"";position:absolute;top:0;bottom:0;left:70%;width:2px;
+    background:var(--ink);opacity:.32;z-index:2;
+  }
+  .fill{display:block;height:100%;min-width:2px;border-radius:5px 3px 3px 5px;position:relative;z-index:1}
+  .fill.good{background:var(--good)}
+  .fill.warn{background:var(--warn)}
+  .fill.crit{background:var(--crit)}
+  .bar-row .val{font-size:.9rem;font-weight:700;text-align:right}
+  .bar-row.below .name{color:var(--muted)}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0 0;font-size:.78rem;color:var(--muted)}
+  .legend .item{display:flex;align-items:center;gap:7px}
+  .legend .swatch{width:22px;height:9px;border-radius:3px}
+  .legend .swatch.good{background:var(--good)}
+  .legend .swatch.warn{background:var(--warn)}
+  .legend .swatch.crit{background:var(--crit)}
+  .legend .thr{width:2px;height:14px;background:var(--ink);opacity:.4;border-radius:2px}
+
+  .aside h3{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+  .defect{
+    background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--warn);
+    border-radius:10px;padding:13px 15px;margin-bottom:12px;
+  }
+  .defect .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:5px}
+  .defect .id{font-weight:800;font-size:.82rem;letter-spacing:.04em}
+  .defect p{margin:0;font-size:.85rem;color:var(--ink-2);line-height:1.4}
+  .note{margin-top:14px;font-size:.8rem;color:var(--muted);line-height:1.45}
+  .note strong{color:var(--ink-2)}
+
+  /* --- slide 3: decisiones --- */
+  .decisions{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:26px}
+  @media(max-width:820px){.decisions{grid-template-columns:1fr}}
+  .card{
+    background:var(--surface-2);border:1px solid var(--line);border-radius:14px;
+    padding:20px 20px 18px;border-top:3px solid var(--accent);
+  }
+  .card.perf{border-top-color:var(--warn)}
+  .card.rel{border-top-color:var(--good)}
+  .card.cov-c{border-top-color:var(--accent)}
+  .card.ux{border-top-color:var(--good)}
+  .card .head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .card h3{font-size:1.02rem;font-weight:800;letter-spacing:-.01em;margin:0}
+  .card .metric{font-size:.82rem;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+  .card .finding{margin:0 0 12px;font-size:.9rem;color:var(--ink-2);line-height:1.45}
+  .card .decision{
+    display:flex;gap:9px;align-items:flex-start;font-size:.9rem;line-height:1.45;
+    padding-top:11px;border-top:1px dashed var(--line);
+  }
+  .card .decision .arrow{color:var(--accent);font-weight:800;flex:none}
+  .card .decision strong{color:var(--ink)}
+
+  footer.meta{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    margin-top:22px;padding-top:16px;border-top:1px solid var(--line);
+    font-size:.76rem;color:var(--muted);
+  }
+  footer.meta .brand{font-weight:800;letter-spacing:-.01em;color:var(--ink)}
+  .src{font-size:.72rem;color:var(--muted);margin:18px 0 0}
+</style>
+
+<div class="deck">
+
+  <!-- ================= SLIDE 1 ================= -->
+  <section class="slide" aria-label="Slide 1 — Panorama de calidad">
+    <p class="eyebrow"><span class="dot"></span> Puntualo · Métricas de calidad <span class="sep">/</span> Slide 1 de 3 <span class="sep">/</span> medido 15 jul 2026</p>
+    <h1>La suite está 100&nbsp;% verde y el rendimiento aguanta la carga</h1>
+    <p class="sub">Panorama de la calidad medida: pruebas automatizadas, aceptación de extremo a extremo, componentes de frontend, rendimiento bajo carga y satisfacción de usuario.</p>
+
+    <div class="kpis">
+      <div class="kpi hero accent">
+        <p class="label">Suite backend (pytest)</p>
+        <div class="big num">96 <span class="unit">passed</span></div>
+        <p class="foot"><span class="pill good"><span class="g"></span>0 failed</span> &nbsp; 29 skipped (esqueletos) · 100&nbsp;% verde de lo ejecutado</p>
+      </div>
+
+      <div class="kpi">
+        <p class="label">Cobertura de líneas</p>
+        <div class="big num">51<span class="unit">%</span></div>
+        <p class="foot">Global. Módulos críticos ya sobre umbral (detalle en slide 2).</p>
+      </div>
+
+      <div class="kpi">
+        <p class="label">Satisfacción · SUS</p>
+        <div class="big num">87.5</div>
+        <p class="foot"><span class="pill good"><span class="g"></span>Excelente</span> &nbsp; &gt;68 = sobre el promedio</p>
+      </div>
+
+      <div class="kpi">
+        <p class="label">e2e · Playwright</p>
+        <div class="big num">3<span class="unit">/3</span></div>
+        <p class="foot">Login: render · inválido→error · válido→/teachers</p>
+      </div>
+
+      <div class="kpi">
+        <p class="label">Componentes · Vitest</p>
+        <div class="big num">8<span class="unit">/8</span></div>
+        <p class="foot">Pagination · ResultsInfo · useAuthStore</p>
+      </div>
+
+      <div class="kpi">
+        <p class="label">Latencia p95 · carga</p>
+        <div class="big num">1.4<span class="unit">s</span></div>
+        <p class="foot">Locust · 50 usuarios · cache caliente</p>
+      </div>
+
+      <div class="kpi">
+        <p class="label">Tasa de error · carga</p>
+        <div class="big num">0<span class="unit">%</span></div>
+        <p class="foot"><span class="pill warn"><span class="g"></span>1% en frío</span> &nbsp; 14.64 req/s de throughput</p>
+      </div>
+    </div>
+
+    <footer class="meta">
+      <span class="brand">Puntualo · QA</span>
+      <span>Reportes: <code>reports/</code> (junit.xml, coverage/) · Locust: <code>results/reporte.html</code></span>
+    </footer>
+  </section>
+
+  <!-- ================= SLIDE 2 ================= -->
+  <section class="slide" aria-label="Slide 2 — Cobertura por módulo y defectos">
+    <p class="eyebrow"><span class="dot"></span> Puntualo · Métricas de calidad <span class="sep">/</span> Slide 2 de 3 <span class="sep">/</span> cobertura y defectos</p>
+    <h1>Cobertura concentrada donde está el riesgo</h1>
+    <p class="sub">Los módulos críticos (seguridad, autenticación, rate&nbsp;limiter, moderación) ya superan el umbral. El déficit se concentra en servicios aún sin suite propia — la prioridad de la próxima iteración.</p>
+
+    <div class="cov">
+      <div>
+        <div class="bars" role="img" aria-label="Cobertura de líneas por módulo, de mayor a menor, sobre un total de 100 por ciento">
+          <div class="bar-row">
+            <span class="name"><code>core/security</code></span>
+            <span class="track"><span class="fill good" style="width:100%"></span></span>
+            <span class="val num">100%</span>
+          </div>
+          <div class="bar-row">
+            <span class="name"><code>rate_limiter</code></span>
+            <span class="track"><span class="fill good" style="width:94%"></span></span>
+            <span class="val num">94%</span>
+          </div>
+          <div class="bar-row">
+            <span class="name"><code>auth/schemas</code></span>
+            <span class="track"><span class="fill good" style="width:90%"></span></span>
+            <span class="val num">90%</span>
+          </div>
+          <div class="bar-row">
+            <span class="name"><code>auth/router</code></span>
+            <span class="track"><span class="fill good" style="width:88%"></span></span>
+            <span class="val num">88%</span>
+          </div>
+          <div class="bar-row">
+            <span class="name"><code>moderation</code></span>
+            <span class="track"><span class="fill good" style="width:70%"></span></span>
+            <span class="val num">70%</span>
+          </div>
+          <div class="bar-row below">
+            <span class="name"><code>auth/service</code></span>
+            <span class="track"><span class="fill warn" style="width:47%"></span></span>
+            <span class="val num">47%</span>
+          </div>
+          <div class="bar-row below">
+            <span class="name"><code>report_service</code></span>
+            <span class="track"><span class="fill crit" style="width:31%"></span></span>
+            <span class="val num">31%</span>
+          </div>
+          <div class="bar-row below">
+            <span class="name"><code>professors/service</code></span>
+            <span class="track"><span class="fill crit" style="width:26%"></span></span>
+            <span class="val num">26%</span>
+          </div>
+        </div>
+        <div class="legend">
+          <span class="item"><span class="swatch good"></span> ≥ 70% (sobre umbral)</span>
+          <span class="item"><span class="swatch warn"></span> 40–69%</span>
+          <span class="item"><span class="swatch crit"></span> &lt; 40%</span>
+          <span class="item"><span class="thr"></span> Umbral 70% · track = 100% del total</span>
+        </div>
+      </div>
+
+      <aside class="aside">
+        <h3>Defectos abiertos · densidad 2</h3>
+        <div class="defect">
+          <div class="top"><span class="id">D-1</span><span class="pill warn"><span class="g"></span>Media · observado</span></div>
+          <p>500s intermitentes (~1%) en endpoints de BD con cache frío bajo carga. Mitigación: precalentar cache + ampliar pool.</p>
+        </div>
+        <div class="defect">
+          <div class="top"><span class="id">D-2</span><span class="pill warn"><span class="g"></span>Media · observado</span></div>
+          <p>Degradación de latencia por pool de 14 conexiones. Decisión: subir workers Uvicorn y <code>DB_POOL_SIZE</code>.</p>
+        </div>
+        <p class="note"><strong>Cuello de botella:</strong> la BD. Ambos defectos apuntan al mismo origen y desaparecen con cache caliente — riesgo acotado y con plan de mitigación.</p>
+      </aside>
+    </div>
+
+    <footer class="meta">
+      <span class="brand">Puntualo · QA</span>
+      <span>Fuente: pytest-cov · 125 casos (96/29/0) · <code>test_report_service.py</code> excluido (fixtures desalineadas)</span>
+    </footer>
+  </section>
+
+  <!-- ================= SLIDE 3 ================= -->
+  <section class="slide" aria-label="Slide 3 — Interpretación y decisiones">
+    <p class="eyebrow"><span class="dot"></span> Puntualo · Métricas de calidad <span class="sep">/</span> Slide 3 de 3 <span class="sep">/</span> interpretación y decisiones</p>
+    <h1>De la métrica a la decisión</h1>
+    <p class="sub">Cada número traducido en una acción concreta. El riesgo está acotado y priorizado; no hay bloqueantes para la entrega.</p>
+
+    <div class="decisions">
+      <div class="card perf">
+        <div class="head"><h3>Rendimiento</h3><span class="metric">p95 1.4 s · 14.64 req/s</span></div>
+        <p class="finding">El cuello de botella es la BD: pool de 14 conexiones. La latencia se degrada en los endpoints que la tocan.</p>
+        <p class="decision"><span class="arrow">→</span><span>Subir workers de Uvicorn y <strong>DB_POOL_SIZE</strong>; cachear los listados pesados.</span></p>
+      </div>
+
+      <div class="card rel">
+        <div class="head"><h3>Fiabilidad</h3><span class="metric">0% error · 1% en frío</span></div>
+        <p class="finding">Los 500s solo aparecen con cache frío (~1%). Con cache caliente, 0% de error sobre 50 usuarios.</p>
+        <p class="decision"><span class="arrow">→</span><span><strong>Precalentar el cache</strong> en el deploy para eliminar el pico inicial.</span></p>
+      </div>
+
+      <div class="card cov-c">
+        <div class="head"><h3>Cobertura</h3><span class="metric">51% global</span></div>
+        <p class="finding">Los módulos de mayor riesgo ya están cubiertos. El déficit está en servicios aún sin suite propia y tareas Celery.</p>
+        <p class="decision"><span class="arrow">→</span><span>Priorizar casos de <strong>report_service</strong> y <strong>professors/service</strong> en la próxima iteración.</span></p>
+      </div>
+
+      <div class="card ux">
+        <div class="head"><h3>Usabilidad</h3><span class="metric">SUS 87.5 · 1.0 errores</span></div>
+        <p class="finding">SUS 87.5/100 ("Excelente") valida los flujos del estudiante; los errores de usuario son bajos.</p>
+        <p class="decision"><span class="arrow">→</span><span><strong>Sin acción urgente.</strong> Mantener los flujos actuales y monitorear.</span></p>
+      </div>
+    </div>
+
+    <footer class="meta">
+      <span class="brand">Puntualo · QA</span>
+      <span>Interpretación completa en §7.3 de <code>07_documentacion_y_metricas.md</code></span>
+    </footer>
+  </section>
+
+  <p class="src">Valores medidos el 2026-07-15 (§7.2–7.3 de <code>07_documentacion_y_metricas.md</code>). Barras de cobertura a escala 0–100% del total.</p>
+</div>
