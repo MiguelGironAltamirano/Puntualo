@@ -71,7 +71,7 @@ async def get_pending_moderation(
 
 
 @router.get(
-    "/moderation/comments/{comment_id}",
+    "/moderation/{comment_id}",
     response_model=CommentModerationDetail,
     dependencies=[Depends(require_admin)],
 )
@@ -85,7 +85,7 @@ async def get_comment_detail(
 
 
 @router.post(
-    "/moderation/comments/{comment_id}/decide",
+    "/moderation/{comment_id}/decide",
     response_model=ModerationActionResponse,
     dependencies=[Depends(require_admin)],
 )
