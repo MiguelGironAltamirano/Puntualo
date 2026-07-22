@@ -239,4 +239,4 @@ class TestProfessorsAPI:
 
     @pytest.mark.skip(reason="Pendiente de implementación (requiere cliente HTTP autenticado)")
     async def test_professor_not_found(self):
-        """Un id inexistente devuelve 404."""
+        """CP-API-05 · Integración · Pruebas de API · Ninguno · Ninguna · 1. GET /professors/{uuid_aleatorio} · 404 Not Found"""

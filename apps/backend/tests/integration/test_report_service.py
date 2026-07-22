@@ -22,7 +22,7 @@ class TestReportService:
 
     @pytest.mark.asyncio
     async def test_create_report_success(self, test_db: AsyncSession, test_comment: Comment, test_user):
-        """Test successful report creation."""
+        """R1 · Integración · Tabla de decisión · Ninguno · Rate OK = Sí, No abusador = Sí, Comentario existe = Sí · 1. Invocar create en ReportService · Reporte creado exitosamente"""
         service = ReportService(test_db)
         
         # Mock rate limiter to allow
@@ -30,8 +30,10 @@ class TestReportService:
             with patch.object(service.rate_limiter, 'record') as mock_record:
                 with patch.object(service.abuse_detector, 'check') as mock_abuse:
                     with patch.object(service, '_calculate_weighted_score') as mock_score:
-                        mock_check.return_value = AsyncMock(allowed=True, remaining=9)()
-                        mock_check.return_value.allowed = True
+                        mock_status = AsyncMock()
+                        mock_status.allowed = True
+                        mock_status.remaining = 9
+                        mock_check.return_value = mock_status
                         mock_abuse.return_value = False
                         mock_score.return_value = 0.5
                         
@@ -48,7 +50,7 @@ class TestReportService:
 
     @pytest.mark.asyncio
     async def test_create_report_rate_limited(self, test_db: AsyncSession, test_comment: Comment, test_user):
-        """Test that rate limit is enforced."""
+        """R2 · Integración · Tabla de decisión · Ninguno · Rate OK = No · 1. Invocar create en ReportService · Lanza ReportRateLimitError"""
         service = ReportService(test_db)
         
         with patch.object(service.rate_limiter, 'check') as mock_check:
@@ -66,7 +68,7 @@ class TestReportService:
 
     @pytest.mark.asyncio
     async def test_create_report_abuse_detected(self, test_db: AsyncSession, test_comment: Comment, test_user):
-        """Test that abuse is detected and blocks report."""
+        """R3 · Integración · Tabla de decisión · Ninguno · No abusador = No · 1. Invocar create en ReportService · Lanza ReportAbuseDetectedError"""
         service = ReportService(test_db)
         
         with patch.object(service.rate_limiter, 'check') as mock_check:
@@ -86,7 +88,7 @@ class TestReportService:
 
     @pytest.mark.asyncio
     async def test_create_report_comment_not_found(self, test_db: AsyncSession, test_user):
-        """Test that non-existent comment raises error."""
+        """R4 · Integración · Tabla de decisión · Ninguno · Comentario existe = No · 1. Invocar create en ReportService · Lanza CommentNotFoundError"""
         service = ReportService(test_db)
         
         with patch.object(service.rate_limiter, 'check') as mock_check:
@@ -106,7 +108,7 @@ class TestReportService:
 
     @pytest.mark.asyncio
     async def test_create_report_escalates_on_high_score(self, test_db: AsyncSession, test_comment: Comment, test_user):
-        """Test that comment is escalated when weighted score >= threshold."""
+        """CP-CMT-02 / CP-RB-01 · Integración · Transición de estados / Basado en riesgo · R1 difamación · Comentario publicado y score reportes >= umbral · 1. Registrar reporte con score alto · Comentario pasa a estado HIDDEN_PENDING_REVIEW y se escala"""
         service = ReportService(test_db)
         
         with patch.object(service.rate_limiter, 'check') as mock_check:
@@ -134,7 +136,7 @@ class TestReportService:
 
     @pytest.mark.asyncio
     async def test_weighted_score_calculation(self, test_db: AsyncSession, test_comment: Comment, test_user):
-        """Test weighted score calculation for different reasons."""
+        """CP-WB-01 / CP-WB-02 / CP-WB-03 · Integración · Cobertura de sentencias · Ninguno · Reportes con diversos pesos de toxicidad · 1. Calcular score ponderado del comentario · score = sumatoria de pesos de reportes acumulados (ej. 2.5)"""
         service = ReportService(test_db)
         
         # Create reports with different reasons

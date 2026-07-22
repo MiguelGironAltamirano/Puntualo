@@ -17,7 +17,7 @@ pytestmark = pytest.mark.skip(reason="Pendiente de implementación")
 
 class TestPaginationAPI:
     async def test_respects_page_size(self):
-        """page_size limita la cantidad de items devueltos."""
+        """CP-API-04 · Integración · Pruebas de API · Ninguno · Múltiples evaluaciones registradas · 1. GET /evaluations?page=1&page_size=20 · 200 OK + lista de máximo 20 items"""
 
     async def test_navigates_pages(self):
         """Cambiar page devuelve el siguiente bloque de items."""

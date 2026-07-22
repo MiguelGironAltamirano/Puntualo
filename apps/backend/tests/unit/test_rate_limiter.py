@@ -11,7 +11,7 @@ class TestReportRateLimiter:
 
     @pytest.mark.asyncio
     async def test_first_report_allowed(self):
-        """Test that first report is always allowed."""
+        """CP-RL-01 · Unitario · Valores límite · Ninguno · 0 reportes previos · 1. Invocar check en ReportRateLimiter · Permitido, remaining = 9"""
         limiter = ReportRateLimiter(max_reports_per_hour=10)
         
         with patch('app.utils.rate_limiter.redis_client') as mock_redis:
@@ -25,7 +25,7 @@ class TestReportRateLimiter:
 
     @pytest.mark.asyncio
     async def test_within_limit(self):
-        """Test that reports within limit are allowed."""
+        """CP-RL-02 · Unitario · Valores límite · Ninguno · 5 reportes previos · 1. Invocar check en ReportRateLimiter · Permitido, remaining = 4"""
         limiter = ReportRateLimiter(max_reports_per_hour=10)
         now = time.time()
         
@@ -47,7 +47,7 @@ class TestReportRateLimiter:
 
     @pytest.mark.asyncio
     async def test_rate_limit_exceeded(self):
-        """Test that rate limit is enforced."""
+        """CP-RL-03 · Unitario · Valores límite · Ninguno · 3 reportes previos (límite alcanzado) · 1. Invocar check en ReportRateLimiter · Bloqueado, allowed = False"""
         limiter = ReportRateLimiter(max_reports_per_hour=3)
         now = time.time()
         

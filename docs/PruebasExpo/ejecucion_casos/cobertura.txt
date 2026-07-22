@@ -1,0 +1,306 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.6, pytest-9.0.3, pluggy-1.6.0 -- /home/nicolas/Github-repos/Repos/Puntualo/apps/backend/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/nicolas/Github-repos/Repos/Puntualo/apps/backend
+configfile: pytest.ini
+plugins: anyio-4.13.0, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 131 items
+
+apps/backend/tests/integration/test_access_control.py::TestAccessControl::test_protected_route_without_token_returns_401 SKIPPED [  0%]
+apps/backend/tests/integration/test_access_control.py::TestAccessControl::test_write_endpoint_without_token_returns_401 SKIPPED [  1%]
+apps/backend/tests/integration/test_access_control.py::TestAccessControl::test_insufficient_role_returns_403 SKIPPED [  2%]
+apps/backend/tests/integration/test_auth_api.py::TestAuthAPI::test_register_new_user PASSED [  3%]
+apps/backend/tests/integration/test_auth_api.py::TestAuthAPI::test_register_non_institutional_email_rejected PASSED [  3%]
+apps/backend/tests/integration/test_auth_api.py::TestAuthAPI::test_register_duplicate_email_rejected PASSED [  4%]
+apps/backend/tests/integration/test_auth_api.py::TestAuthAPI::test_login_valid_credentials_returns_token PASSED [  5%]
+apps/backend/tests/integration/test_auth_api.py::TestAuthAPI::test_login_invalid_password_rejected PASSED [  6%]
+apps/backend/tests/integration/test_auth_api.py::TestAuthAPI::test_login_unknown_user_rejected PASSED [  6%]
+apps/backend/tests/integration/test_auth_api.py::TestAuthAPI::test_refresh_token_flow PASSED [  7%]
+apps/backend/tests/integration/test_auth_api.py::TestAuthAPI::test_refresh_with_invalid_token_rejected PASSED [  8%]
+apps/backend/tests/integration/test_auth_api.py::TestAuthAPI::test_me_requires_authentication PASSED [  9%]
+apps/backend/tests/integration/test_auth_api.py::TestAuthAPI::test_me_returns_current_user_with_token PASSED [  9%]
+apps/backend/tests/integration/test_cache.py::TestCache::test_miss_then_hit SKIPPED [ 10%]
+apps/backend/tests/integration/test_cache.py::TestCache::test_ttl_expiry SKIPPED [ 11%]
+apps/backend/tests/integration/test_cache.py::TestCache::test_invalidation SKIPPED [ 12%]
+apps/backend/tests/integration/test_catalogs_courses_api.py::TestCatalogsCoursesAPI::test_list_courses_sorted_by_name_ignores_insertion_order PASSED [ 12%]
+apps/backend/tests/integration/test_catalogs_courses_api.py::TestCatalogsCoursesAPI::test_list_courses_respects_page_size PASSED [ 13%]
+apps/backend/tests/integration/test_catalogs_courses_api.py::TestCatalogsCoursesAPI::test_list_universities SKIPPED [ 14%]
+apps/backend/tests/integration/test_catalogs_courses_api.py::TestCatalogsCoursesAPI::test_empty_catalog_returns_empty_list SKIPPED [ 15%]
+apps/backend/tests/integration/test_comments_flow.py::TestCommentsFlow::test_valid_comment_is_published SKIPPED [ 16%]
+apps/backend/tests/integration/test_comments_flow.py::TestCommentsFlow::test_flagged_comment_is_held SKIPPED [ 16%]
+apps/backend/tests/integration/test_comments_flow.py::TestCommentsFlow::test_comment_status_transitions SKIPPED [ 17%]
+apps/backend/tests/integration/test_moderation_db.py::TestModerationWithDB::test_banned_term_increases_score_or_blocks SKIPPED [ 18%]
+apps/backend/tests/integration/test_moderation_db.py::TestModerationWithDB::test_l33t_speak_matches_banned_term SKIPPED [ 19%]
+apps/backend/tests/integration/test_moderation_db.py::TestModerationWithDB::test_clean_comment_passes_with_db SKIPPED [ 19%]
+apps/backend/tests/integration/test_pagination_api.py::TestPaginationAPI::test_respects_page_size SKIPPED [ 20%]
+apps/backend/tests/integration/test_pagination_api.py::TestPaginationAPI::test_navigates_pages SKIPPED [ 21%]
+apps/backend/tests/integration/test_pagination_api.py::TestPaginationAPI::test_out_of_range_page_returns_empty SKIPPED [ 22%]
+apps/backend/tests/integration/test_professors_api.py::TestProfessorsAPI::test_list_professors_paginated PASSED [ 22%]
+apps/backend/tests/integration/test_professors_api.py::TestProfessorsAPI::test_list_computes_real_metric_averages PASSED [ 23%]
+apps/backend/tests/integration/test_professors_api.py::TestProfessorsAPI::test_search_by_name SKIPPED [ 24%]
+apps/backend/tests/integration/test_professors_api.py::TestProfessorsAPI::test_professor_detail SKIPPED [ 25%]
+apps/backend/tests/integration/test_professors_api.py::TestProfessorsAPI::test_professor_not_found SKIPPED [ 25%]
+apps/backend/tests/integration/test_report_service.py::TestReportService::test_create_report_success PASSED [ 26%]
+apps/backend/tests/integration/test_report_service.py::TestReportService::test_create_report_rate_limited PASSED [ 27%]
+apps/backend/tests/integration/test_report_service.py::TestReportService::test_create_report_abuse_detected PASSED [ 28%]
+apps/backend/tests/integration/test_report_service.py::TestReportService::test_create_report_comment_not_found PASSED [ 29%]
+apps/backend/tests/integration/test_report_service.py::TestReportService::test_create_report_escalates_on_high_score PASSED [ 29%]
+apps/backend/tests/integration/test_report_service.py::TestReportService::test_weighted_score_calculation PASSED [ 30%]
+apps/backend/tests/smoke/test_smoke.py::TestSmoke::test_app_starts PASSED [ 31%]
+apps/backend/tests/smoke/test_smoke.py::TestSmoke::test_health_db_responds_200 PASSED [ 32%]
+apps/backend/tests/smoke/test_smoke.py::TestSmoke::test_openapi_available PASSED [ 32%]
+apps/backend/tests/unit/test_admin_stats.py::test_unverified_user_without_request_does_not_count PASSED [ 33%]
+apps/backend/tests/unit/test_admin_stats.py::test_pending_request_counts_and_matches_listing PASSED [ 34%]
+apps/backend/tests/unit/test_admin_stats.py::test_approved_request_clears_counter_and_listing PASSED [ 35%]
+apps/backend/tests/unit/test_chat_sse_encoding.py::test_multiline_chunk_survives_round_trip PASSED [ 35%]
+apps/backend/tests/unit/test_chat_sse_encoding.py::test_every_payload_line_is_prefixed PASSED [ 36%]
+apps/backend/tests/unit/test_chat_sse_encoding.py::test_named_event PASSED [ 37%]
+apps/backend/tests/unit/test_chat_sse_encoding.py::test_round_trip_preserves_text[una sola l\xednea] PASSED [ 38%]
+apps/backend/tests/unit/test_chat_sse_encoding.py::test_round_trip_preserves_text[l\xednea\ncon salto] PASSED [ 38%]
+apps/backend/tests/unit/test_chat_sse_encoding.py::test_round_trip_preserves_text[\nempieza con salto] PASSED [ 39%]
+apps/backend/tests/unit/test_chat_sse_encoding.py::test_round_trip_preserves_text[termina con salto\n] PASSED [ 40%]
+apps/backend/tests/unit/test_chatbot_grounding.py::test_professors_mentioned_in_encuentra_nombre_exacto PASSED [ 41%]
+apps/backend/tests/unit/test_chatbot_grounding.py::test_sin_known_professors_no_toca_la_db PASSED [ 41%]
+apps/backend/tests/unit/test_chatbot_grounding.py::test_agrega_advertencia_si_profesor_no_dicta_el_curso_mencionado PASSED [ 42%]
+apps/backend/tests/unit/test_chatbot_grounding.py::test_no_agrega_advertencia_si_el_profesor_si_dicta_el_curso PASSED [ 43%]
+apps/backend/tests/unit/test_chatbot_grounding.py::test_check_grounding_detecta_profesor_inventado PASSED [ 44%]
+apps/backend/tests/unit/test_chatbot_grounding.py::test_check_grounding_profesor_real_citado_de_memoria_se_valida_por_curso PASSED [ 45%]
+apps/backend/tests/unit/test_chatbot_grounding.py::test_check_grounding_reporta_ungrounded_y_cursos PASSED [ 45%]
+apps/backend/tests/unit/test_chatbot_grounding.py::test_correction_instruction_nombra_profesor_y_curso PASSED [ 46%]
+apps/backend/tests/unit/test_chatbot_grounding.py::test_sin_curso_mencionado_no_agrega_advertencia PASSED [ 47%]
+apps/backend/tests/unit/test_chatbot_stream_loop.py::test_respuesta_sin_tools_usa_una_sola_llamada PASSED [ 48%]
+apps/backend/tests/unit/test_chatbot_stream_loop.py::test_ronda_de_tool_y_luego_respuesta PASSED [ 48%]
+apps/backend/tests/unit/test_chatbot_stream_loop.py::test_429_reintenta_y_luego_responde PASSED [ 49%]
+apps/backend/tests/unit/test_chatbot_stream_loop.py::test_429_persistente_devuelve_mensaje_amigable PASSED [ 50%]
+apps/backend/tests/unit/test_chatbot_stream_loop.py::test_error_no_429_se_propaga PASSED [ 51%]
+apps/backend/tests/unit/test_chatbot_stream_loop.py::test_grounding_gate_pide_correccion_y_emite_la_version_corregida PASSED [ 51%]
+apps/backend/tests/unit/test_chatbot_stream_loop.py::test_grounding_gate_correccion_fallida_anexa_advertencia PASSED [ 52%]
+apps/backend/tests/unit/test_chatbot_stream_loop.py::test_grounding_gate_no_interviene_si_el_profesor_dicta_el_curso PASSED [ 53%]
+apps/backend/tests/unit/test_chatbot_stream_loop.py::test_max_rounds_agotado_cae_a_stream_final PASSED [ 54%]
+apps/backend/tests/unit/test_hashtag_normalizer.py::TestHashtagNormalizer::test_lowercase_and_strip SKIPPED [ 54%]
+apps/backend/tests/unit/test_hashtag_normalizer.py::TestHashtagNormalizer::test_accents_removed SKIPPED [ 55%]
+apps/backend/tests/unit/test_hashtag_normalizer.py::TestHashtagNormalizer::test_duplicates_collapse_to_same_key SKIPPED [ 56%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_allow_clean_comment PASSED [ 57%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_banned_term_detection PASSED [ 58%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_email_pattern_detection PASSED [ 58%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_url_pattern_detection PASSED [ 59%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_zero_width_chars_detection PASSED [ 60%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_excessive_caps_scoring PASSED [ 61%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_repeated_chars_scoring PASSED [ 61%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_phone_pattern_detection PASSED [ 62%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_l33t_speak_no_score_without_db PASSED [ 63%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_gibberish_detection PASSED [ 64%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_cumulative_violations PASSED [ 64%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_normal_comment_with_numbers PASSED [ 65%]
+apps/backend/tests/unit/test_moderation.py::TestHeuristicFilter::test_normal_comment_with_punctuation PASSED [ 66%]
+apps/backend/tests/unit/test_pagination.py::TestPaginationHelper::test_offset_limit_computed SKIPPED [ 67%]
+apps/backend/tests/unit/test_pagination.py::TestPaginationHelper::test_total_pages_metadata SKIPPED [ 67%]
+apps/backend/tests/unit/test_pagination.py::TestPaginationHelper::test_invalid_page_defaults SKIPPED [ 68%]
+apps/backend/tests/unit/test_professor_score.py::TestProfessorScore::test_score_with_no_evaluations SKIPPED [ 69%]
+apps/backend/tests/unit/test_professor_score.py::TestProfessorScore::test_score_aggregates_multiple_evaluations SKIPPED [ 70%]
+apps/backend/tests/unit/test_professor_score.py::TestProfessorScore::test_threshold_boundaries SKIPPED [ 70%]
+apps/backend/tests/unit/test_professor_sort.py::test_global_score_desc_pone_los_nulls_al_final PASSED [ 71%]
+apps/backend/tests/unit/test_professor_sort.py::test_global_score_asc_pone_los_nulls_al_final PASSED [ 72%]
+apps/backend/tests/unit/test_professor_sort.py::test_todos_los_criterios_desempatan_por_id[created_at-asc] PASSED [ 73%]
+apps/backend/tests/unit/test_professor_sort.py::test_todos_los_criterios_desempatan_por_id[created_at-desc] PASSED [ 74%]
+apps/backend/tests/unit/test_professor_sort.py::test_todos_los_criterios_desempatan_por_id[global_score-asc] PASSED [ 74%]
+apps/backend/tests/unit/test_professor_sort.py::test_todos_los_criterios_desempatan_por_id[global_score-desc] PASSED [ 75%]
+apps/backend/tests/unit/test_professor_sort.py::test_todos_los_criterios_desempatan_por_id[total_evaluations-asc] PASSED [ 76%]
+apps/backend/tests/unit/test_professor_sort.py::test_todos_los_criterios_desempatan_por_id[total_evaluations-desc] PASSED [ 77%]
+apps/backend/tests/unit/test_rate_limiter.py::TestReportRateLimiter::test_first_report_allowed PASSED [ 77%]
+apps/backend/tests/unit/test_rate_limiter.py::TestReportRateLimiter::test_within_limit PASSED [ 78%]
+apps/backend/tests/unit/test_rate_limiter.py::TestReportRateLimiter::test_rate_limit_exceeded PASSED [ 79%]
+apps/backend/tests/unit/test_rate_limiter.py::TestReportRateLimiter::test_record_report PASSED [ 80%]
+apps/backend/tests/unit/test_rate_limiter.py::TestReportRateLimiter::test_old_timestamps_filtered_out PASSED [ 80%]
+apps/backend/tests/unit/test_rate_limiter.py::TestReportAbuseDetector::test_no_abuse_initially PASSED [ 81%]
+apps/backend/tests/unit/test_rate_limiter.py::TestReportAbuseDetector::test_abuse_detection_at_threshold PASSED [ 82%]
+apps/backend/tests/unit/test_rate_limiter.py::TestReportAbuseDetector::test_increment_abuse_count PASSED [ 83%]
+apps/backend/tests/unit/test_rate_limiter.py::TestReportAbuseDetector::test_reset_abuse_count PASSED [ 83%]
+apps/backend/tests/unit/test_scoring.py::TestEvaluationScoring::test_score_within_valid_range SKIPPED [ 84%]
+apps/backend/tests/unit/test_scoring.py::TestEvaluationScoring::test_score_weights_applied SKIPPED [ 85%]
+apps/backend/tests/unit/test_scoring.py::TestEvaluationScoring::test_boundary_values SKIPPED [ 86%]
+apps/backend/tests/unit/test_security.py::TestPasswordHashing::test_hash_and_verify_password PASSED [ 87%]
+apps/backend/tests/unit/test_security.py::TestPasswordHashing::test_hash_is_salted_and_non_deterministic PASSED [ 87%]
+apps/backend/tests/unit/test_security.py::TestPasswordHashing::test_wrong_password_fails_verification PASSED [ 88%]
+apps/backend/tests/unit/test_security.py::TestJWT::test_create_access_token PASSED [ 89%]
+apps/backend/tests/unit/test_security.py::TestJWT::test_refresh_token_marked_as_refresh PASSED [ 90%]
+apps/backend/tests/unit/test_security.py::TestJWT::test_decode_valid_token PASSED [ 90%]
+apps/backend/tests/unit/test_security.py::TestJWT::test_expired_token_rejected PASSED [ 91%]
+apps/backend/tests/unit/test_security.py::TestJWT::test_tampered_token_rejected PASSED [ 92%]
+apps/backend/tests/unit/test_security.py::TestJWT::test_token_signed_with_other_key_rejected PASSED [ 93%]
+apps/backend/tests/unit/test_unmsm_directory_ssl.py::test_ca_bundle_existe_y_es_pem PASSED [ 93%]
+apps/backend/tests/unit/test_unmsm_directory_ssl.py::test_ca_bundle_carga_en_sslcontext PASSED [ 94%]
+apps/backend/tests/unit/test_unmsm_directory_ssl.py::test_ca_bundle_es_el_intermediate_esperado PASSED [ 95%]
+apps/backend/tests/unit/test_verification_image.py::test_imagen_pequena_y_borrosa_se_acepta PASSED [ 96%]
+apps/backend/tests/unit/test_verification_image.py::test_png_pequeno_se_acepta PASSED [ 96%]
+apps/backend/tests/unit/test_verification_image.py::test_tipo_mime_no_permitido_se_rechaza PASSED [ 97%]
+apps/backend/tests/unit/test_verification_image.py::test_formato_real_no_permitido_se_rechaza PASSED [ 98%]
+apps/backend/tests/unit/test_verification_image.py::test_archivo_ilegible_se_rechaza PASSED [ 99%]
+apps/backend/tests/unit/test_verification_image.py::test_supera_tamano_maximo_se_rechaza PASSED [100%]
+
+=============================== warnings summary ===============================
+apps/backend/app/modules/professors/router_comparison.py:14
+  /home/nicolas/Github-repos/Repos/Puntualo/apps/backend/app/modules/professors/router_comparison.py:14: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class CompareRequest(BaseModel):
+
+apps/backend/.venv/lib/python3.14/site-packages/google/genai/types.py:42
+  /home/nicolas/Github-repos/Repos/Puntualo/apps/backend/.venv/lib/python3.14/site-packages/google/genai/types.py:42: DeprecationWarning: '_UnionGenericAlias' is deprecated and slated for removal in Python 3.17
+    VersionedUnionType = Union[builtin_types.UnionType, _UnionGenericAlias]
+
+tests/integration/test_auth_api.py::TestAuthAPI::test_register_new_user
+  /home/nicolas/Github-repos/Repos/Puntualo/apps/backend/app/modules/admin/schemas/index.py:10: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class ReportSummary(BaseModel):
+
+tests/integration/test_auth_api.py::TestAuthAPI::test_register_new_user
+  /home/nicolas/Github-repos/Repos/Puntualo/apps/backend/app/modules/admin/schemas/index.py:25: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class CommentModerationDetail(BaseModel):
+
+tests/integration/test_auth_api.py::TestAuthAPI::test_register_new_user
+  /home/nicolas/Github-repos/Repos/Puntualo/apps/backend/app/modules/admin/schemas/index.py:89: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class UserAdminRead(BaseModel):
+
+tests/integration/test_auth_api.py::TestAuthAPI::test_register_new_user
+  /home/nicolas/Github-repos/Repos/Puntualo/apps/backend/app/modules/admin/schemas/index.py:110: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class UserReportItem(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.6-final-0 ________________
+
+Name                                                                        Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------------------------------------
+apps/backend/app/core/celery_app.py                                             5      0   100%
+apps/backend/app/core/config.py                                               152     18    88%   42-49, 60-66, 79, 81, 91, 382
+apps/backend/app/core/security.py                                              31      0   100%
+apps/backend/app/db/async_session.py                                           40      4    90%   26-27, 94-95
+apps/backend/app/db/base.py                                                     3      0   100%
+apps/backend/app/db/session.py                                                 10      4    60%   26-32
+apps/backend/app/main.py                                                       49      8    84%   29-36, 52-59, 67-72
+apps/backend/app/models/__init__.py                                            30      0   100%
+apps/backend/app/models/academic_degree.py                                     10      0   100%
+apps/backend/app/models/ai_job.py                                              18      0   100%
+apps/backend/app/models/banned_term.py                                         10      0   100%
+apps/backend/app/models/career.py                                              10      0   100%
+apps/backend/app/models/career_course.py                                        8      0   100%
+apps/backend/app/models/chat_message.py                                        14      0   100%
+apps/backend/app/models/chat_session.py                                        13      0   100%
+apps/backend/app/models/comment.py                                             29      0   100%
+apps/backend/app/models/course.py                                              11      0   100%
+apps/backend/app/models/email_verification.py                                  19      0   100%
+apps/backend/app/models/evaluation.py                                          19      0   100%
+apps/backend/app/models/evaluation_hashtag.py                                  11      0   100%
+apps/backend/app/models/faculty.py                                             10      0   100%
+apps/backend/app/models/hashtag.py                                             13      0   100%
+apps/backend/app/models/mixins.py                                              12      0   100%
+apps/backend/app/models/moderation_action.py                                   16      0   100%
+apps/backend/app/models/password_reset.py                                      14      0   100%
+apps/backend/app/models/professor.py                                           17      0   100%
+apps/backend/app/models/professor_ai_summary.py                                17      0   100%
+apps/backend/app/models/professor_course.py                                    11      0   100%
+apps/backend/app/models/professor_degree.py                                    12      0   100%
+apps/backend/app/models/professor_embedding.py                                 15      0   100%
+apps/backend/app/models/professor_evidence.py                                  19      0   100%
+apps/backend/app/models/reaction.py                                            17      0   100%
+apps/backend/app/models/report.py                                              31      0   100%
+apps/backend/app/models/university.py                                          11      0   100%
+apps/backend/app/models/uploaded_document.py                                   19      0   100%
+apps/backend/app/models/user.py                                                20      0   100%
+apps/backend/app/models/user_strike.py                                         12      0   100%
+apps/backend/app/models/verification_request.py                                16      0   100%
+apps/backend/app/modules/admin/__init__.py                                      0      0   100%
+apps/backend/app/modules/admin/router/__init__.py                               5      0   100%
+apps/backend/app/modules/admin/router/admin_router.py                          65     35    46%   35, 42-47, 61-70, 83-84, 98-104, 116-117, 129-130, 147-155, 173-177, 193-197, 215-221
+apps/backend/app/modules/admin/router/professor_validation.py                  34     10    71%   30-35, 47, 61, 73, 86, 100, 112, 124
+apps/backend/app/modules/admin/schemas/__init__.py                             12      0   100%
+apps/backend/app/modules/admin/schemas/index.py                                94      0   100%
+apps/backend/app/modules/admin/service/__init__.py                             88     43    51%   63, 67-69, 110, 115, 132-149, 155-204, 208-222, 226-240
+apps/backend/app/modules/admin/service/admin_service.py                       138    114    17%   23-24, 33-50, 57-82, 119-151, 162-199, 212-218, 225-236, 247-297, 301-309, 313-322, 331-368
+apps/backend/app/modules/auth/dependencies.py                                  23      5    78%   24, 30, 38, 46, 52
+apps/backend/app/modules/auth/router.py                                        43      5    88%   66, 76, 87, 117, 125
+apps/backend/app/modules/auth/schemas.py                                       71     10    86%   96, 112, 135, 144-147, 167, 176-179
+apps/backend/app/modules/auth/service.py                                      213    112    47%   72, 82, 102-103, 129, 135-140, 146-148, 161, 167-175, 190-197, 225-229, 248, 256-258, 264-266, 273-275, 281-283, 293-295, 301-308, 314-318, 345-402, 414-449, 457-459, 469-492, 528
+apps/backend/app/modules/catalogs/__init__.py                                   0      0   100%
+apps/backend/app/modules/catalogs/router.py                                    20      9    55%   20-22, 37-49
+apps/backend/app/modules/catalogs/schemas.py                                    5      0   100%
+apps/backend/app/modules/catalogs/service.py                                   16      7    56%   11, 14-15, 18-19, 22-27
+apps/backend/app/modules/chat/__init__.py                                       0      0   100%
+apps/backend/app/modules/chat/router.py                                        82     51    38%   49-56, 74-98, 103-113, 122-125, 135-139, 149-153, 164-183
+apps/backend/app/modules/chat/schemas.py                                        8      0   100%
+apps/backend/app/modules/chat/service.py                                       43     23    47%   25, 28-31, 34-41, 44-49, 53-56, 59-63, 66-68
+apps/backend/app/modules/evaluations/__init__.py                                0      0   100%
+apps/backend/app/modules/evaluations/errors.py                                 79      6    92%   22, 98-101, 109-113
+apps/backend/app/modules/evaluations/router.py                                 14      0   100%
+apps/backend/app/modules/evaluations/routers/__init__.py                        0      0   100%
+apps/backend/app/modules/evaluations/routers/comments.py                       38     21    45%   48-82, 116-130
+apps/backend/app/modules/evaluations/routers/courses.py                        54     11    80%   61-75, 84-85, 87, 101-102
+apps/backend/app/modules/evaluations/routers/evaluations.py                    85     63    26%   53-74, 103-110, 158-238
+apps/backend/app/modules/evaluations/routers/hashtags.py                       11      2    82%   24-25
+apps/backend/app/modules/evaluations/routers/reactions.py                      19      6    68%   33-45
+apps/backend/app/modules/evaluations/routers/reports.py                        27     14    48%   43-77
+apps/backend/app/modules/evaluations/schemas.py                                43      0   100%
+apps/backend/app/modules/evaluations/semester.py                                9      6    33%   14-19
+apps/backend/app/modules/evaluations/service/__init__.py                        0      0   100%
+apps/backend/app/modules/evaluations/service/comment_service.py                56     42    25%   32, 52-126, 129-133
+apps/backend/app/modules/evaluations/service/course_service.py                 29     15    48%   31-44, 54-55, 57, 65-71
+apps/backend/app/modules/evaluations/service/evaluation_service.py            124     85    31%   65, 78-149, 167-176, 192-216, 220-225, 228-231, 236-242, 246-260, 272-284
+apps/backend/app/modules/evaluations/service/hashtag_service.py                58     43    26%   36, 44-92, 100-111
+apps/backend/app/modules/evaluations/service/reaction_service.py               48     29    40%   41, 50-91
+apps/backend/app/modules/evaluations/service/report_service.py                 75     14    81%   100, 114-116, 168-183
+apps/backend/app/modules/evaluations/summary_hook.py                           10      4    60%   20-25
+apps/backend/app/modules/professors/__init__.py                                 0      0   100%
+apps/backend/app/modules/professors/dependencies.py                            13      6    54%   14-22, 28-36
+apps/backend/app/modules/professors/router.py                                 160     94    41%   77-105, 152-162, 165, 255-304, 326-350, 367-374, 395-402, 420-437, 457-469, 488-496, 515-533, 551-558
+apps/backend/app/modules/professors/router_comparison.py                       35     20    43%   49-93, 111-112
+apps/backend/app/modules/professors/schemas.py                                 73      2    97%   57, 73
+apps/backend/app/modules/professors/service.py                                269    198    26%   51-52, 61-62, 79-126, 133-171, 174-181, 184-211, 216-229, 232-256, 259-266, 275-279, 319-320, 329, 332, 335, 358-381, 385, 387, 391, 395-399, 402-406, 409, 430-440, 457-523, 542-568, 577-586, 594-602, 609-617
+apps/backend/app/modules/professors/service_comparison.py                      80     60    25%   21, 37-91, 98-108, 115-124, 128-136, 145-164, 178-193, 201-217, 224-297
+apps/backend/app/modules/verification/__init__.py                               0      0   100%
+apps/backend/app/modules/verification/router.py                                12      2    83%   24-25
+apps/backend/app/modules/verification/schemas.py                                2      0   100%
+apps/backend/app/modules/verification/service.py                               88     51    42%   22-27, 101, 109-122, 135-199, 203-212, 222-264
+apps/backend/app/schemas/__init__.py                                            0      0   100%
+apps/backend/app/schemas/error.py                                               5      0   100%
+apps/backend/app/schemas/pagination.py                                          4      0   100%
+apps/backend/app/services/__init__.py                                           0      0   100%
+apps/backend/app/services/chatbot/__init__.py                                   0      0   100%
+apps/backend/app/services/chatbot/cohere_client.py                             24     13    46%   22-28, 32-39, 42-44, 47-48
+apps/backend/app/services/chatbot/gemini_chat_client.py                        41     20    51%   28-30, 43-57, 64-76, 82-91
+apps/backend/app/services/chatbot/grounding.py                                 75      4    95%   77, 97, 128, 168
+apps/backend/app/services/chatbot/orchestrator.py                             124     33    73%   48, 52, 60-62, 85, 87-90, 92-93, 95-98, 129-131, 144, 219-243
+apps/backend/app/services/chatbot/prompts/__init__.py                           4      1    75%   7
+apps/backend/app/services/chatbot/rate_limit.py                                14      8    43%   12, 17-23
+apps/backend/app/services/chatbot/retriever.py                                 60     30    50%   37-47, 52-53, 56-57, 60-67, 71-83, 86-99, 102-110
+apps/backend/app/services/chatbot/tools/__init__.py                            10      0   100%
+apps/backend/app/services/chatbot/tools/compare_professors.py                  16     10    38%   13-19, 34-36
+apps/backend/app/services/chatbot/tools/compare_professors_by_name.py          20     15    25%   17-42
+apps/backend/app/services/chatbot/tools/definitions.py                          1      0   100%
+apps/backend/app/services/chatbot/tools/get_course_professors.py               16     11    31%   18-41
+apps/backend/app/services/chatbot/tools/get_professor_details.py               18     13    28%   28-58
+apps/backend/app/services/chatbot/tools/resolve_professor.py                   18     12    33%   17, 32-48
+apps/backend/app/services/chatbot/tools/search_courses.py                       9      4    56%   23-26
+apps/backend/app/services/chatbot/tools/search_professors.py                    9      4    56%   26-37
+apps/backend/app/services/chatbot/tools/search_professors_by_topic.py           9      5    44%   16-26
+apps/backend/app/services/moderation/__init__.py                                0      0   100%
+apps/backend/app/services/moderation/moderation_pipeline.py                    76     43    43%   48, 61-103, 124-134, 152-180, 190-196, 206, 215-222
+apps/backend/app/services/nlp/__init__.py                                       0      0   100%
+apps/backend/app/services/nlp/gemini_client.py                                 40     16    60%   51-57, 60-98
+apps/backend/app/services/nlp/output_parser.py                                 36     28    22%   22-32, 36-46, 57-62
+apps/backend/app/services/nlp/prompts/__init__.py                              14      8    43%   18-28
+apps/backend/app/services/nlp/summary_generator.py                             68     49    28%   28, 45-105, 113, 117, 140-191
+apps/backend/app/services/professor_validation/__init__.py                      0      0   100%
+apps/backend/app/services/professor_validation/sources/__init__.py              0      0   100%
+apps/backend/app/services/professor_validation/sources/base.py                 23      0   100%
+apps/backend/app/services/professor_validation/sources/unmsm_directory.py     109     77    29%   48-51, 55-58, 62-100, 110-124, 127-150, 153-157, 160-172, 181-199
+apps/backend/app/tasks/__init__.py                                              0      0   100%
+apps/backend/app/tasks/nlp_tasks.py                                            97     66    32%   29-31, 35-44, 54-62, 66-98, 109-118, 136-174, 178-188, 193-196
+apps/backend/app/utils/__init__.py                                              0      0   100%
+apps/backend/app/utils/cache.py                                                20     11    45%   17-22, 26-29, 40
+apps/backend/app/utils/db.py                                                    5      4    20%   32-35
+apps/backend/app/utils/email.py                                                24     19    21%   10-31
+apps/backend/app/utils/hashtag_normalizer.py                                   18     11    39%   17-25, 29-30
+apps/backend/app/utils/moderation.py                                          165     49    70%   64, 70-71, 75-76, 83-86, 101, 108, 111, 125, 148, 150, 172-184, 189-192, 208-219, 252, 265-269, 298-299, 306, 308
+apps/backend/app/utils/rate_limiter.py                                         53      3    94%   83-84, 124
+---------------------------------------------------------------------------------------------------------
+TOTAL                                                                        4470   1819    59%
+================= 99 passed, 32 skipped, 6 warnings in 15.22s ==================

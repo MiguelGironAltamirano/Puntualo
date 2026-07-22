@@ -9,14 +9,14 @@ class TestHeuristicFilter:
 
     @pytest.mark.asyncio
     async def test_allow_clean_comment(self):
-        """Test that clean comments pass the filter."""
+        """CP-MOD-01 · Unitario · Partición de equivalencias · Ninguno · Filtro heurístico activo · "Excelente profesor, explica muy bien" · 1. Invocar heuristic_filter con la entrada · action = allow, spam_score < 0.4"""
         result = await heuristic_filter("This is a great professor, very helpful!")
         assert result.action == "allow"
         assert result.spam_score < 0.4
 
     @pytest.mark.asyncio
     async def test_banned_term_detection(self):
-        """Test that banned terms increase spam score (no DB, so skip that stage)."""
+        """CP-WB-05 · Unitario · Cobertura de decisiones · Ninguno · Filtro heurístico activo, DB ausente · Término baneado en texto · 1. Invocar heuristic_filter con la entrada · no bloquea (DB ausente, batea a siguiente etapa)"""
         # Without DB, banned terms stage is skipped
         result = await heuristic_filter("This professor is not good")
         # Should pass because no DB to check banned terms
@@ -24,21 +24,21 @@ class TestHeuristicFilter:
 
     @pytest.mark.asyncio
     async def test_email_pattern_detection(self):
-        """Test that emails are detected and add to spam score."""
+        """CP-MOD-02 · Unitario · Partición de equivalencias · Ninguno · Filtro heurístico activo · "Contact me at hacker@evil.com for cheating" · 1. Invocar heuristic_filter con la entrada · spam_score >= 0.1, patrón 'email'"""
         result = await heuristic_filter("Contact me at hacker@evil.com for cheating")
         assert "email" in result.matched_patterns or "email" in " ".join(result.reasons).lower()
         assert result.spam_score >= 0.1  # Email detection adds score
 
     @pytest.mark.asyncio
     async def test_url_pattern_detection(self):
-        """Test that URLs are detected."""
+        """CP-MOD-03 · Unitario · Partición de equivalencias · Ninguno · Filtro heurístico activo · "Click here: https://malicious.com/scam" · 1. Invocar heuristic_filter con la entrada · spam_score >= 0.1, patrón 'url'"""
         result = await heuristic_filter("Click here: https://malicious.com/scam")
         assert "url" in result.matched_patterns or "url" in " ".join(result.reasons).lower()
         assert result.spam_score >= 0.1
 
     @pytest.mark.asyncio
     async def test_zero_width_chars_detection(self):
-        """Test that comments with zero-width characters are flagged."""
+        """CP-WB-04 · Unitario · Cobertura de decisiones · Ninguno · Filtro heurístico activo · Texto con caracteres de ancho cero · 1. Invocar heuristic_filter con la entrada · reason contiene 'obfuscation' o 'zero'"""
         # Insert zero-width space
         text = "This is a comment\u200Bwith hidden characters"
         result = await heuristic_filter(text)
@@ -46,7 +46,7 @@ class TestHeuristicFilter:
 
     @pytest.mark.asyncio
     async def test_excessive_caps_scoring(self):
-        """Test that comments with excessive caps increase spam score."""
+        """CP-MOD-04 · Unitario · Partición de equivalencias · Ninguno · Filtro heurístico activo · "THIS PROFESSOR IS THE BEST!!!!!" · 1. Invocar heuristic_filter con la entrada · action = allow, spam_score >= 0.25"""
         result = await heuristic_filter("THIS PROFESSOR IS THE BEST!!!!!")
         assert result.action == "allow"  # Should be allow, not block
         assert result.spam_score >= 0.25  # Caps + repetition should score higher

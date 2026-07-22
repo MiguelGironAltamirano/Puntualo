@@ -83,7 +83,7 @@ class TestJWT:
         assert payload["type"] == "refresh"
 
     def test_decode_valid_token(self):
-        """Un token válido se decodifica y expone el subject/claims."""
+        """CP-SEC-01 · Unitario · JWT (Caja Blanca) · Ninguno · Payload válido · 1. Generar token, 2. Decodificar con decode_token · claims correctos recuperados"""
         token = create_access_token({"sub": "someone@unmsm.edu.pe", "role": "admin"})
 
         payload = decode_token(token)
@@ -93,7 +93,7 @@ class TestJWT:
         assert payload["role"] == "admin"
 
     def test_expired_token_rejected(self):
-        """Un token expirado es rechazado (decode_token -> None)."""
+        """CP-SEC-02 · Unitario · JWT (Caja Blanca) · Ninguno · Token vencido · 1. Generar token con exp en el pasado, 2. Decodificar · devuelva None"""
         expired = jwt.encode(
             {
                 "sub": "user@unmsm.edu.pe",
@@ -107,7 +107,7 @@ class TestJWT:
         assert decode_token(expired) is None
 
     def test_tampered_token_rejected(self):
-        """Un token con firma alterada es rechazado (decode_token -> None)."""
+        """CP-SEC-03 · Unitario · JWT (Caja Blanca) · Ninguno · Token alterado · 1. Mutar firma del token, 2. Decodificar · devuelva None (rechazado)"""
         token = create_access_token({"sub": "user@unmsm.edu.pe"})
 
         # Alterar un carácter intermedio de la firma invalida el token. (Cambiar

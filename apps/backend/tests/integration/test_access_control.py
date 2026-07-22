@@ -17,10 +17,10 @@ pytestmark = pytest.mark.skip(reason="Pendiente de implementación")
 
 class TestAccessControl:
     async def test_protected_route_without_token_returns_401(self):
-        """/professors sin token devuelve 401."""
+        """CP-API-01 · Integración · Pruebas de API · Ninguno · Ninguna · 1. GET /professors sin cabecera Authorization · 401 Unauthorized"""
 
     async def test_write_endpoint_without_token_returns_401(self):
         """Un endpoint de escritura sin token devuelve 401."""
 
     async def test_insufficient_role_returns_403(self):
-        """Un usuario sin rol admin recibe 403 en rutas de admin."""
+        """CP-RB-02 · Integración · Basado en riesgo · R3 IDOR · Usuario autenticado con rol student · 1. Acceder a ruta reservada para admin · 403 Forbidden"""

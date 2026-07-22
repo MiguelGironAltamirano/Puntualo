@@ -103,7 +103,7 @@ class TestAuthAPI:
         assert resp.status_code == 400
 
     def test_login_valid_credentials_returns_token(self, api_client):
-        """Login con credenciales correctas devuelve access y refresh token."""
+        """CP-API-02 · Integración · Pruebas de API · Ninguno · Usuario registrado y verificado · 1. POST /login con credenciales correctas · 200 OK + access y refresh token"""
         _register_and_verify(api_client)
 
         resp = api_client.post(
@@ -119,7 +119,7 @@ class TestAuthAPI:
         assert body["role"] == "student"
 
     def test_login_invalid_password_rejected(self, api_client):
-        """Login con contraseña incorrecta devuelve 401."""
+        """CP-API-03 · Integración · Pruebas de API · Ninguno · Usuario registrado · 1. POST /login con contraseña incorrecta · 401 Unauthorized"""
         _register_and_verify(api_client)
 
         resp = api_client.post(

@@ -1,6 +1,8 @@
 """
 Prueba de carga - Puntualo backend (50 usuarios concurrentes)
 
+CP-RB-04 · Carga · Basado en riesgo · R6 saturación BD · Servidor activo · 1. Simular 50 usuarios concurrentes con Locust · Sin caídas, p95 dentro de umbral
+
 Solo ejercita endpoints PÚBLICOS de lectura (GET) que responden 200 sin
 autenticación. No escribe datos ni requiere credenciales, por lo que es
 seguro correrlo contra la VM.

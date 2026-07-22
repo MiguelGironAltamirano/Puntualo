@@ -82,6 +82,7 @@ async def test_no_agrega_advertencia_si_el_profesor_si_dicta_el_curso():
 
 
 async def test_check_grounding_detecta_profesor_inventado():
+    """CP-RB-03 · Unitario · Basado en riesgo · R5 prompt injection · Respuesta del chatbot con profesor inventado · 1. Invocar check_grounding · ok = False, invented contiene el profesor inventado"""
     # Nombre con título académico que no vino de tools ni existe en `professors`.
     db = FakeDB(course_rows=[(3, "Cálculo I")], teaching_rows=[], named_rows=[])
     check = await check_grounding(

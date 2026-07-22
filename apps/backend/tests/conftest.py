@@ -79,6 +79,7 @@ async def test_db() -> AsyncGenerator[AsyncSession, None]:
         poolclass=StaticPool,
         echo=False,
     )
+    _sa_event.listen(engine.sync_engine, "connect", _register_sqlite_uuid_fn)
 
     # Create all tables (best-effort: se omiten las tablas con DDL solo-Postgres)
     async with engine.begin() as conn:
@@ -94,11 +95,13 @@ async def test_db() -> AsyncGenerator[AsyncSession, None]:
 async def test_user(test_db: AsyncSession) -> User:
     """Create a test user."""
     user = User(
-        id="550e8400-e29b-41d4-a716-446655440000",
+        id=_uuid.UUID("550e8400-e29b-41d4-a716-446655440000"),
         email="testuser@unmsm.edu.pe",
+        full_name="Test User",
         username="testuser",
+        hashed_password="mockedhashedpassword",
         is_active=True,
-        role="user",
+        role="student",
         strike_count=0,
     )
     test_db.add(user)
@@ -110,9 +113,11 @@ async def test_user(test_db: AsyncSession) -> User:
 async def test_admin_user(test_db: AsyncSession) -> User:
     """Create a test admin user."""
     admin = User(
-        id="550e8400-e29b-41d4-a716-446655440001",
+        id=_uuid.UUID("550e8400-e29b-41d4-a716-446655440001"),
         email="admin@unmsm.edu.pe",
+        full_name="Admin User",
         username="admin",
+        hashed_password="mockedhashedpassword",
         is_active=True,
         role="admin",
     )
@@ -121,14 +126,26 @@ async def test_admin_user(test_db: AsyncSession) -> User:
     return admin
 
 
+
 @pytest_asyncio.fixture
 async def test_professor(test_db: AsyncSession) -> Professor:
     """Create a test professor."""
+    from app.models.university import University
+    from app.models.faculty import Faculty
+
+    uni = University(id=1, name="Universidad Nacional Mayor de San Marcos", city="Lima")
+    test_db.add(uni)
+    await test_db.flush()
+
+    faculty = Faculty(id=1, name="Facultad de Ingeniería de Sistemas e Informática", university_id=uni.id)
+    test_db.add(faculty)
+    await test_db.flush()
+
     professor = Professor(
-        id="550e8400-e29b-41d4-a716-446655440100",
-        first_name="John",
-        last_name="Doe",
-        email="john.doe@unmsm.edu.pe",
+        id=_uuid.UUID("550e8400-e29b-41d4-a716-446655440100"),
+        full_name="John Doe",
+        university_id=uni.id,
+        faculty_id=faculty.id,
         validation_status="validated",
         is_active=True,
     )
@@ -142,17 +159,48 @@ async def test_comment(
     test_db: AsyncSession, test_user: User, test_professor: Professor
 ) -> Comment:
     """Create a test comment."""
-    comment = Comment(
-        id="550e8400-e29b-41d4-a716-446655440200",
+    from app.models.course import Course
+    from app.models.evaluation import Evaluation
+
+    course = Course(
+        id=1,
+        name="Cálculo I",
+        university_id=1,
+        faculty_id=1,
+    )
+    test_db.add(course)
+    await test_db.flush()
+
+    evaluation = Evaluation(
+        id=_uuid.UUID("550e8400-e29b-41d4-a716-446655440300"),
         user_id=test_user.id,
         professor_id=test_professor.id,
-        content="This is a test comment about the professor.",
+        course_id=course.id,
+        semester="2026-1",
+        clarity=4,
+        easiness=4,
+        helpfulness=4,
+        punctuality=4,
+        modality="presencial",
+    )
+    test_db.add(evaluation)
+    await test_db.flush()
+
+    comment = Comment(
+        id=_uuid.UUID("550e8400-e29b-41d4-a716-446655440200"),
+        evaluation_id=evaluation.id,
+        user_id=test_user.id,
+        professor_id=test_professor.id,
+        course_id=course.id,
+        text="This is a test comment about the professor.",
+        modality="presencial",
         status=CommentStatus.PUBLISHED.value,
         reports_count=0,
     )
     test_db.add(comment)
     await test_db.flush()
     return comment
+
 
 
 # ---------------------------------------------------------------------------
